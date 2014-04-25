@@ -30,7 +30,7 @@ window.onload = ->
   pixiWrapper.appendViewTo(document.body)
 
   pixiWrapper.loadAssets ->
-    world = new BumperCatsWorld(
+    world = new RtsWorld(
       pixiWrapper:pixiWrapper
     )
 
