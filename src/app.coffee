@@ -10,7 +10,7 @@ window.gameConfig =
   stageWidth: 800
   stageHeight: 600
   imageAssets: [
-    "images/bumpercat_red.png"
+    "images/bunny.png"
     ]
   url: "http://#{window.location.hostname}:#{window.location.port}"
 
