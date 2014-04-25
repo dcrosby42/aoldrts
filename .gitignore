@@ -1,0 +1,6 @@
+/build
+tags
+/server.log
+/tools/*.txt
+/node_modules
+

@@ -1,0 +1,10 @@
+git push heroku master
+
+git push heroku tanks:master
+
+
+heroku logs
+
+heroku restart
+
+heroku labs:enable websockets
