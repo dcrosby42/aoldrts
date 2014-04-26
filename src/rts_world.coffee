@@ -40,7 +40,7 @@ class Movement
   constructor: ({@vx, @vy}) ->
 
 class Sprite
-  constructor: ({@name}) ->
+  constructor: ({@name, @framelist}) ->
     @remove = false
     @add = true
 
@@ -131,12 +131,22 @@ class SpriteSyncSystem extends makr.IteratingSystem
     else if sprite.remove
       @removeSprite(entity, sprite)
     else
+      deltaX = position.x - pixiSprite.position.x
+      deltaY = position.y - pixiSprite.position.y
+
       pixiSprite.position.x = position.x
       pixiSprite.position.y = position.y
     
   buildSprite: (entity, sprite, position) ->
     console.log "ADDING SPRITE FOR #{entity.id}"
-    pixiSprite = new PIXI.Sprite(PIXI.Texture.fromFrame(sprite.name))
+    pixiSprite = undefined
+    if sprite.framelist
+      spriteTextures = (new PIXI.Texture.fromFrame(frame) for frame in sprite.framelist.right)
+      pixiSprite = new PIXI.MovieClip(spriteTextures)
+      pixiSprite.animationSpeed = 0.05
+      pixiSprite.play()
+    else
+      pixiSprite = new PIXI.Sprite(PIXI.Texture.fromFrame(sprite.name))
     pixiSprite.anchor.x = pixiSprite.anchor.y = 0.5
     @pixiWrapper.sprites.addChild pixiSprite
     @spriteCache[entity.id] = pixiSprite
@@ -153,13 +163,20 @@ class SpriteSyncSystem extends makr.IteratingSystem
 fixFloat = SimSim.Util.fixFloat
 HalfPI = Math.PI/2
 
+Robot0Framelist = {
+  down: ["robot0_down_0.png","robot0_down_1.png","robot0_down_2.png", "robot0_down_1.png"]
+  left: ["robot0_left_0.png","robot0_left_1.png","robot0_left_2.png", "robot0_left_1.png"]
+  up: ["robot0_up_0.png","robot0_up_1.png","robot0_up_2.png", "robot0_up_1.png"]
+  right: ["robot0_right_0.png","robot0_right_1.png","robot0_right_2.png", "robot0_right_1.png"]
+}
+
 class EntityFactory
   constructor: (@ecs) ->
 
   bunny: (x,y) ->
     bunny = @ecs.create()
     bunny.add(new Position(x: x, y: y), ComponentRegister.get(Position))
-    bunny.add(new Sprite(name: "images/bunny.png"), ComponentRegister.get(Sprite))
+    bunny.add(new Sprite(framelist: Robot0Framelist), ComponentRegister.get(Sprite))
     bunny.add(new Controls(), ComponentRegister.get(Controls))
     bunny.add(new Movement(vx: 0, vy: 0), ComponentRegister.get(Movement))
     bunny

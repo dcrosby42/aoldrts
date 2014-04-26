@@ -4,6 +4,7 @@ class PixiWrapper
     @stage = new PIXI.Stage(0xDDDDDD, true)
     @renderer = PIXI.autoDetectRenderer(opts.width, opts.height, undefined, false)
     @loader = new PIXI.AssetLoader(opts.assets)
+    @spriteSheetLoaders = (new PIXI.SpriteSheetLoader(sheet) for sheet in opts.spriteSheets)
     @sprites = new PIXI.DisplayObjectContainer()
     @sprites.setInteractive true
     @stage.addChild @sprites
@@ -41,6 +42,8 @@ class PixiWrapper
   loadAssets: (callback) ->
     @loader.onComplete = callback
     @loader.load()
+    sheet.load() for sheet in @spriteSheetLoaders
+    null
 
   render: ->
     @interface.update()

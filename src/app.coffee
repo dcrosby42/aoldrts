@@ -26,6 +26,9 @@ window.gameConfig = ->
     imageAssets: [
       "images/bunny.png"
       ]
+    spriteSheetAssets: [
+      "images/EBRobotedit2crMatsuoKaito.json"
+    ]
     simSimConnection:
       url: "#{scheme}://#{window.location.hostname}"#:#{window.location.port}"
       secure: useHttps
@@ -47,6 +50,7 @@ window.onload = ->
     width:  gameConfig.stageWidth
     height: gameConfig.stageHeight
     assets: gameConfig.imageAssets
+    spriteSheets: gameConfig.spriteSheetAssets
   )
 
   pixiWrapper.appendViewTo(document.getElementById('gameDiv'))

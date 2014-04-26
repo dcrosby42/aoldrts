@@ -38,6 +38,7 @@ window.gameConfig = function() {
     stageWidth: window.screen.width / 2,
     stageHeight: window.screen.height / 2,
     imageAssets: ["images/bunny.png"],
+    spriteSheetAssets: ["images/EBRobotedit2crMatsuoKaito.json"],
     simSimConnection: {
       url: "" + scheme + "://" + window.location.hostname,
       secure: useHttps
@@ -59,7 +60,8 @@ window.onload = function() {
   pixiWrapper = buildPixiWrapper({
     width: gameConfig.stageWidth,
     height: gameConfig.stageHeight,
-    assets: gameConfig.imageAssets
+    assets: gameConfig.imageAssets,
+    spriteSheets: gameConfig.spriteSheetAssets
   });
   pixiWrapper.appendViewTo(document.getElementById('gameDiv'));
   return pixiWrapper.loadAssets(function() {
@@ -452,9 +454,20 @@ RtsInterface = require('./rts_interface.coffee');
 
 PixiWrapper = (function() {
   function PixiWrapper(opts) {
+    var sheet;
     this.stage = new PIXI.Stage(0xDDDDDD, true);
     this.renderer = PIXI.autoDetectRenderer(opts.width, opts.height, void 0, false);
     this.loader = new PIXI.AssetLoader(opts.assets);
+    this.spriteSheetLoaders = (function() {
+      var _i, _len, _ref, _results;
+      _ref = opts.spriteSheets;
+      _results = [];
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        sheet = _ref[_i];
+        _results.push(new PIXI.SpriteSheetLoader(sheet));
+      }
+      return _results;
+    })();
     this.sprites = new PIXI.DisplayObjectContainer();
     this.sprites.setInteractive(true);
     this.stage.addChild(this.sprites);
@@ -504,8 +517,15 @@ PixiWrapper = (function() {
   };
 
   PixiWrapper.prototype.loadAssets = function(callback) {
+    var sheet, _i, _len, _ref;
     this.loader.onComplete = callback;
-    return this.loader.load();
+    this.loader.load();
+    _ref = this.spriteSheetLoaders;
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      sheet = _ref[_i];
+      sheet.load();
+    }
+    return null;
   };
 
   PixiWrapper.prototype.render = function() {
@@ -609,7 +629,7 @@ module.exports = RtsInterface;
 
 
 },{}],9:[function(require,module,exports){
-var BUNNY_VEL, ChecksumCalculator, ComponentRegister, ControlMappingSystem, ControlSystem, Controls, EntityFactory, EntityInspectorSystem, HalfPI, Movement, MovementSystem, Player, Position, RtsWorld, Sprite, SpriteSyncSystem, fixFloat,
+var BUNNY_VEL, ChecksumCalculator, ComponentRegister, ControlMappingSystem, ControlSystem, Controls, EntityFactory, EntityInspectorSystem, HalfPI, Movement, MovementSystem, Player, Position, Robot0Framelist, RtsWorld, Sprite, SpriteSyncSystem, fixFloat,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
@@ -683,7 +703,7 @@ Movement = (function() {
 
 Sprite = (function() {
   function Sprite(_arg) {
-    this.name = _arg.name;
+    this.name = _arg.name, this.framelist = _arg.framelist;
     this.remove = false;
     this.add = true;
   }
@@ -819,7 +839,7 @@ SpriteSyncSystem = (function(_super) {
   };
 
   SpriteSyncSystem.prototype.process = function(entity, elapsed) {
-    var pixiSprite, position, sprite;
+    var deltaX, deltaY, pixiSprite, position, sprite;
     position = entity.get(ComponentRegister.get(Position));
     sprite = entity.get(ComponentRegister.get(Sprite));
     pixiSprite = this.spriteCache[entity.id];
@@ -828,15 +848,34 @@ SpriteSyncSystem = (function(_super) {
     } else if (sprite.remove) {
       return this.removeSprite(entity, sprite);
     } else {
+      deltaX = position.x - pixiSprite.position.x;
+      deltaY = position.y - pixiSprite.position.y;
       pixiSprite.position.x = position.x;
       return pixiSprite.position.y = position.y;
     }
   };
 
   SpriteSyncSystem.prototype.buildSprite = function(entity, sprite, position) {
-    var pixiSprite;
+    var frame, pixiSprite, spriteTextures;
     console.log("ADDING SPRITE FOR " + entity.id);
-    pixiSprite = new PIXI.Sprite(PIXI.Texture.fromFrame(sprite.name));
+    pixiSprite = void 0;
+    if (sprite.framelist) {
+      spriteTextures = (function() {
+        var _i, _len, _ref, _results;
+        _ref = sprite.framelist.right;
+        _results = [];
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          frame = _ref[_i];
+          _results.push(new PIXI.Texture.fromFrame(frame));
+        }
+        return _results;
+      })();
+      pixiSprite = new PIXI.MovieClip(spriteTextures);
+      pixiSprite.animationSpeed = 0.05;
+      pixiSprite.play();
+    } else {
+      pixiSprite = new PIXI.Sprite(PIXI.Texture.fromFrame(sprite.name));
+    }
     pixiSprite.anchor.x = pixiSprite.anchor.y = 0.5;
     this.pixiWrapper.sprites.addChild(pixiSprite);
     this.spriteCache[entity.id] = pixiSprite;
@@ -859,6 +898,13 @@ fixFloat = SimSim.Util.fixFloat;
 
 HalfPI = Math.PI / 2;
 
+Robot0Framelist = {
+  down: ["robot0_down_0.png", "robot0_down_1.png", "robot0_down_2.png", "robot0_down_1.png"],
+  left: ["robot0_left_0.png", "robot0_left_1.png", "robot0_left_2.png", "robot0_left_1.png"],
+  up: ["robot0_up_0.png", "robot0_up_1.png", "robot0_up_2.png", "robot0_up_1.png"],
+  right: ["robot0_right_0.png", "robot0_right_1.png", "robot0_right_2.png", "robot0_right_1.png"]
+};
+
 EntityFactory = (function() {
   function EntityFactory(ecs) {
     this.ecs = ecs;
@@ -872,7 +918,7 @@ EntityFactory = (function() {
       y: y
     }), ComponentRegister.get(Position));
     bunny.add(new Sprite({
-      name: "images/bunny.png"
+      framelist: Robot0Framelist
     }), ComponentRegister.get(Sprite));
     bunny.add(new Controls(), ComponentRegister.get(Controls));
     bunny.add(new Movement({
@@ -931,6 +977,49 @@ RtsWorld = (function(_super) {
     return entityInspector;
   };
 
+  RtsWorld.prototype.findEntityById = function(id) {
+    var entity;
+    return ((function() {
+      var _i, _len, _ref, _results;
+      _ref = this.ecs._alive;
+      _results = [];
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        entity = _ref[_i];
+        if (("" + entity.id) === ("" + id)) {
+          _results.push(entity);
+        }
+      }
+      return _results;
+    }).call(this))[0];
+  };
+
+  RtsWorld.prototype.resetData = function() {};
+
+  RtsWorld.prototype.serializeComponent = function(component) {
+    var name, serializedComponent, value;
+    serializedComponent = {};
+    for (name in component) {
+      value = component[name];
+      serializedComponent[name] = value;
+    }
+    serializedComponent['type'] = component.constructor.name;
+    return serializedComponent;
+  };
+
+  RtsWorld.prototype.deserializeComponent = function(serializedComponent) {
+    return eval("new " + serializedComponent.type + "(serializedComponent)");
+  };
+
+  RtsWorld.prototype.updateControl = function(id, action, value) {
+    var _base, _name;
+    (_base = this.currentControls)[_name = this.players[id]] || (_base[_name] = []);
+    return this.currentControls[this.players[id]].push([action, value]);
+  };
+
+  RtsWorld.prototype.addPlayer = function(playerId) {};
+
+  RtsWorld.prototype.removePlayer = function(playerId) {};
+
   RtsWorld.prototype.playerJoined = function(playerId) {
     var bunny;
     bunny = this.entityFactory.bunny(400, 400);
@@ -948,22 +1037,6 @@ RtsWorld = (function(_super) {
     ent.kill();
     this.players[playerId] = void 0;
     return console.log("Player " + playerId + " LEFT");
-  };
-
-  RtsWorld.prototype.findEntityById = function(id) {
-    var entity;
-    return ((function() {
-      var _i, _len, _ref, _results;
-      _ref = this.ecs._alive;
-      _results = [];
-      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-        entity = _ref[_i];
-        if (("" + entity.id) === ("" + id)) {
-          _results.push(entity);
-        }
-      }
-      return _results;
-    }).call(this))[0];
   };
 
   RtsWorld.prototype.theEnd = function() {
@@ -1015,8 +1088,6 @@ RtsWorld = (function(_super) {
     return _results;
   };
 
-  RtsWorld.prototype.resetData = function() {};
-
   RtsWorld.prototype.getData = function() {
     var c, componentBags, components, data, ent, entId, _ref;
     componentBags = {};
@@ -1043,34 +1114,9 @@ RtsWorld = (function(_super) {
     };
   };
 
-  RtsWorld.prototype.serializeComponent = function(component) {
-    var name, serializedComponent, value;
-    serializedComponent = {};
-    for (name in component) {
-      value = component[name];
-      serializedComponent[name] = value;
-    }
-    serializedComponent['type'] = component.constructor.name;
-    return serializedComponent;
-  };
-
-  RtsWorld.prototype.deserializeComponent = function(serializedComponent) {
-    return eval("new " + serializedComponent.type + "(serializedComponent)");
-  };
-
   RtsWorld.prototype.getChecksum = function() {
     return 0;
   };
-
-  RtsWorld.prototype.updateControl = function(id, action, value) {
-    var _base, _name;
-    (_base = this.currentControls)[_name = this.players[id]] || (_base[_name] = []);
-    return this.currentControls[this.players[id]].push([action, value]);
-  };
-
-  RtsWorld.prototype.addPlayer = function(playerId) {};
-
-  RtsWorld.prototype.removePlayer = function(playerId) {};
 
   return RtsWorld;
 
