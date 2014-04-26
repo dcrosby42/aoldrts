@@ -27,6 +27,8 @@ makr.World.prototype.resurrect = (entId) ->
   @_alive.push(entity)
   entity
 
+class Wander
+  constructor: ({@id}) ->
 
 class Player
   constructor: ({@id}) ->
@@ -68,6 +70,7 @@ class ControlMappingSystem extends makr.IteratingSystem
     makr.IteratingSystem.call(@)
     @registerComponent(ComponentRegister.get(Movement))
     @registerComponent(ComponentRegister.get(Controls))
+    @registerComponent(ComponentRegister.get(Player))
 
   process: (entity, elapsed) ->
     movement = entity.get(ComponentRegister.get(Movement))
@@ -85,6 +88,42 @@ class ControlMappingSystem extends makr.IteratingSystem
       movement.vx = BUNNY_VEL
     else
       movement.vx = 0
+
+class WanderControlMappingSystem extends makr.IteratingSystem
+  constructor: () ->
+    makr.IteratingSystem.call(@)
+    @registerComponent(ComponentRegister.get(Movement))
+    @registerComponent(ComponentRegister.get(Controls))
+    @registerComponent(ComponentRegister.get(Wander))
+
+    @timer = 0
+    @direction = 0
+    @setInterval()
+
+  setInterval: () ->
+    @timeInterval = (Math.random() * 10 |0) / 20
+
+  process: (entity, elapsed) ->
+    movement = entity.get(ComponentRegister.get(Movement))
+    controls = entity.get(ComponentRegister.get(Controls))
+
+    @timer += elapsed
+    if @timer > @timeInterval
+      @direction = ( Math.random() * 10 ) | 0 % 4
+      @timer = 0
+      @setInterval()
+
+      movement.vx = 0
+      movement.vy = 0
+      switch @direction
+        when 0
+          movement.vy = -BUNNY_VEL
+        when 1
+          movement.vx = -BUNNY_VEL
+        when 2
+          movement.vy = BUNNY_VEL
+        when 3
+          movement.vx = BUNNY_VEL
 
 class MovementSystem extends makr.IteratingSystem
   constructor: () ->
@@ -149,6 +188,13 @@ class EntityFactory
     bunny.add(new Movement(vx: 0, vy: 0), ComponentRegister.get(Movement))
     bunny
 
+  autoBunny: (x,y) ->
+    autoBunny = @ecs.create()
+    autoBunny.add(new Position(x: x, y: y), ComponentRegister.get(Position))
+    autoBunny.add(new Sprite(name: "images/bunny.png"), ComponentRegister.get(Sprite))
+    autoBunny.add(new Controls(), ComponentRegister.get(Controls))
+    autoBunny.add(new Movement(vx: 0, vy: 0), ComponentRegister.get(Movement))
+    autoBunny
 
 BUNNY_VEL = 3
 class RtsWorld extends SimSim.WorldBase
@@ -161,17 +207,20 @@ class RtsWorld extends SimSim.WorldBase
     @players = {}
     @currentControls = {}
 
+ 
   setupECS: (pixieWrapper) ->
     ComponentRegister.register(Position)
     ComponentRegister.register(Sprite)
     ComponentRegister.register(Player)
     ComponentRegister.register(Movement)
     ComponentRegister.register(Controls)
+    ComponentRegister.register(Wander)
     ecs = new makr.World()
     ecs.registerSystem(new SpriteSyncSystem(@pixiWrapper))
     ecs.registerSystem(new ControlSystem(this))
     ecs.registerSystem(new MovementSystem())
     ecs.registerSystem(new ControlMappingSystem())
+    ecs.registerSystem(new WanderControlMappingSystem())
     ecs
 
   playerJoined: (playerId) ->
@@ -179,6 +228,12 @@ class RtsWorld extends SimSim.WorldBase
     bunny.add(new Player(id: playerId), ComponentRegister.get(Player))
     @players[playerId] = bunny._id
     console.log "Player #{playerId}, #{bunny._id} JOINED"
+
+    autoBunny = @entityFactory.autoBunny(400, 400)
+    autoBunny.add(new Wander(id: "Wander#{playerId}"), ComponentRegister.get(Wander))
+    @players["Wander#{playerId}"] = autoBunny._id
+    console.log "AutoBunny Wander#{playerId}, #{autoBunny._id} JOINED"
+
 
   playerLeft: (playerId) ->
     @ecs._alive.filter((ent) =>
