@@ -433,7 +433,7 @@ RtsWorld = (function(_super) {
     }
     delete this.data.players[playerId];
     this.syncNeeded = true;
-    return console.log("Player " + id + " LEFT, @data is now", this.data);
+    return console.log("Player " + playerId + " LEFT, @data is now", this.data);
   };
 
   RtsWorld.prototype.theEnd = function() {

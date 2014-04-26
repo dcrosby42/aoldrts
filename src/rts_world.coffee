@@ -41,7 +41,7 @@ class RtsWorld extends SimSim.WorldBase
       delete @data.bunnies[bunnyId]
     delete @data.players[playerId]
     @syncNeeded = true
-    console.log "Player #{id} LEFT, @data is now", @data
+    console.log "Player #{playerId} LEFT, @data is now", @data
     
   theEnd: ->
     @resetData()
