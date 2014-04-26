@@ -44,10 +44,11 @@ class ControlSystem extends makr.IteratingSystem
 
   process: (entity, elapsed) ->
     controls = entity.get(ComponentRegister.get(Controls))
-    if entityControls = @rtsWorld.currentControls[entity._id]
-      for [action, value] in entityControls
-        controls[controls[action]] = value
-      @rtsWorld.currentControls[entity._id] = []
+    entityControls = @rtsWorld.currentControls[entity._id]
+    for [action, value] in entityControls
+      controls[action] = value
+
+    @rtsWorld.currentControls[entity._id] = []
 
 
 class ControlMappingSystem extends makr.IteratingSystem
@@ -155,7 +156,7 @@ class RtsWorld extends SimSim.WorldBase
     ComponentRegister.register(Controls)
     ecs = new makr.World()
     ecs.registerSystem(new SpriteSyncSystem(@pixiWrapper))
-    ecs.registerSystem(new ControlSystem(@))
+    ecs.registerSystem(new ControlSystem(this))
     ecs.registerSystem(new MovementSystem())
     ecs.registerSystem(new ControlMappingSystem())
     ecs
@@ -193,6 +194,6 @@ class RtsWorld extends SimSim.WorldBase
   # Invocable via proxy:
   #
   updateControl: (id, action,value) ->
-    @currentControls[@players[id]._id] << [action, value]
+    @currentControls[@players[id]._id].push([action, value])
 
 module.exports = RtsWorld

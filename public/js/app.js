@@ -461,13 +461,12 @@ ControlSystem = (function(_super) {
   ControlSystem.prototype.process = function(entity, elapsed) {
     var action, controls, entityControls, value, _i, _len, _ref;
     controls = entity.get(ComponentRegister.get(Controls));
-    if (entityControls = this.rtsWorld.currentControls[entity._id]) {
-      for (_i = 0, _len = entityControls.length; _i < _len; _i++) {
-        _ref = entityControls[_i], action = _ref[0], value = _ref[1];
-        controls[controls[action]] = value;
-      }
-      return this.rtsWorld.currentControls[entity._id] = [];
+    entityControls = this.rtsWorld.currentControls[entity._id];
+    for (_i = 0, _len = entityControls.length; _i < _len; _i++) {
+      _ref = entityControls[_i], action = _ref[0], value = _ref[1];
+      controls[action] = value;
     }
+    return this.rtsWorld.currentControls[entity._id] = [];
   };
 
   return ControlSystem;
@@ -669,7 +668,7 @@ RtsWorld = (function(_super) {
   };
 
   RtsWorld.prototype.updateControl = function(id, action, value) {
-    return this.currentControls[this.players[id]._id] << [action, value];
+    return this.currentControls[this.players[id]._id].push([action, value]);
   };
 
   return RtsWorld;
