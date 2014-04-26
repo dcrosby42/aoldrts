@@ -6,15 +6,28 @@ KeyboardController = require './keyboard_controller.coffee'
 PixiWrapper = require './pixi_wrapper.coffee'
 GameRunner = require './game_runner.coffee'
 
-window.gameConfig =
-  stageWidth: 800
-  stageHeight: 600
-  imageAssets: [
-    "images/bunny.png"
-    ]
-  simSimConnection:
-    url: "https://#{window.location.hostname}"#:#{window.location.port}"
-    secure: true
+getMeta = (name) ->
+  for meta in document.getElementsByTagName('meta')
+    if meta.getAttribute("name") == name
+      return meta.getAttribute("content")
+  return null
+
+window.gameConfig = ->
+  return @_gameConfig if @_gameConfig
+  useHttps = getMeta('use-https') == "true"
+  scheme = if useHttps then "https" else "http"
+
+  @_gameConfig = {
+    stageWidth: 800
+    stageHeight: 600
+    imageAssets: [
+      "images/bunny.png"
+      ]
+    simSimConnection:
+      url: "#{scheme}://#{window.location.hostname}"#:#{window.location.port}"
+      secure: useHttps
+  }
+  return @_gameConfig
   
 
 window.local =
@@ -22,12 +35,14 @@ window.local =
   gameRunner: null
 
 window.onload = ->
+  gameConfig = window.gameConfig()
+
   stats = setupStats()
 
   pixiWrapper = buildPixiWrapper(
-    width: window.gameConfig.stageWidth
-    height: window.gameConfig.stageHeight
-    assets: window.gameConfig.imageAssets
+    width:  gameConfig.stageWidth
+    height: gameConfig.stageHeight
+    assets: gameConfig.imageAssets
   )
 
   pixiWrapper.appendViewTo(document.body)
@@ -39,8 +54,8 @@ window.onload = ->
 
     simulation = buildSimulation(
       world: world
-      url: window.gameConfig.simSimConnection.url
-      secure: window.gameConfig.simSimConnection.secure
+      url: gameConfig.simSimConnection.url
+      secure: gameConfig.simSimConnection.secure
     )
     keyboardController = buildKeyboardController()
     stopWatch = buildStopWatch()

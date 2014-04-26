@@ -1,5 +1,5 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-var GameRunner, KeyboardController, PixiWrapper, RtsWorld, StopWatch, buildKeyboardController, buildPixiWrapper, buildSimulation, buildStopWatch, setupStats, _copyData;
+var GameRunner, KeyboardController, PixiWrapper, RtsWorld, StopWatch, buildKeyboardController, buildPixiWrapper, buildSimulation, buildStopWatch, getMeta, setupStats, _copyData;
 
 RtsWorld = require('./rts_world.coffee');
 
@@ -11,14 +11,35 @@ PixiWrapper = require('./pixi_wrapper.coffee');
 
 GameRunner = require('./game_runner.coffee');
 
-window.gameConfig = {
-  stageWidth: 800,
-  stageHeight: 600,
-  imageAssets: ["images/bunny.png"],
-  simSimConnection: {
-    url: "https://" + window.location.hostname,
-    secure: true
+getMeta = function(name) {
+  var meta, _i, _len, _ref;
+  _ref = document.getElementsByTagName('meta');
+  for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+    meta = _ref[_i];
+    if (meta.getAttribute("name") === name) {
+      return meta.getAttribute("content");
+    }
   }
+  return null;
+};
+
+window.gameConfig = function() {
+  var scheme, useHttps;
+  if (this._gameConfig) {
+    return this._gameConfig;
+  }
+  useHttps = getMeta('use-https') === "true";
+  scheme = useHttps ? "https" : "http";
+  this._gameConfig = {
+    stageWidth: 800,
+    stageHeight: 600,
+    imageAssets: ["images/bunny.png"],
+    simSimConnection: {
+      url: "" + scheme + "://" + window.location.hostname,
+      secure: useHttps
+    }
+  };
+  return this._gameConfig;
 };
 
 window.local = {
@@ -27,12 +48,13 @@ window.local = {
 };
 
 window.onload = function() {
-  var pixiWrapper, stats;
+  var gameConfig, pixiWrapper, stats;
+  gameConfig = window.gameConfig();
   stats = setupStats();
   pixiWrapper = buildPixiWrapper({
-    width: window.gameConfig.stageWidth,
-    height: window.gameConfig.stageHeight,
-    assets: window.gameConfig.imageAssets
+    width: gameConfig.stageWidth,
+    height: gameConfig.stageHeight,
+    assets: gameConfig.imageAssets
   });
   pixiWrapper.appendViewTo(document.body);
   return pixiWrapper.loadAssets(function() {
@@ -42,8 +64,8 @@ window.onload = function() {
     });
     simulation = buildSimulation({
       world: world,
-      url: window.gameConfig.simSimConnection.url,
-      secure: window.gameConfig.simSimConnection.secure
+      url: gameConfig.simSimConnection.url,
+      secure: gameConfig.simSimConnection.secure
     });
     keyboardController = buildKeyboardController();
     stopWatch = buildStopWatch();
