@@ -6,7 +6,7 @@ logfmt     = require('logfmt')
 express    = require('express')
 expressApp = express()
 httpServer = require('http').createServer(expressApp)
-socketIO   = require('socket.io').listen(httpServer, log: false, secure: false)
+socketIO   = require('socket.io').listen(httpServer, log: true, secure: false)
 simSim  = require('sim-sim-js')
 
 simultSimServer = simSim.create.socketIOServer(

@@ -397,9 +397,22 @@ ComponentRegister = (function() {
   };
 })();
 
+makr.World.prototype.resurrect = function(entId) {
+  var entity;
+  entity = null;
+  if (this._dead.length > 0) {
+    entity = this._dead.pop();
+    entity._alive = true;
+  } else {
+    entity = new makr.Entity(this, entId);
+  }
+  this._alive.push(entity);
+  return entity;
+};
+
 Player = (function() {
-  function Player(id) {
-    this.id = id;
+  function Player(_arg) {
+    this.id = _arg.id;
   }
 
   return Player;
@@ -407,9 +420,8 @@ Player = (function() {
 })();
 
 Position = (function() {
-  function Position(x, y) {
-    this.x = x;
-    this.y = y;
+  function Position(_arg) {
+    this.x = _arg.x, this.y = _arg.y;
   }
 
   return Position;
@@ -417,9 +429,8 @@ Position = (function() {
 })();
 
 Movement = (function() {
-  function Movement(vx, vy) {
-    this.vx = vx;
-    this.vy = vy;
+  function Movement(_arg) {
+    this.vx = _arg.vx, this.vy = _arg.vy;
   }
 
   return Movement;
@@ -427,8 +438,8 @@ Movement = (function() {
 })();
 
 Sprite = (function() {
-  function Sprite(name) {
-    this.name = name;
+  function Sprite(_arg) {
+    this.name = _arg.name;
     this.remove = false;
     this.add = true;
   }
@@ -461,7 +472,7 @@ ControlSystem = (function(_super) {
   ControlSystem.prototype.process = function(entity, elapsed) {
     var action, controls, entityControls, value, _i, _len, _ref;
     controls = entity.get(ComponentRegister.get(Controls));
-    entityControls = this.rtsWorld.currentControls[entity._id];
+    entityControls = this.rtsWorld.currentControls[entity._id] || [];
     for (_i = 0, _len = entityControls.length; _i < _len; _i++) {
       _ref = entityControls[_i], action = _ref[0], value = _ref[1];
       controls[action] = value;
@@ -542,12 +553,13 @@ SpriteSyncSystem = (function(_super) {
     var pixiSprite, position, sprite;
     position = entity.get(ComponentRegister.get(Position));
     sprite = entity.get(ComponentRegister.get(Sprite));
-    if (sprite.add) {
+    pixiSprite = this.spriteCache[entity._id];
+    if (pixiSprite == null) {
+      console.log("ADDING SPRITE FOR " + entity._id);
       return this.buildSprite(entity, sprite, position);
     } else if (sprite.remove) {
       return this.removeSprite(entity, sprite);
     } else {
-      pixiSprite = this.spriteCache[entity._id];
       pixiSprite.position.x = position.x;
       return pixiSprite.position.y = position.y;
     }
@@ -586,10 +598,18 @@ EntityFactory = (function() {
   EntityFactory.prototype.bunny = function(x, y) {
     var bunny;
     bunny = this.ecs.create();
-    bunny.add(new Position(x, y), ComponentRegister.get(Position));
-    bunny.add(new Sprite("images/bunny.png"), ComponentRegister.get(Sprite));
+    bunny.add(new Position({
+      x: x,
+      y: y
+    }), ComponentRegister.get(Position));
+    bunny.add(new Sprite({
+      name: "images/bunny.png"
+    }), ComponentRegister.get(Sprite));
     bunny.add(new Controls(), ComponentRegister.get(Controls));
-    bunny.add(new Movement(0, 0), ComponentRegister.get(Movement));
+    bunny.add(new Movement({
+      vx: 0,
+      vy: 0
+    }), ComponentRegister.get(Movement));
     return bunny;
   };
 
@@ -634,14 +654,19 @@ RtsWorld = (function(_super) {
   RtsWorld.prototype.playerJoined = function(playerId) {
     var bunny;
     bunny = this.entityFactory.bunny(400, 400);
-    bunny.add(new Player(playerId), ComponentRegister.get(Player));
-    this.players[playerId] = bunny;
-    this.currentControls[bunny._id] = [];
+    bunny.add(new Player({
+      id: playerId
+    }), ComponentRegister.get(Player));
+    this.players[playerId] = bunny._id;
     return console.log("Player " + playerId + ", " + bunny._id + " JOINED");
   };
 
   RtsWorld.prototype.playerLeft = function(playerId) {
-    this.players[playerId].kill;
+    this.ecs._alive.filter((function(_this) {
+      return function(ent) {
+        return ent._id === _this.players[playerId];
+      };
+    })(this))[0].kill;
     delete this.players[playerId];
     return console.log("Player " + playerId + " LEFT");
   };
@@ -655,7 +680,41 @@ RtsWorld = (function(_super) {
     return this.ecs.update(dt);
   };
 
-  RtsWorld.prototype.setData = function(data) {};
+  RtsWorld.prototype.setData = function(data) {
+    var c, comp, components, comps, ent, entId, entity, staleEnts, _i, _len, _ref, _results;
+    this.players = data.players;
+    this.ecs.nextEntityId = data.nextEntityId;
+    staleEnts = this.ecs._alive.slice(0);
+    for (_i = 0, _len = staleEnts.length; _i < _len; _i++) {
+      ent = staleEnts[_i];
+      ent.kill;
+    }
+    _ref = data.componentBags;
+    _results = [];
+    for (entId in _ref) {
+      components = _ref[entId];
+      entity = this.ecs.resurrect(entId);
+      comps = (function() {
+        var _j, _len1, _results1;
+        _results1 = [];
+        for (_j = 0, _len1 = components.length; _j < _len1; _j++) {
+          c = components[_j];
+          _results1.push(this.deserializeComponent(c));
+        }
+        return _results1;
+      }).call(this);
+      _results.push((function() {
+        var _j, _len1, _results1;
+        _results1 = [];
+        for (_j = 0, _len1 = comps.length; _j < _len1; _j++) {
+          comp = comps[_j];
+          _results1.push(entity.add(comp, ComponentRegister.get(comp.constructor)));
+        }
+        return _results1;
+      })());
+    }
+    return _results;
+  };
 
   RtsWorld.prototype.resetData = function() {};
 
@@ -676,6 +735,7 @@ RtsWorld = (function(_super) {
       }).call(this);
     }
     return data = {
+      players: this.players,
       componentBags: componentBags,
       nextEntityId: this.ecs._nextEntityID
     };
@@ -692,12 +752,18 @@ RtsWorld = (function(_super) {
     return serializedComponent;
   };
 
+  RtsWorld.prototype.deserializeComponent = function(serializedComponent) {
+    return eval("new " + serializedComponent.type + "(serializedComponent)");
+  };
+
   RtsWorld.prototype.getChecksum = function() {
     return 0;
   };
 
   RtsWorld.prototype.updateControl = function(id, action, value) {
-    return this.currentControls[this.players[id]._id].push([action, value]);
+    var _base, _name;
+    (_base = this.currentControls)[_name = this.players[id]] || (_base[_name] = []);
+    return this.currentControls[this.players[id]].push([action, value]);
   };
 
   return RtsWorld;

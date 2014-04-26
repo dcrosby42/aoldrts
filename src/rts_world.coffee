@@ -16,17 +16,29 @@ ComponentRegister = (->
     types[i]
 )()
 
+makr.World.prototype.resurrect = (entId) ->
+  entity = null
+  if (@_dead.length > 0)
+    entity = @_dead.pop()
+    entity._alive = true
+  else
+    entity = new makr.Entity(@, entId)
+
+  @_alive.push(entity)
+  entity
+
+
 class Player
-  constructor: (@id) ->
+  constructor: ({@id}) ->
 
 class Position
-  constructor: (@x, @y) ->
+  constructor: ({@x, @y}) ->
 
 class Movement
-  constructor: (@vx, @vy) ->
+  constructor: ({@vx, @vy}) ->
 
 class Sprite
-  constructor: (@name) ->
+  constructor: ({@name}) ->
     @remove = false
     @add = true
 
@@ -44,7 +56,7 @@ class ControlSystem extends makr.IteratingSystem
 
   process: (entity, elapsed) ->
     controls = entity.get(ComponentRegister.get(Controls))
-    entityControls = @rtsWorld.currentControls[entity._id]
+    entityControls = @rtsWorld.currentControls[entity._id] || []
     for [action, value] in entityControls
       controls[action] = value
 
@@ -97,12 +109,13 @@ class SpriteSyncSystem extends makr.IteratingSystem
     position = entity.get(ComponentRegister.get(Position));
     sprite = entity.get(ComponentRegister.get(Sprite));
 
-    if sprite.add
+    pixiSprite = @spriteCache[entity._id]
+    unless pixiSprite?
+      console.log "ADDING SPRITE FOR #{entity._id}"
       @buildSprite(entity, sprite, position)
     else if sprite.remove
       @removeSprite(entity, sprite)
     else
-      pixiSprite = @spriteCache[entity._id]
       pixiSprite.position.x = position.x
       pixiSprite.position.y = position.y
     
@@ -130,10 +143,10 @@ class EntityFactory
 
   bunny: (x,y) ->
     bunny = @ecs.create()
-    bunny.add(new Position(x,y), ComponentRegister.get(Position))
-    bunny.add(new Sprite("images/bunny.png"), ComponentRegister.get(Sprite))
+    bunny.add(new Position(x: x, y: y), ComponentRegister.get(Position))
+    bunny.add(new Sprite(name: "images/bunny.png"), ComponentRegister.get(Sprite))
     bunny.add(new Controls(), ComponentRegister.get(Controls))
-    bunny.add(new Movement(0,0), ComponentRegister.get(Movement))
+    bunny.add(new Movement(vx: 0, vy: 0), ComponentRegister.get(Movement))
     bunny
 
 
@@ -163,13 +176,15 @@ class RtsWorld extends SimSim.WorldBase
 
   playerJoined: (playerId) ->
     bunny = @entityFactory.bunny(400,400)
-    bunny.add(new Player(playerId), ComponentRegister.get(Player))
-    @players[playerId] = bunny
-    @currentControls[bunny._id] = []
+    bunny.add(new Player(id: playerId), ComponentRegister.get(Player))
+    @players[playerId] = bunny._id
     console.log "Player #{playerId}, #{bunny._id} JOINED"
 
   playerLeft: (playerId) ->
-    @players[playerId].kill
+    @ecs._alive.filter((ent) =>
+      ent._id == @players[playerId]
+    )[0].kill
+
     delete @players[playerId]
     console.log "Player #{playerId} LEFT"
     
@@ -181,6 +196,18 @@ class RtsWorld extends SimSim.WorldBase
     @ecs.update(dt)
   
   setData: (data) ->
+    @players = data.players
+    @ecs.nextEntityId = data.nextEntityId
+    staleEnts = @ecs._alive.slice(0)
+    for ent in staleEnts
+      ent.kill
+
+    for entId, components of data.componentBags
+      entity = @ecs.resurrect(entId)
+      # @ecs._componentBags[entId] = 
+      comps = (@deserializeComponent(c) for c in components)
+      for comp in comps
+        entity.add(comp, ComponentRegister.get(comp.constructor))
     
   resetData: ->
 
@@ -190,6 +217,7 @@ class RtsWorld extends SimSim.WorldBase
       componentBags[entId] = (@serializeComponent(c) for c in components)
 
     data =
+      players: @players
       componentBags: componentBags
       nextEntityId: @ecs._nextEntityID
 
@@ -200,6 +228,8 @@ class RtsWorld extends SimSim.WorldBase
     serializedComponent['type'] = component.constructor.name
     serializedComponent
 
+  deserializeComponent: (serializedComponent) ->
+    eval("new #{serializedComponent.type}(serializedComponent)")
 
   getChecksum: ->
     # @checksumCalculator.calculate JSON.stringify(@getData())
@@ -209,6 +239,7 @@ class RtsWorld extends SimSim.WorldBase
   # Invocable via proxy:
   #
   updateControl: (id, action,value) ->
-    @currentControls[@players[id]._id].push([action, value])
+    @currentControls[@players[id]] ||= []
+    @currentControls[@players[id]].push([action, value])
 
 module.exports = RtsWorld
