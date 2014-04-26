@@ -55,7 +55,7 @@ module.exports = (grunt) ->
           stdout: true
 
       sneak_sim_sim:
-        command: "cd ../sim-sim-js && grunt build && cd ../bumpercats && rm -rf node_modules/sim-sim-js && cp -r ../sim-sim-js/build ./node_modules/sim-sim-js"
+        command: "./tools/sneak_sim_sim.sh"
         options:
           failOnError: true
           stdout: true
