@@ -1,5 +1,6 @@
 git push heroku master
 
+To push a local branch to the Heroku site:
 git push heroku tanks:master
 
 
