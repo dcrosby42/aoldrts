@@ -660,11 +660,40 @@ RtsWorld = (function(_super) {
   RtsWorld.prototype.resetData = function() {};
 
   RtsWorld.prototype.getData = function() {
-    return {};
+    var c, componentBags, components, data, entId, _ref;
+    componentBags = {};
+    _ref = this.ecs._componentBags;
+    for (entId in _ref) {
+      components = _ref[entId];
+      componentBags[entId] = (function() {
+        var _i, _len, _results;
+        _results = [];
+        for (_i = 0, _len = components.length; _i < _len; _i++) {
+          c = components[_i];
+          _results.push(this.serializeComponent(c));
+        }
+        return _results;
+      }).call(this);
+    }
+    return data = {
+      componentBags: componentBags,
+      nextEntityId: this.ecs._nextEntityID
+    };
+  };
+
+  RtsWorld.prototype.serializeComponent = function(component) {
+    var name, serializedComponent, value;
+    serializedComponent = {};
+    for (name in component) {
+      value = component[name];
+      serializedComponent[name] = value;
+    }
+    serializedComponent['type'] = component.constructor.name;
+    return serializedComponent;
   };
 
   RtsWorld.prototype.getChecksum = function() {
-    return this.checksumCalculator.calculate(JSON.stringify(this.getData()));
+    return 0;
   };
 
   RtsWorld.prototype.updateControl = function(id, action, value) {

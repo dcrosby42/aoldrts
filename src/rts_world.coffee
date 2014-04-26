@@ -185,10 +185,25 @@ class RtsWorld extends SimSim.WorldBase
   resetData: ->
 
   getData: ->
-    {}
+    componentBags = {}
+    for entId, components of @ecs._componentBags
+      componentBags[entId] = (@serializeComponent(c) for c in components)
+
+    data =
+      componentBags: componentBags
+      nextEntityId: @ecs._nextEntityID
+
+  serializeComponent: (component) ->
+    serializedComponent = {}
+    for name, value of component
+      serializedComponent[name] = value
+    serializedComponent['type'] = component.constructor.name
+    serializedComponent
+
 
   getChecksum: ->
-    @checksumCalculator.calculate JSON.stringify(@getData())
+    # @checksumCalculator.calculate JSON.stringify(@getData())
+    0
 
   #
   # Invocable via proxy:
