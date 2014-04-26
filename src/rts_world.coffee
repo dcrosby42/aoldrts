@@ -11,7 +11,7 @@ class RtsWorld extends SimSim.WorldBase
 
     @pixiWrapper = opts.pixiWrapper or throw new Error("Need opts.pixiWrapper")
     @data = @defaultData()
-    
+
     @gameObjects =
       bunnies: {}
 
@@ -42,7 +42,7 @@ class RtsWorld extends SimSim.WorldBase
     delete @data.players[playerId]
     @syncNeeded = true
     console.log "Player #{playerId} LEFT, @data is now", @data
-    
+
   theEnd: ->
     @resetData()
     console.log "THE END"
@@ -52,12 +52,12 @@ class RtsWorld extends SimSim.WorldBase
     @applyControls()
     @moveBunnies()
     @moveSprites()
-  
+
   setData: (data) ->
     @resetData()
     @data = data
     @syncNeeded = true
-    
+
   resetData: ->
     @data = @defaultData()
     @syncNeeded = true
@@ -75,7 +75,7 @@ class RtsWorld extends SimSim.WorldBase
 
   updateControl: (id, action,value) ->
     @data.players[id].controls[action] = value
-    
+
   #
   # Internal:
   #
@@ -85,7 +85,7 @@ class RtsWorld extends SimSim.WorldBase
       bunny.x += bunny.vx
       bunny.y += bunny.vy
       # console.log bunny
-    
+
   moveSprites: ->
     for bunnyId,obj of @gameObjects.bunnies
       bunny = @data.bunnies[bunnyId]
@@ -101,6 +101,7 @@ class RtsWorld extends SimSim.WorldBase
         bunny.vy = -BUNNY_VEL
       else if con.down
         bunny.vy = BUNNY_VEL
+        new Howl({urls: ['sounds/affirm.ogg']}).play() #silly example
       else
         bunny.vy = 0
       if con.left
