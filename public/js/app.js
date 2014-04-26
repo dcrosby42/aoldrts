@@ -403,7 +403,7 @@ makr.World.prototype.resurrect = function(entId) {
   if (this._dead.length > 0) {
     entity = this._dead.pop();
     entity._alive = true;
-    entity._id = entId;
+    entity.id = entId;
   } else {
     entity = new makr.Entity(this, entId);
   }
@@ -473,12 +473,12 @@ ControlSystem = (function(_super) {
   ControlSystem.prototype.process = function(entity, elapsed) {
     var action, controls, entityControls, value, _i, _len, _ref;
     controls = entity.get(ComponentRegister.get(Controls));
-    entityControls = this.rtsWorld.currentControls[entity._id] || [];
+    entityControls = this.rtsWorld.currentControls[entity.id] || [];
     for (_i = 0, _len = entityControls.length; _i < _len; _i++) {
       _ref = entityControls[_i], action = _ref[0], value = _ref[1];
       controls[action] = value;
     }
-    return this.rtsWorld.currentControls[entity._id] = [];
+    return this.rtsWorld.currentControls[entity.id] = [];
   };
 
   return ControlSystem;
@@ -550,13 +550,17 @@ SpriteSyncSystem = (function(_super) {
     this.spriteCache = {};
   }
 
+  SpriteSyncSystem.prototype.onRemoved = function(entity) {
+    this.pixiWrapper.stage.removeChild(this.spriteCache[entity.id]);
+    return this.spriteCache[entity.id] = void 0;
+  };
+
   SpriteSyncSystem.prototype.process = function(entity, elapsed) {
     var pixiSprite, position, sprite;
     position = entity.get(ComponentRegister.get(Position));
     sprite = entity.get(ComponentRegister.get(Sprite));
-    pixiSprite = this.spriteCache[entity._id];
+    pixiSprite = this.spriteCache[entity.id];
     if (pixiSprite == null) {
-      console.log("ADDING SPRITE FOR " + entity._id);
       return this.buildSprite(entity, sprite, position);
     } else if (sprite.remove) {
       return this.removeSprite(entity, sprite);
@@ -568,18 +572,20 @@ SpriteSyncSystem = (function(_super) {
 
   SpriteSyncSystem.prototype.buildSprite = function(entity, sprite, position) {
     var pixiSprite;
+    console.log("ADDING SPRITE FOR " + entity.id);
     pixiSprite = new PIXI.Sprite(PIXI.Texture.fromFrame(sprite.name));
     pixiSprite.anchor.x = pixiSprite.anchor.y = 0.5;
     this.pixiWrapper.stage.addChild(pixiSprite);
-    this.spriteCache[entity._id] = pixiSprite;
+    this.spriteCache[entity.id] = pixiSprite;
     pixiSprite.position.x = position.x;
     pixiSprite.position.y = position.y;
     return sprite.add = false;
   };
 
   SpriteSyncSystem.prototype.removeSprite = function(entity, sprite) {
-    this.pixiWrapper.stage.removeChild(this.spriteCache[entity._id]);
-    delete this.spriteCache[entity._id];
+    console.log("REMOVING SPRITE FOR " + entity.id);
+    this.pixiWrapper.stage.removeChild(this.spriteCache[entity.id]);
+    delete this.spriteCache[entity.id];
     return sprite.remove = false;
   };
 
@@ -658,18 +664,33 @@ RtsWorld = (function(_super) {
     bunny.add(new Player({
       id: playerId
     }), ComponentRegister.get(Player));
-    this.players[playerId] = bunny._id;
-    return console.log("Player " + playerId + ", " + bunny._id + " JOINED");
+    this.players[playerId] = bunny.id;
+    return console.log("Player " + playerId + ", " + bunny.id + " JOINED");
   };
 
   RtsWorld.prototype.playerLeft = function(playerId) {
-    this.ecs._alive.filter((function(_this) {
-      return function(ent) {
-        return ent._id === _this.players[playerId];
-      };
-    })(this))[0].kill;
-    delete this.players[playerId];
+    var ent;
+    ent = this.findEntityById(this.players[playerId]);
+    console.log("KILLING: " + ent.id);
+    ent.kill();
+    this.players[playerId] = void 0;
     return console.log("Player " + playerId + " LEFT");
+  };
+
+  RtsWorld.prototype.findEntityById = function(id) {
+    var entity;
+    return ((function() {
+      var _i, _len, _ref, _results;
+      _ref = this.ecs._alive;
+      _results = [];
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        entity = _ref[_i];
+        if (entity.id === id) {
+          _results.push(entity);
+        }
+      }
+      return _results;
+    }).call(this))[0];
   };
 
   RtsWorld.prototype.theEnd = function() {
@@ -688,7 +709,7 @@ RtsWorld = (function(_super) {
     staleEnts = this.ecs._alive.slice(0);
     for (_i = 0, _len = staleEnts.length; _i < _len; _i++) {
       ent = staleEnts[_i];
-      ent.kill;
+      ent.kill();
     }
     _ref = data.componentBags;
     _results = [];
@@ -720,20 +741,25 @@ RtsWorld = (function(_super) {
   RtsWorld.prototype.resetData = function() {};
 
   RtsWorld.prototype.getData = function() {
-    var c, componentBags, components, data, entId, _ref;
+    var c, componentBags, components, data, ent, entId, _ref;
     componentBags = {};
     _ref = this.ecs._componentBags;
     for (entId in _ref) {
       components = _ref[entId];
-      componentBags[entId] = (function() {
-        var _i, _len, _results;
-        _results = [];
-        for (_i = 0, _len = components.length; _i < _len; _i++) {
-          c = components[_i];
-          _results.push(this.serializeComponent(c));
-        }
-        return _results;
-      }).call(this);
+      ent = this.findEntityById(entId);
+      if ((ent != null) && ent.alive) {
+        componentBags[entId] = (function() {
+          var _i, _len, _results;
+          _results = [];
+          for (_i = 0, _len = components.length; _i < _len; _i++) {
+            c = components[_i];
+            _results.push(this.serializeComponent(c));
+          }
+          return _results;
+        }).call(this);
+      } else {
+        componentBags[entId] = void 0;
+      }
     }
     return data = {
       players: this.players,
