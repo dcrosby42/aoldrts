@@ -30,7 +30,7 @@ window.gameConfig = function() {
   if (this._gameConfig) {
     return this._gameConfig;
   }
-  useHttps = getMeta('use-https') === "true";
+  useHttps = !!(window.location.protocol.match(/https/));
   scheme = useHttps ? "https" : "http";
   this._gameConfig = {
     stageWidth: window.screen.width / 2,
