@@ -509,6 +509,9 @@ RtsWorld = (function(_super) {
         bunny.vy = -BUNNY_VEL;
       } else if (con.down) {
         bunny.vy = BUNNY_VEL;
+        new Howl({
+          urls: ['sounds/affirm.ogg']
+        }).play();
       } else {
         bunny.vy = 0;
       }
