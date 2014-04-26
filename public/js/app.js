@@ -366,15 +366,237 @@ module.exports = PixiWrapper;
 
 
 },{}],6:[function(require,module,exports){
-var BUNNY_VEL, ChecksumCalculator, HalfPI, RtsWorld, fixFloat,
+var BUNNY_VEL, ChecksumCalculator, ComponentRegister, ControlMappingSystem, ControlSystem, Controls, EntityFactory, HalfPI, Movement, MovementSystem, Player, Position, RtsWorld, Sprite, SpriteSyncSystem, fixFloat,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 ChecksumCalculator = require('./checksum_calculator.coffee');
 
+ComponentRegister = (function() {
+  var ctors, nextType, types;
+  nextType = 0;
+  ctors = [];
+  types = [];
+  return {
+    register: function(ctor) {
+      var i;
+      i = ctors.indexOf(ctor);
+      if (i < 0) {
+        ctors.push(ctor);
+        types.push(nextType++);
+      }
+    },
+    get: function(ctor) {
+      var i;
+      i = ctors.indexOf(ctor);
+      if (i < 0) {
+        throw "Unknown type " + ctor;
+      }
+      return types[i];
+    }
+  };
+})();
+
+Player = (function() {
+  function Player(id) {
+    this.id = id;
+  }
+
+  return Player;
+
+})();
+
+Position = (function() {
+  function Position(x, y) {
+    this.x = x;
+    this.y = y;
+  }
+
+  return Position;
+
+})();
+
+Movement = (function() {
+  function Movement(vx, vy) {
+    this.vx = vx;
+    this.vy = vy;
+  }
+
+  return Movement;
+
+})();
+
+Sprite = (function() {
+  function Sprite(name) {
+    this.name = name;
+    this.remove = false;
+    this.add = true;
+  }
+
+  return Sprite;
+
+})();
+
+Controls = (function() {
+  function Controls() {
+    this.up = false;
+    this.down = false;
+    this.left = false;
+    this.right = false;
+  }
+
+  return Controls;
+
+})();
+
+ControlSystem = (function(_super) {
+  __extends(ControlSystem, _super);
+
+  function ControlSystem(rtsWorld) {
+    this.rtsWorld = rtsWorld;
+    makr.IteratingSystem.call(this);
+    this.registerComponent(ComponentRegister.get(Controls));
+  }
+
+  ControlSystem.prototype.process = function(entity, elapsed) {
+    var action, controls, entityControls, value, _i, _len, _ref;
+    controls = entity.get(ComponentRegister.get(Controls));
+    if (entityControls = this.rtsWorld.currentControls[entity._id]) {
+      for (_i = 0, _len = entityControls.length; _i < _len; _i++) {
+        _ref = entityControls[_i], action = _ref[0], value = _ref[1];
+        controls[controls[action]] = value;
+      }
+      return this.rtsWorld.currentControls[entity._id] = [];
+    }
+  };
+
+  return ControlSystem;
+
+})(makr.IteratingSystem);
+
+ControlMappingSystem = (function(_super) {
+  __extends(ControlMappingSystem, _super);
+
+  function ControlMappingSystem() {
+    makr.IteratingSystem.call(this);
+    this.registerComponent(ComponentRegister.get(Movement));
+    this.registerComponent(ComponentRegister.get(Controls));
+  }
+
+  ControlMappingSystem.prototype.process = function(entity, elapsed) {
+    var controls, movement;
+    movement = entity.get(ComponentRegister.get(Movement));
+    controls = entity.get(ComponentRegister.get(Controls));
+    if (controls.up) {
+      movement.vy = -BUNNY_VEL;
+    } else if (controls.down) {
+      movement.vy = BUNNY_VEL;
+    } else {
+      movement.vy = 0;
+    }
+    if (controls.left) {
+      return movement.vx = -BUNNY_VEL;
+    } else if (controls.right) {
+      return movement.vx = BUNNY_VEL;
+    } else {
+      return movement.vx = 0;
+    }
+  };
+
+  return ControlMappingSystem;
+
+})(makr.IteratingSystem);
+
+MovementSystem = (function(_super) {
+  __extends(MovementSystem, _super);
+
+  function MovementSystem() {
+    makr.IteratingSystem.call(this);
+    this.registerComponent(ComponentRegister.get(Movement));
+    this.registerComponent(ComponentRegister.get(Position));
+  }
+
+  MovementSystem.prototype.process = function(entity, elapsed) {
+    var movement, position;
+    position = entity.get(ComponentRegister.get(Position));
+    movement = entity.get(ComponentRegister.get(Movement));
+    position.x += movement.vx;
+    return position.y += movement.vy;
+  };
+
+  return MovementSystem;
+
+})(makr.IteratingSystem);
+
+SpriteSyncSystem = (function(_super) {
+  __extends(SpriteSyncSystem, _super);
+
+  function SpriteSyncSystem(pixiWrapper) {
+    this.pixiWrapper = pixiWrapper;
+    makr.IteratingSystem.call(this);
+    this.registerComponent(ComponentRegister.get(Sprite));
+    this.registerComponent(ComponentRegister.get(Position));
+    this.spriteCache = {};
+  }
+
+  SpriteSyncSystem.prototype.process = function(entity, elapsed) {
+    var pixiSprite, position, sprite;
+    position = entity.get(ComponentRegister.get(Position));
+    sprite = entity.get(ComponentRegister.get(Sprite));
+    if (sprite.add) {
+      return this.buildSprite(entity, sprite, position);
+    } else if (sprite.remove) {
+      return this.removeSprite(entity, sprite);
+    } else {
+      pixiSprite = this.spriteCache[entity._id];
+      pixiSprite.position.x = position.x;
+      return pixiSprite.position.y = position.y;
+    }
+  };
+
+  SpriteSyncSystem.prototype.buildSprite = function(entity, sprite, position) {
+    var pixiSprite;
+    pixiSprite = new PIXI.Sprite(PIXI.Texture.fromFrame(sprite.name));
+    pixiSprite.anchor.x = pixiSprite.anchor.y = 0.5;
+    this.pixiWrapper.stage.addChild(pixiSprite);
+    this.spriteCache[entity._id] = pixiSprite;
+    pixiSprite.position.x = position.x;
+    pixiSprite.position.y = position.y;
+    return sprite.add = false;
+  };
+
+  SpriteSyncSystem.prototype.removeSprite = function(entity, sprite) {
+    this.pixiWrapper.stage.removeChild(this.spriteCache[entity._id]);
+    delete this.spriteCache[entity._id];
+    return sprite.remove = false;
+  };
+
+  return SpriteSyncSystem;
+
+})(makr.IteratingSystem);
+
 fixFloat = SimSim.Util.fixFloat;
 
 HalfPI = Math.PI / 2;
+
+EntityFactory = (function() {
+  function EntityFactory(ecs) {
+    this.ecs = ecs;
+  }
+
+  EntityFactory.prototype.bunny = function(x, y) {
+    var bunny;
+    bunny = this.ecs.create();
+    bunny.add(new Position(x, y), ComponentRegister.get(Position));
+    bunny.add(new Sprite("images/bunny.png"), ComponentRegister.get(Sprite));
+    bunny.add(new Controls(), ComponentRegister.get(Controls));
+    bunny.add(new Movement(0, 0), ComponentRegister.get(Movement));
+    return bunny;
+  };
+
+  return EntityFactory;
+
+})();
 
 BUNNY_VEL = 3;
 
@@ -389,51 +611,40 @@ RtsWorld = (function(_super) {
     this.pixiWrapper = opts.pixiWrapper || (function() {
       throw new Error("Need opts.pixiWrapper");
     })();
-    this.data = this.defaultData();
-    this.gameObjects = {
-      bunnies: {}
-    };
-    this.syncNeeded = true;
+    this.ecs = this.setupECS(this.pixieWrapper);
+    this.entityFactory = new EntityFactory(this.ecs);
+    this.players = {};
+    this.currentControls = {};
   }
 
-  RtsWorld.prototype.defaultData = function() {
-    return {
-      nextId: 0,
-      players: {},
-      bunnies: {}
-    };
+  RtsWorld.prototype.setupECS = function(pixieWrapper) {
+    var ecs;
+    ComponentRegister.register(Position);
+    ComponentRegister.register(Sprite);
+    ComponentRegister.register(Player);
+    ComponentRegister.register(Movement);
+    ComponentRegister.register(Controls);
+    ecs = new makr.World();
+    ecs.registerSystem(new SpriteSyncSystem(this.pixiWrapper));
+    ecs.registerSystem(new ControlSystem(this));
+    ecs.registerSystem(new MovementSystem());
+    ecs.registerSystem(new ControlMappingSystem());
+    return ecs;
   };
 
   RtsWorld.prototype.playerJoined = function(playerId) {
-    var bunnyId;
-    bunnyId = "Bunny" + (this.nextId());
-    this.data.bunnies[bunnyId] = {
-      x: 400,
-      y: 200,
-      vx: 0,
-      vy: 0
-    };
-    this.data.players[playerId] = {
-      bunnyId: bunnyId,
-      controls: {
-        up: false,
-        down: false,
-        left: false,
-        right: false
-      }
-    };
-    this.syncNeeded = true;
-    return console.log("Player " + playerId + " JOINED, @data is now", this.data);
+    var bunny;
+    bunny = this.entityFactory.bunny(400, 400);
+    bunny.add(new Player(playerId), ComponentRegister.get(Player));
+    this.players[playerId] = bunny;
+    this.currentControls[bunny._id] = [];
+    return console.log("Player " + playerId + ", " + bunny._id + " JOINED");
   };
 
   RtsWorld.prototype.playerLeft = function(playerId) {
-    var bunnyId;
-    if (bunnyId = this.data.players[playerId].bunnyId) {
-      delete this.data.bunnies[bunnyId];
-    }
-    delete this.data.players[playerId];
-    this.syncNeeded = true;
-    return console.log("Player " + id + " LEFT, @data is now", this.data);
+    this.players[playerId].kill;
+    delete this.players[playerId];
+    return console.log("Player " + playerId + " LEFT");
   };
 
   RtsWorld.prototype.theEnd = function() {
@@ -442,26 +653,15 @@ RtsWorld = (function(_super) {
   };
 
   RtsWorld.prototype.step = function(dt) {
-    this.syncDataToGameObjects();
-    this.applyControls();
-    this.moveBunnies();
-    return this.moveSprites();
+    return this.ecs.update(dt);
   };
 
-  RtsWorld.prototype.setData = function(data) {
-    this.resetData();
-    this.data = data;
-    return this.syncNeeded = true;
-  };
+  RtsWorld.prototype.setData = function(data) {};
 
-  RtsWorld.prototype.resetData = function() {
-    this.data = this.defaultData();
-    this.syncNeeded = true;
-    return this.syncDataToGameObjects();
-  };
+  RtsWorld.prototype.resetData = function() {};
 
   RtsWorld.prototype.getData = function() {
-    return this.data;
+    return {};
   };
 
   RtsWorld.prototype.getChecksum = function() {
@@ -469,116 +669,7 @@ RtsWorld = (function(_super) {
   };
 
   RtsWorld.prototype.updateControl = function(id, action, value) {
-    return this.data.players[id].controls[action] = value;
-  };
-
-  RtsWorld.prototype.moveBunnies = function() {
-    var bunny, bunnyId, _ref, _results;
-    _ref = this.data.bunnies;
-    _results = [];
-    for (bunnyId in _ref) {
-      bunny = _ref[bunnyId];
-      bunny.x += bunny.vx;
-      _results.push(bunny.y += bunny.vy);
-    }
-    return _results;
-  };
-
-  RtsWorld.prototype.moveSprites = function() {
-    var bunny, bunnyId, obj, _ref, _results;
-    _ref = this.gameObjects.bunnies;
-    _results = [];
-    for (bunnyId in _ref) {
-      obj = _ref[bunnyId];
-      bunny = this.data.bunnies[bunnyId];
-      obj.sprite.position.x = bunny.x;
-      _results.push(obj.sprite.position.y = bunny.y);
-    }
-    return _results;
-  };
-
-  RtsWorld.prototype.applyControls = function() {
-    var bunny, con, player, playerId, _ref, _results;
-    _ref = this.data.players;
-    _results = [];
-    for (playerId in _ref) {
-      player = _ref[playerId];
-      con = player.controls;
-      bunny = this.data.bunnies[player.bunnyId];
-      if (con.up) {
-        bunny.vy = -BUNNY_VEL;
-      } else if (con.down) {
-        bunny.vy = BUNNY_VEL;
-      } else {
-        bunny.vy = 0;
-      }
-      if (con.left) {
-        _results.push(bunny.vx = -BUNNY_VEL);
-      } else if (con.right) {
-        _results.push(bunny.vx = BUNNY_VEL);
-      } else {
-        _results.push(bunny.vx = 0);
-      }
-    }
-    return _results;
-  };
-
-  RtsWorld.prototype.nextId = function() {
-    var nid;
-    nid = this.data.nextId;
-    this.data.nextId += 1;
-    return nid;
-  };
-
-  RtsWorld.prototype.syncDataToGameObjects = function() {
-    var bunnyData, bunnyId, e, obj, _ref, _ref1, _results;
-    if (!this.syncNeeded) {
-      return;
-    }
-    this.syncNeeded = false;
-    _ref = this.data.bunnies;
-    for (bunnyId in _ref) {
-      bunnyData = _ref[bunnyId];
-      if (!this.gameObjects.bunnies[bunnyId]) {
-        try {
-          obj = {};
-          obj.sprite = this.makeBoxSprite(bunnyData);
-          this.pixiWrapper.stage.addChild(obj.sprite);
-          this.gameObjects.bunnies[bunnyId] = obj;
-        } catch (_error) {
-          e = _error;
-          console.log("OOPS adding box " + bunnyId, e);
-        }
-      }
-    }
-    _ref1 = this.gameObjects.bunnies;
-    _results = [];
-    for (bunnyId in _ref1) {
-      obj = _ref1[bunnyId];
-      if (!this.data.bunnies[bunnyId]) {
-        try {
-          this.pixiWrapper.stage.removeChild(obj.sprite);
-          _results.push(delete this.gameObjects.bunnies[bunnyId]);
-        } catch (_error) {
-          e = _error;
-          _results.push(console.log("OOPS removing box " + bunnyId, e));
-        }
-      } else {
-        _results.push(void 0);
-      }
-    }
-    return _results;
-  };
-
-  RtsWorld.prototype.makeBoxSprite = function(boxData) {
-    var box, size;
-    size = 1;
-    box = new PIXI.Sprite(PIXI.Texture.fromFrame("images/bunny.png"));
-    box.i = 0;
-    box.anchor.x = box.anchor.y = 0.5;
-    box.scale.x = size;
-    box.scale.y = size;
-    return box;
+    return this.currentControls[this.players[id]._id] << [action, value];
   };
 
   return RtsWorld;
