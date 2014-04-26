@@ -5,6 +5,7 @@ StopWatch = require './stop_watch.coffee'
 KeyboardController = require './keyboard_controller.coffee'
 PixiWrapper = require './pixi_wrapper.coffee'
 GameRunner = require './game_runner.coffee'
+ParkMillerRNG = require './pm_prng.coffee'
 
 window.gameConfig =
   stageWidth: 800
@@ -79,7 +80,7 @@ setupStats = ->
   container.appendChild(stats.domElement)
   stats.domElement.style.position = "absolute"
   stats
-  
+
 buildPixiWrapper = (opts={})->
   new PixiWrapper(opts)
 
