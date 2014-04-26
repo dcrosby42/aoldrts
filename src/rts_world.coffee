@@ -38,6 +38,27 @@ class Position
 class Movement
   constructor: ({@vx, @vy}) ->
 
+class MapTiles
+  constructor: ({@seed, @width, @height}) ->
+
+  existialize: (world) ->
+    tiles = new PIXI.DisplayObjectContainer();
+    tiles.position.x = 0
+    tiles.position.y = 0
+    tileSize = 32
+    for x in [0..window.gameConfig.stageWidth] by tileSize
+      for y in [0..window.gameConfig.stageHeight] by tileSize
+        index = (@seed + x*y) % 3
+        tile = new PIXI.Sprite(PIXI.Texture.fromFrame("dirt#{index}.png"))
+        tile.position.x = x
+        tile.position.y = y
+        tiles.addChild(tile);
+        # alien.anchor.x = 0.5;
+        # alien.anchor.y = 0.5;
+    tiles.cacheAsBitmap = true
+    world.pixiWrapper.stage.addChild(tiles)
+
+
 class Sprite
   constructor: ({@name}) ->
     @remove = false
@@ -150,6 +171,11 @@ class EntityFactory
     bunny.add(new Movement(vx: 0, vy: 0), ComponentRegister.get(Movement))
     bunny
 
+  mapTiles: (seed, width, height) ->
+    mapTiles = @ecs.create()
+    # mapTiles.add(new Position(0, 0), ComponentRegister.get(Position))
+    mapTiles.add(new MapTiles(seed: seed, width: width, height: height), ComponentRegister.get(MapTiles))
+    mapTiles
 
 BUNNY_VEL = 3
 class RtsWorld extends SimSim.WorldBase
@@ -161,8 +187,11 @@ class RtsWorld extends SimSim.WorldBase
     @entityFactory = new EntityFactory(@ecs)
     @players = {}
     @currentControls = {}
+    @entityFactory.mapTiles((Math.random() * 1000)|0, 50, 50)
+
 
   setupECS: (pixieWrapper) ->
+    ComponentRegister.register(MapTiles)
     ComponentRegister.register(Position)
     ComponentRegister.register(Sprite)
     ComponentRegister.register(Player)
@@ -222,6 +251,7 @@ class RtsWorld extends SimSim.WorldBase
       nextEntityId: @ecs._nextEntityID
 
   serializeComponent: (component) ->
+    console.log(component)
     serializedComponent = {}
     for name, value of component
       serializedComponent[name] = value
@@ -229,7 +259,11 @@ class RtsWorld extends SimSim.WorldBase
     serializedComponent
 
   deserializeComponent: (serializedComponent) ->
-    eval("new #{serializedComponent.type}(serializedComponent)")
+    c = eval("new #{serializedComponent.type}(serializedComponent)")
+    if c.existialize
+      c.existialize(@)
+    console.log(c)
+    c
 
   getChecksum: ->
     # @checksumCalculator.calculate JSON.stringify(@getData())

@@ -8,9 +8,13 @@ GameRunner = require './game_runner.coffee'
 
 window.gameConfig =
   stageWidth: 800
-  stageHeight: 600
+  stageHeight: 576
   imageAssets: [
-    "images/bunny.png"
+    "images/bunny.png",
+    "images/EBRobotedit2crMatsuoKaito.png",
+    "images/bunny.png",
+    "images/logo.png",
+    "images/terrain.png",
     ]
   url: "http://#{window.location.hostname}:#{window.location.port}"
 
