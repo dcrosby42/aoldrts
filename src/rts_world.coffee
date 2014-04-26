@@ -21,6 +21,7 @@ makr.World.prototype.resurrect = (entId) ->
   if (@_dead.length > 0)
     entity = @_dead.pop()
     entity._alive = true
+    entity._id = entId
   else
     entity = new makr.Entity(@, entId)
 
@@ -197,14 +198,13 @@ class RtsWorld extends SimSim.WorldBase
   
   setData: (data) ->
     @players = data.players
-    @ecs.nextEntityId = data.nextEntityId
+    @ecs._nextEntityID = data.nextEntityId
     staleEnts = @ecs._alive.slice(0)
     for ent in staleEnts
       ent.kill
 
     for entId, components of data.componentBags
       entity = @ecs.resurrect(entId)
-      # @ecs._componentBags[entId] = 
       comps = (@deserializeComponent(c) for c in components)
       for comp in comps
         entity.add(comp, ComponentRegister.get(comp.constructor))
@@ -241,5 +241,9 @@ class RtsWorld extends SimSim.WorldBase
   updateControl: (id, action,value) ->
     @currentControls[@players[id]] ||= []
     @currentControls[@players[id]].push([action, value])
+
+  addPlayer: (playerId) ->
+
+  removePlayer: (playerId) ->
 
 module.exports = RtsWorld

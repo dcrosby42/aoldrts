@@ -403,6 +403,7 @@ makr.World.prototype.resurrect = function(entId) {
   if (this._dead.length > 0) {
     entity = this._dead.pop();
     entity._alive = true;
+    entity._id = entId;
   } else {
     entity = new makr.Entity(this, entId);
   }
@@ -683,7 +684,7 @@ RtsWorld = (function(_super) {
   RtsWorld.prototype.setData = function(data) {
     var c, comp, components, comps, ent, entId, entity, staleEnts, _i, _len, _ref, _results;
     this.players = data.players;
-    this.ecs.nextEntityId = data.nextEntityId;
+    this.ecs._nextEntityID = data.nextEntityId;
     staleEnts = this.ecs._alive.slice(0);
     for (_i = 0, _len = staleEnts.length; _i < _len; _i++) {
       ent = staleEnts[_i];
@@ -765,6 +766,10 @@ RtsWorld = (function(_super) {
     (_base = this.currentControls)[_name = this.players[id]] || (_base[_name] = []);
     return this.currentControls[this.players[id]].push([action, value]);
   };
+
+  RtsWorld.prototype.addPlayer = function(playerId) {};
+
+  RtsWorld.prototype.removePlayer = function(playerId) {};
 
   return RtsWorld;
 
