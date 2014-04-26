@@ -12,7 +12,10 @@ window.gameConfig =
   imageAssets: [
     "images/bunny.png"
     ]
-  url: "http://#{window.location.hostname}:#{window.location.port}"
+  simSimConnection:
+    url: "https://#{window.location.hostname}"#:#{window.location.port}"
+    secure: true
+  
 
 window.local =
   vars: {}
@@ -34,7 +37,11 @@ window.onload = ->
       pixiWrapper:pixiWrapper
     )
 
-    simulation = buildSimulation(url: window.gameConfig.url, world: world)
+    simulation = buildSimulation(
+      world: world
+      url: window.gameConfig.simSimConnection.url
+      secure: window.gameConfig.simSimConnection.secure
+    )
     keyboardController = buildKeyboardController()
     stopWatch = buildStopWatch()
     gameRunner = new GameRunner(
@@ -61,6 +68,8 @@ buildSimulation = (opts={})->
       type: 'socket_io'
       options:
         url: opts.url
+        secure: opts.secure
+
     world: opts.world
     # spyOnDataIn: (simulation, data) ->
     #   step = "?"

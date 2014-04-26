@@ -15,7 +15,10 @@ window.gameConfig = {
   stageWidth: 800,
   stageHeight: 600,
   imageAssets: ["images/bunny.png"],
-  url: "http://" + window.location.hostname + ":" + window.location.port
+  simSimConnection: {
+    url: "https://" + window.location.hostname,
+    secure: true
+  }
 };
 
 window.local = {
@@ -38,8 +41,9 @@ window.onload = function() {
       pixiWrapper: pixiWrapper
     });
     simulation = buildSimulation({
-      url: window.gameConfig.url,
-      world: world
+      world: world,
+      url: window.gameConfig.simSimConnection.url,
+      secure: window.gameConfig.simSimConnection.secure
     });
     keyboardController = buildKeyboardController();
     stopWatch = buildStopWatch();
@@ -72,7 +76,8 @@ buildSimulation = function(opts) {
     adapter: {
       type: 'socket_io',
       options: {
-        url: opts.url
+        url: opts.url,
+        secure: opts.secure
       }
     },
     world: opts.world
