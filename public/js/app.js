@@ -419,7 +419,7 @@ module.exports = ParkMillerRNG;
 
 
 },{}],7:[function(require,module,exports){
-var BUNNY_VEL, ChecksumCalculator, ComponentRegister, ControlMappingSystem, ControlSystem, Controls, EntityFactory, HalfPI, Movement, MovementSystem, Player, Position, RtsWorld, Sprite, SpriteSyncSystem, fixFloat,
+var BUNNY_VEL, ChecksumCalculator, ComponentRegister, ControlMappingSystem, ControlSystem, Controls, EntityFactory, HalfPI, Movement, MovementSystem, Player, Position, RtsWorld, Sprite, SpriteSyncSystem, Wander, WanderControlMappingSystem, fixFloat,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
@@ -463,6 +463,15 @@ makr.World.prototype.resurrect = function(entId) {
   this._alive.push(entity);
   return entity;
 };
+
+Wander = (function() {
+  function Wander(_arg) {
+    this.id = _arg.id;
+  }
+
+  return Wander;
+
+})();
 
 Player = (function() {
   function Player(_arg) {
@@ -545,6 +554,7 @@ ControlMappingSystem = (function(_super) {
     makr.IteratingSystem.call(this);
     this.registerComponent(ComponentRegister.get(Movement));
     this.registerComponent(ComponentRegister.get(Controls));
+    this.registerComponent(ComponentRegister.get(Player));
   }
 
   ControlMappingSystem.prototype.process = function(entity, elapsed) {
@@ -568,6 +578,51 @@ ControlMappingSystem = (function(_super) {
   };
 
   return ControlMappingSystem;
+
+})(makr.IteratingSystem);
+
+WanderControlMappingSystem = (function(_super) {
+  __extends(WanderControlMappingSystem, _super);
+
+  function WanderControlMappingSystem() {
+    makr.IteratingSystem.call(this);
+    this.registerComponent(ComponentRegister.get(Movement));
+    this.registerComponent(ComponentRegister.get(Controls));
+    this.registerComponent(ComponentRegister.get(Wander));
+    this.timer = 0;
+    this.direction = 0;
+    this.setInterval();
+  }
+
+  WanderControlMappingSystem.prototype.setInterval = function() {
+    return this.timeInterval = (Math.random() * 10 | 0) / 20;
+  };
+
+  WanderControlMappingSystem.prototype.process = function(entity, elapsed) {
+    var controls, movement;
+    movement = entity.get(ComponentRegister.get(Movement));
+    controls = entity.get(ComponentRegister.get(Controls));
+    this.timer += elapsed;
+    if (this.timer > this.timeInterval) {
+      this.direction = (Math.random() * 10) | 0 % 4;
+      this.timer = 0;
+      this.setInterval();
+      movement.vx = 0;
+      movement.vy = 0;
+      switch (this.direction) {
+        case 0:
+          return movement.vy = -BUNNY_VEL;
+        case 1:
+          return movement.vx = -BUNNY_VEL;
+        case 2:
+          return movement.vy = BUNNY_VEL;
+        case 3:
+          return movement.vx = BUNNY_VEL;
+      }
+    }
+  };
+
+  return WanderControlMappingSystem;
 
 })(makr.IteratingSystem);
 
@@ -667,6 +722,24 @@ EntityFactory = (function() {
     return bunny;
   };
 
+  EntityFactory.prototype.autoBunny = function(x, y) {
+    var autoBunny;
+    autoBunny = this.ecs.create();
+    autoBunny.add(new Position({
+      x: x,
+      y: y
+    }), ComponentRegister.get(Position));
+    autoBunny.add(new Sprite({
+      name: "images/bunny.png"
+    }), ComponentRegister.get(Sprite));
+    autoBunny.add(new Controls(), ComponentRegister.get(Controls));
+    autoBunny.add(new Movement({
+      vx: 0,
+      vy: 0
+    }), ComponentRegister.get(Movement));
+    return autoBunny;
+  };
+
   return EntityFactory;
 
 })();
@@ -697,22 +770,30 @@ RtsWorld = (function(_super) {
     ComponentRegister.register(Player);
     ComponentRegister.register(Movement);
     ComponentRegister.register(Controls);
+    ComponentRegister.register(Wander);
     ecs = new makr.World();
     ecs.registerSystem(new SpriteSyncSystem(this.pixiWrapper));
     ecs.registerSystem(new ControlSystem(this));
     ecs.registerSystem(new MovementSystem());
     ecs.registerSystem(new ControlMappingSystem());
+    ecs.registerSystem(new WanderControlMappingSystem());
     return ecs;
   };
 
   RtsWorld.prototype.playerJoined = function(playerId) {
-    var bunny;
+    var autoBunny, bunny;
     bunny = this.entityFactory.bunny(400, 400);
     bunny.add(new Player({
       id: playerId
     }), ComponentRegister.get(Player));
     this.players[playerId] = bunny._id;
-    return console.log("Player " + playerId + ", " + bunny._id + " JOINED");
+    console.log("Player " + playerId + ", " + bunny._id + " JOINED");
+    autoBunny = this.entityFactory.autoBunny(400, 400);
+    autoBunny.add(new Wander({
+      id: "Wander" + playerId
+    }), ComponentRegister.get(Wander));
+    this.players["Wander" + playerId] = autoBunny._id;
+    return console.log("AutoBunny Wander" + playerId + ", " + autoBunny._id + " JOINED");
   };
 
   RtsWorld.prototype.playerLeft = function(playerId) {
