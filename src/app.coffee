@@ -5,26 +5,45 @@ StopWatch = require './stop_watch.coffee'
 KeyboardController = require './keyboard_controller.coffee'
 PixiWrapper = require './pixi_wrapper.coffee'
 GameRunner = require './game_runner.coffee'
+ParkMillerRNG = require './pm_prng.coffee'
 
-window.gameConfig =
-  stageWidth: 800
-  stageHeight: 600
-  imageAssets: [
-    "images/bunny.png"
-    ]
-  url: "http://#{window.location.hostname}:#{window.location.port}"
+getMeta = (name) ->
+  for meta in document.getElementsByTagName('meta')
+    if meta.getAttribute("name") == name
+      return meta.getAttribute("content")
+  return null
+
+window.gameConfig = ->
+  return @_gameConfig if @_gameConfig
+  useHttps = getMeta('use-https') == "true"
+  scheme = if useHttps then "https" else "http"
+
+  @_gameConfig = {
+    stageWidth: 800
+    stageHeight: 600
+    imageAssets: [
+      "images/bunny.png"
+      ]
+    simSimConnection:
+      url: "#{scheme}://#{window.location.hostname}"#:#{window.location.port}"
+      secure: useHttps
+  }
+  return @_gameConfig
+  
 
 window.local =
   vars: {}
   gameRunner: null
 
 window.onload = ->
+  gameConfig = window.gameConfig()
+
   stats = setupStats()
 
   pixiWrapper = buildPixiWrapper(
-    width: window.gameConfig.stageWidth
-    height: window.gameConfig.stageHeight
-    assets: window.gameConfig.imageAssets
+    width:  gameConfig.stageWidth
+    height: gameConfig.stageHeight
+    assets: gameConfig.imageAssets
   )
 
   pixiWrapper.appendViewTo(document.body)
@@ -34,7 +53,11 @@ window.onload = ->
       pixiWrapper:pixiWrapper
     )
 
-    simulation = buildSimulation(url: window.gameConfig.url, world: world)
+    simulation = buildSimulation(
+      world: world
+      url: gameConfig.simSimConnection.url
+      secure: gameConfig.simSimConnection.secure
+    )
     keyboardController = buildKeyboardController()
     stopWatch = buildStopWatch()
     gameRunner = new GameRunner(
@@ -61,6 +84,8 @@ buildSimulation = (opts={})->
       type: 'socket_io'
       options:
         url: opts.url
+        secure: opts.secure
+
     world: opts.world
     # spyOnDataIn: (simulation, data) ->
     #   step = "?"
@@ -79,7 +104,7 @@ setupStats = ->
   container.appendChild(stats.domElement)
   stats.domElement.style.position = "absolute"
   stats
-  
+
 buildPixiWrapper = (opts={})->
   new PixiWrapper(opts)
 
