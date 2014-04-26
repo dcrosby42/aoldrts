@@ -54,8 +54,8 @@ class RtsWorld extends SimSim.WorldBase
     @applyControls()
 
     # Step the physics simulation:
-    @b2world.Step(dt,  3,  3)
-    @b2world.ClearForces()
+    # @b2world.Step(dt,  3,  3)
+    # @b2world.ClearForces()
     
     @moveSprites()
   
@@ -89,7 +89,7 @@ class RtsWorld extends SimSim.WorldBase
   #
 
   moveSprites: ->
-    for boxId,obj of @gameObjects.boxes
+    # for boxId,obj of @gameObjects.boxes
       # body = obj.body
       # sprite = obj.sprite
       # Update sprite locations based on their bodies:
@@ -191,11 +191,11 @@ class RtsWorld extends SimSim.WorldBase
         
   makeBoxSprite: (boxData) ->
     size = 1
-    box = new PIXI.Sprite(PIXI.Texture.fromFrame("images/bumpercat_red.png"))
+    box = new PIXI.Sprite(PIXI.Texture.fromFrame("images/bunny.png"))
     box.i = 0
     box.anchor.x = box.anchor.y = 0.5
     box.scale.x = size
     box.scale.y = size
     box
 
-module.exports = BumperCatsWorld
+module.exports = RtsWorld
