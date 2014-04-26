@@ -19,8 +19,8 @@ window.gameConfig = ->
   scheme = if useHttps then "https" else "http"
 
   @_gameConfig = {
-    stageWidth: 800
-    stageHeight: 600
+    stageWidth: window.screen.width / 2
+    stageHeight: window.screen.height / 2
     imageAssets: [
       "images/bunny.png"
       ]
