@@ -46,8 +46,8 @@ class MapTiles
     tiles.position.x = 0
     tiles.position.y = 0
     tileSize = 32
-    for x in [0..window.gameConfig.stageWidth] by tileSize
-      for y in [0..window.gameConfig.stageHeight] by tileSize
+    for x in [0..window.gameConfig().stageWidth] by tileSize
+      for y in [0..window.gameConfig().stageHeight] by tileSize
         index = (@seed + x*y) % 3
         tile = new PIXI.Sprite(PIXI.Texture.fromFrame("dirt#{index}.png"))
         tile.position.x = x
