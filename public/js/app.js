@@ -102,10 +102,10 @@ buildKeyboardController = function() {
     a: "left",
     d: "right",
     s: "down",
-    up: "forward",
+    up: "up",
     left: "left",
     right: "right",
-    back: "back"
+    down: "down"
   });
 };
 
