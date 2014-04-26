@@ -85,10 +85,10 @@ buildPixiWrapper = (opts={})->
 
 buildKeyboardController = ->
   new KeyboardController(
-    w: "forward"
+    w: "up"
     a: "left"
     d: "right"
-    s: "back"
+    s: "down"
     up: "forward"
     left: "left"
     right: "right"

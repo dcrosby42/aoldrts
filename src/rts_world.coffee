@@ -4,44 +4,42 @@ ChecksumCalculator = require './checksum_calculator.coffee'
 fixFloat = SimSim.Util.fixFloat
 HalfPI = Math.PI/2
 
+BUNNY_VEL = 3
 class RtsWorld extends SimSim.WorldBase
   constructor: (opts={}) ->
     @checksumCalculator = new ChecksumCalculator()
-    @thrust = 0.2
-    @turnSpeed = 0.06
 
     @pixiWrapper = opts.pixiWrapper or throw new Error("Need opts.pixiWrapper")
     @data = @defaultData()
     
     @gameObjects =
-      boxes: {}
-    # @setupPhysics()
+      bunnies: {}
+
     @syncNeeded = true
 
   defaultData: ->
     {
       nextId: 0
       players: {}
-      boxes: {}
+      bunnies: {}
     }
 
-  playerJoined: (id) ->
-    boxId = "B#{@nextId()}"
-    @data.boxes[boxId] = {
-      x: 4.0
-      y: 2.0
-      angle: 0
-      vx: 0.0
-      vy: 0.0
+  playerJoined: (playerId) ->
+    bunnyId = "Bunny#{@nextId()}"
+    @data.bunnies[bunnyId] = {
+      x: 400
+      y: 200
+      vx: 0
+      vy: 0
     }
-    @data.players[id] = { boxId: boxId, controls: {forward:false,left:false,right:false} }
+    @data.players[playerId] = { bunnyId: bunnyId, controls: {up:false,down:false,left:false,right:false} }
     @syncNeeded = true
-    console.log "Player #{id} JOINED, @data is now", @data
+    console.log "Player #{playerId} JOINED, @data is now", @data
 
-  playerLeft: (id) ->
-    if boxId = @data.players[id].boxId
-      delete @data.boxes[boxId]
-    delete @data.players[id]
+  playerLeft: (playerId) ->
+    if bunnyId = @data.players[playerId].bunnyId
+      delete @data.bunnies[bunnyId]
+    delete @data.players[playerId]
     @syncNeeded = true
     console.log "Player #{id} LEFT, @data is now", @data
     
@@ -52,11 +50,7 @@ class RtsWorld extends SimSim.WorldBase
   step: (dt) ->
     @syncDataToGameObjects()
     @applyControls()
-
-    # Step the physics simulation:
-    # @b2world.Step(dt,  3,  3)
-    # @b2world.ClearForces()
-    
+    @moveBunnies()
     @moveSprites()
   
   setData: (data) ->
@@ -70,7 +64,6 @@ class RtsWorld extends SimSim.WorldBase
     @syncDataToGameObjects()
 
   getData: ->
-    @captureGameObjectsAsData()
     @data
 
   getChecksum: ->
@@ -83,112 +76,71 @@ class RtsWorld extends SimSim.WorldBase
   updateControl: (id, action,value) ->
     @data.players[id].controls[action] = value
     
-
   #
   # Internal:
   #
 
+  moveBunnies: ->
+    for bunnyId,bunny of @data.bunnies
+      bunny.x += bunny.vx
+      bunny.y += bunny.vy
+      # console.log bunny
+    
   moveSprites: ->
-    # for boxId,obj of @gameObjects.boxes
-      # body = obj.body
-      # sprite = obj.sprite
-      # Update sprite locations based on their bodies:
-      # position = body.GetPosition()
-      # sprite.position.x = position.x * 100
-      # sprite.position.y = position.y * 100
-      # sprite.rotation = body.GetAngle() + HalfPI
+    for bunnyId,obj of @gameObjects.bunnies
+      bunny = @data.bunnies[bunnyId]
+      obj.sprite.position.x = bunny.x
+      obj.sprite.position.y = bunny.y
 
   applyControls: ->
-    for id,player of @data.players
+    for playerId,player of @data.players
       con = player.controls
+      bunny = @data.bunnies[player.bunnyId]
       # body = @gameObjects.boxes[player.boxId].body
-      # if con.forward
-      #   r = body.GetAngle()
-      #   f = @thrust * body.GetMass()
-      #   v = vec2(f*Math.cos(r), f*Math.sin(r))
-      #   body.ApplyImpulse(v, body.GetWorldCenter())
-      # if con.left
-      #   a = body.GetAngle()
-      #   body.SetAngle(a - @turnSpeed)
-      # if con.right
-      #   a = body.GetAngle()
-      #   body.SetAngle(a + @turnSpeed)
+      if con.up
+        bunny.vy = -BUNNY_VEL
+      else if con.down
+        bunny.vy = BUNNY_VEL
+      else
+        bunny.vy = 0
+      if con.left
+        bunny.vx = -BUNNY_VEL
+      else if con.right
+        bunny.vx = BUNNY_VEL
+      else
+        bunny.vx = 0
 
   nextId: ->
     nid = @data.nextId
     @data.nextId += 1
     nid
 
-  # setupPhysics: ->
-    # gravity = vec2(0,0)
-    # @b2world = new Box2D.Dynamics.b2World(vec2(0,0), true)
-
   syncDataToGameObjects: ->
     return unless @syncNeeded
     @syncNeeded=false
     # Boxes:
-    for boxId,boxData of @data.boxes
-      if !@gameObjects.boxes[boxId]
+    for bunnyId,bunnyData of @data.bunnies
+      if !@gameObjects.bunnies[bunnyId]
         try
-          # A box exists in @data that is NOT represented in game objects
+          # A bunny exists in @data that is NOT represented in game objects
           obj = {}
 
           # obj.body = @makeBoxBody(boxData)
-          obj.sprite = @makeBoxSprite(boxData)
+          obj.sprite = @makeBoxSprite(bunnyData)
           @pixiWrapper.stage.addChild obj.sprite
-          @gameObjects.boxes[boxId] = obj
+          @gameObjects.bunnies[bunnyId] = obj
         catch e
-          console.log "OOPS adding box #{boxId}", e
+          console.log "OOPS adding box #{bunnyId}", e
 
-    for boxId,obj of @gameObjects.boxes
-      if !@data.boxes[boxId]
+    for bunnyId,obj of @gameObjects.bunnies
+      if !@data.bunnies[bunnyId]
         try
-          # A box game object exists for a box that has disappeared from @data
-          # @b2world.DestroyBody(obj.body)
+          # A bunny game object exists for a box that has disappeared from @data
           @pixiWrapper.stage.removeChild(obj.sprite)
-          delete @gameObjects.boxes[boxId]
+          delete @gameObjects.bunnies[bunnyId]
         catch e
-          console.log "OOPS removing box #{boxId}", e
+          console.log "OOPS removing box #{bunnyId}", e
 
-
-  captureGameObjectsAsData: ->
-    # Boxes:
-    for boxId,boxData of @data.boxes
-      obj = @gameObjects.boxes[boxId]
-      # if obj
-        # pos = obj.body.GetPosition()
-        # vel = obj.body.GetLinearVelocity()
-        # boxData.x = fixFloat(pos.x)
-        # boxData.y = fixFloat(pos.y)
-        # boxData.angle = fixFloat(obj.body.GetAngle())
-        # boxData.vx = fixFloat(vel.x)
-        # boxData.vy = fixFloat(vel.y)
-
-        
-  # makeBoxBody: (boxData) ->
-    # size = 1
-    # linearDamping = 3
-    # angularDamping = 3
-
-    # polyFixture = new Box2D.Dynamics.b2FixtureDef()
-    # polyFixture.shape = new Box2D.Collision.Shapes.b2PolygonShape()
-    # polyFixture.density = 1
-    # polyFixture.shape.SetAsBox(0.71,0.4)
-
-    # bodyDef = new Box2D.Dynamics.b2BodyDef()
-    # bodyDef.type = Box2D.Dynamics.b2Body.b2_dynamicBody
-    # bodyDef.position.Set(boxData.x, boxData.y)
-    # bodyDef.angle = boxData.angle
-    # bodyDef.linearVelocity = vec2(boxData.vx,boxData.vy)
-    # bodyDef.awake = true
-
-    # body = @b2world.CreateBody(bodyDef)
-    # body.CreateFixture(polyFixture)
-    # body.SetLinearDamping(linearDamping)
-    # body.SetAngularDamping(angularDamping)
-
-    # body
-        
   makeBoxSprite: (boxData) ->
     size = 1
     box = new PIXI.Sprite(PIXI.Texture.fromFrame("images/bunny.png"))

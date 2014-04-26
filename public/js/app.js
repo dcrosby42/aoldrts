@@ -98,10 +98,10 @@ buildPixiWrapper = function(opts) {
 
 buildKeyboardController = function() {
   return new KeyboardController({
-    w: "forward",
+    w: "up",
     a: "left",
     d: "right",
-    s: "back",
+    s: "down",
     up: "forward",
     left: "left",
     right: "right",
@@ -366,7 +366,7 @@ module.exports = PixiWrapper;
 
 
 },{}],6:[function(require,module,exports){
-var ChecksumCalculator, HalfPI, RtsWorld, fixFloat,
+var BUNNY_VEL, ChecksumCalculator, HalfPI, RtsWorld, fixFloat,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
@@ -376,6 +376,8 @@ fixFloat = SimSim.Util.fixFloat;
 
 HalfPI = Math.PI / 2;
 
+BUNNY_VEL = 3;
+
 RtsWorld = (function(_super) {
   __extends(RtsWorld, _super);
 
@@ -384,14 +386,12 @@ RtsWorld = (function(_super) {
       opts = {};
     }
     this.checksumCalculator = new ChecksumCalculator();
-    this.thrust = 0.2;
-    this.turnSpeed = 0.06;
     this.pixiWrapper = opts.pixiWrapper || (function() {
       throw new Error("Need opts.pixiWrapper");
     })();
     this.data = this.defaultData();
     this.gameObjects = {
-      boxes: {}
+      bunnies: {}
     };
     this.syncNeeded = true;
   }
@@ -400,38 +400,38 @@ RtsWorld = (function(_super) {
     return {
       nextId: 0,
       players: {},
-      boxes: {}
+      bunnies: {}
     };
   };
 
-  RtsWorld.prototype.playerJoined = function(id) {
-    var boxId;
-    boxId = "B" + (this.nextId());
-    this.data.boxes[boxId] = {
-      x: 4.0,
-      y: 2.0,
-      angle: 0,
-      vx: 0.0,
-      vy: 0.0
+  RtsWorld.prototype.playerJoined = function(playerId) {
+    var bunnyId;
+    bunnyId = "Bunny" + (this.nextId());
+    this.data.bunnies[bunnyId] = {
+      x: 400,
+      y: 200,
+      vx: 0,
+      vy: 0
     };
-    this.data.players[id] = {
-      boxId: boxId,
+    this.data.players[playerId] = {
+      bunnyId: bunnyId,
       controls: {
-        forward: false,
+        up: false,
+        down: false,
         left: false,
         right: false
       }
     };
     this.syncNeeded = true;
-    return console.log("Player " + id + " JOINED, @data is now", this.data);
+    return console.log("Player " + playerId + " JOINED, @data is now", this.data);
   };
 
-  RtsWorld.prototype.playerLeft = function(id) {
-    var boxId;
-    if (boxId = this.data.players[id].boxId) {
-      delete this.data.boxes[boxId];
+  RtsWorld.prototype.playerLeft = function(playerId) {
+    var bunnyId;
+    if (bunnyId = this.data.players[playerId].bunnyId) {
+      delete this.data.bunnies[bunnyId];
     }
-    delete this.data.players[id];
+    delete this.data.players[playerId];
     this.syncNeeded = true;
     return console.log("Player " + id + " LEFT, @data is now", this.data);
   };
@@ -444,6 +444,7 @@ RtsWorld = (function(_super) {
   RtsWorld.prototype.step = function(dt) {
     this.syncDataToGameObjects();
     this.applyControls();
+    this.moveBunnies();
     return this.moveSprites();
   };
 
@@ -460,7 +461,6 @@ RtsWorld = (function(_super) {
   };
 
   RtsWorld.prototype.getData = function() {
-    this.captureGameObjectsAsData();
     return this.data;
   };
 
@@ -472,15 +472,53 @@ RtsWorld = (function(_super) {
     return this.data.players[id].controls[action] = value;
   };
 
-  RtsWorld.prototype.moveSprites = function() {};
+  RtsWorld.prototype.moveBunnies = function() {
+    var bunny, bunnyId, _ref, _results;
+    _ref = this.data.bunnies;
+    _results = [];
+    for (bunnyId in _ref) {
+      bunny = _ref[bunnyId];
+      bunny.x += bunny.vx;
+      _results.push(bunny.y += bunny.vy);
+    }
+    return _results;
+  };
+
+  RtsWorld.prototype.moveSprites = function() {
+    var bunny, bunnyId, obj, _ref, _results;
+    _ref = this.gameObjects.bunnies;
+    _results = [];
+    for (bunnyId in _ref) {
+      obj = _ref[bunnyId];
+      bunny = this.data.bunnies[bunnyId];
+      obj.sprite.position.x = bunny.x;
+      _results.push(obj.sprite.position.y = bunny.y);
+    }
+    return _results;
+  };
 
   RtsWorld.prototype.applyControls = function() {
-    var con, id, player, _ref, _results;
+    var bunny, con, player, playerId, _ref, _results;
     _ref = this.data.players;
     _results = [];
-    for (id in _ref) {
-      player = _ref[id];
-      _results.push(con = player.controls);
+    for (playerId in _ref) {
+      player = _ref[playerId];
+      con = player.controls;
+      bunny = this.data.bunnies[player.bunnyId];
+      if (con.up) {
+        bunny.vy = -BUNNY_VEL;
+      } else if (con.down) {
+        bunny.vy = BUNNY_VEL;
+      } else {
+        bunny.vy = 0;
+      }
+      if (con.left) {
+        _results.push(bunny.vx = -BUNNY_VEL);
+      } else if (con.right) {
+        _results.push(bunny.vx = BUNNY_VEL);
+      } else {
+        _results.push(bunny.vx = 0);
+      }
     }
     return _results;
   };
@@ -493,52 +531,41 @@ RtsWorld = (function(_super) {
   };
 
   RtsWorld.prototype.syncDataToGameObjects = function() {
-    var boxData, boxId, e, obj, _ref, _ref1, _results;
+    var bunnyData, bunnyId, e, obj, _ref, _ref1, _results;
     if (!this.syncNeeded) {
       return;
     }
     this.syncNeeded = false;
-    _ref = this.data.boxes;
-    for (boxId in _ref) {
-      boxData = _ref[boxId];
-      if (!this.gameObjects.boxes[boxId]) {
+    _ref = this.data.bunnies;
+    for (bunnyId in _ref) {
+      bunnyData = _ref[bunnyId];
+      if (!this.gameObjects.bunnies[bunnyId]) {
         try {
           obj = {};
-          obj.sprite = this.makeBoxSprite(boxData);
+          obj.sprite = this.makeBoxSprite(bunnyData);
           this.pixiWrapper.stage.addChild(obj.sprite);
-          this.gameObjects.boxes[boxId] = obj;
+          this.gameObjects.bunnies[bunnyId] = obj;
         } catch (_error) {
           e = _error;
-          console.log("OOPS adding box " + boxId, e);
+          console.log("OOPS adding box " + bunnyId, e);
         }
       }
     }
-    _ref1 = this.gameObjects.boxes;
+    _ref1 = this.gameObjects.bunnies;
     _results = [];
-    for (boxId in _ref1) {
-      obj = _ref1[boxId];
-      if (!this.data.boxes[boxId]) {
+    for (bunnyId in _ref1) {
+      obj = _ref1[bunnyId];
+      if (!this.data.bunnies[bunnyId]) {
         try {
           this.pixiWrapper.stage.removeChild(obj.sprite);
-          _results.push(delete this.gameObjects.boxes[boxId]);
+          _results.push(delete this.gameObjects.bunnies[bunnyId]);
         } catch (_error) {
           e = _error;
-          _results.push(console.log("OOPS removing box " + boxId, e));
+          _results.push(console.log("OOPS removing box " + bunnyId, e));
         }
       } else {
         _results.push(void 0);
       }
-    }
-    return _results;
-  };
-
-  RtsWorld.prototype.captureGameObjectsAsData = function() {
-    var boxData, boxId, obj, _ref, _results;
-    _ref = this.data.boxes;
-    _results = [];
-    for (boxId in _ref) {
-      boxData = _ref[boxId];
-      _results.push(obj = this.gameObjects.boxes[boxId]);
     }
     return _results;
   };
