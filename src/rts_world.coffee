@@ -1,4 +1,6 @@
 ChecksumCalculator = require './checksum_calculator.coffee'
+ParkMillerRNG = require './pm_prng.coffee'
+
 ComponentRegister = (->
   nextType = 0
   ctors = []
@@ -99,10 +101,11 @@ class WanderControlMappingSystem extends makr.IteratingSystem
 
     @timer = 0
     @direction = 0
+    @randy =  new ParkMillerRNG(1234)
     @setInterval()
 
   setInterval: () ->
-    @timeInterval = (Math.random() * 10 |0) / 20
+    @timeInterval = @randy.nextInt(1,20)/100
 
   process: (entity, elapsed) ->
     movement = entity.get(ComponentRegister.get(Movement))
@@ -110,7 +113,7 @@ class WanderControlMappingSystem extends makr.IteratingSystem
 
     @timer += elapsed
     if @timer > @timeInterval
-      @direction = ( Math.random() * 10 ) | 0 % 4
+      @direction = @randy.nextInt(0,3)
       @timer = 0
       @setInterval()
 

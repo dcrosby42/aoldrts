@@ -419,11 +419,13 @@ module.exports = ParkMillerRNG;
 
 
 },{}],7:[function(require,module,exports){
-var BUNNY_VEL, ChecksumCalculator, ComponentRegister, ControlMappingSystem, ControlSystem, Controls, EntityFactory, HalfPI, Movement, MovementSystem, Player, Position, RtsWorld, Sprite, SpriteSyncSystem, Wander, WanderControlMappingSystem, fixFloat,
+var BUNNY_VEL, ChecksumCalculator, ComponentRegister, ControlMappingSystem, ControlSystem, Controls, EntityFactory, HalfPI, Movement, MovementSystem, ParkMillerRNG, Player, Position, RtsWorld, Sprite, SpriteSyncSystem, Wander, WanderControlMappingSystem, fixFloat,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 ChecksumCalculator = require('./checksum_calculator.coffee');
+
+ParkMillerRNG = require('./pm_prng.coffee');
 
 ComponentRegister = (function() {
   var ctors, nextType, types;
@@ -591,11 +593,12 @@ WanderControlMappingSystem = (function(_super) {
     this.registerComponent(ComponentRegister.get(Wander));
     this.timer = 0;
     this.direction = 0;
+    this.randy = new ParkMillerRNG(1234);
     this.setInterval();
   }
 
   WanderControlMappingSystem.prototype.setInterval = function() {
-    return this.timeInterval = (Math.random() * 10 | 0) / 20;
+    return this.timeInterval = this.randy.nextInt(1, 20) / 100;
   };
 
   WanderControlMappingSystem.prototype.process = function(entity, elapsed) {
@@ -604,7 +607,7 @@ WanderControlMappingSystem = (function(_super) {
     controls = entity.get(ComponentRegister.get(Controls));
     this.timer += elapsed;
     if (this.timer > this.timeInterval) {
-      this.direction = (Math.random() * 10) | 0 % 4;
+      this.direction = this.randy.nextInt(0, 3);
       this.timer = 0;
       this.setInterval();
       movement.vx = 0;
@@ -912,7 +915,7 @@ RtsWorld = (function(_super) {
 module.exports = RtsWorld;
 
 
-},{"./checksum_calculator.coffee":2}],8:[function(require,module,exports){
+},{"./checksum_calculator.coffee":2,"./pm_prng.coffee":6}],8:[function(require,module,exports){
 var StopWatch;
 
 StopWatch = (function() {
