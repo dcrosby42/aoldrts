@@ -592,13 +592,14 @@ WanderControlMappingSystem = (function(_super) {
     this.registerComponent(ComponentRegister.get(Controls));
     this.registerComponent(ComponentRegister.get(Wander));
     this.timer = 0;
-    this.direction = 0;
+    this.verticalDirection = 0;
+    this.horizontalDirection = 0;
     this.randy = new ParkMillerRNG(1234);
     this.setInterval();
   }
 
   WanderControlMappingSystem.prototype.setInterval = function() {
-    return this.timeInterval = this.randy.nextInt(1, 20) / 100;
+    return this.timeInterval = this.randy.nextInt(1, 2);
   };
 
   WanderControlMappingSystem.prototype.process = function(entity, elapsed) {
@@ -607,21 +608,12 @@ WanderControlMappingSystem = (function(_super) {
     controls = entity.get(ComponentRegister.get(Controls));
     this.timer += elapsed;
     if (this.timer > this.timeInterval) {
-      this.direction = this.randy.nextInt(0, 3);
+      this.verticalDirection = this.randy.nextInt(-1, 1);
+      this.horizontalDirection = this.randy.nextInt(-1, 1);
       this.timer = 0;
       this.setInterval();
-      movement.vx = 0;
-      movement.vy = 0;
-      switch (this.direction) {
-        case 0:
-          return movement.vy = -BUNNY_VEL;
-        case 1:
-          return movement.vx = -BUNNY_VEL;
-        case 2:
-          return movement.vy = BUNNY_VEL;
-        case 3:
-          return movement.vx = BUNNY_VEL;
-      }
+      movement.vx = this.horizontalDirection;
+      return movement.vy = this.verticalDirection;
     }
   };
 

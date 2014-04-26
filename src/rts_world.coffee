@@ -92,6 +92,7 @@ class ControlMappingSystem extends makr.IteratingSystem
     else
       movement.vx = 0
 
+
 class WanderControlMappingSystem extends makr.IteratingSystem
   constructor: () ->
     makr.IteratingSystem.call(@)
@@ -100,12 +101,13 @@ class WanderControlMappingSystem extends makr.IteratingSystem
     @registerComponent(ComponentRegister.get(Wander))
 
     @timer = 0
-    @direction = 0
+    @verticalDirection = 0
+    @horizontalDirection = 0
     @randy =  new ParkMillerRNG(1234)
     @setInterval()
 
   setInterval: () ->
-    @timeInterval = @randy.nextInt(1,20)/100
+    @timeInterval = @randy.nextInt(1, 2)
 
   process: (entity, elapsed) ->
     movement = entity.get(ComponentRegister.get(Movement))
@@ -113,21 +115,13 @@ class WanderControlMappingSystem extends makr.IteratingSystem
 
     @timer += elapsed
     if @timer > @timeInterval
-      @direction = @randy.nextInt(0,3)
+      @verticalDirection = @randy.nextInt(-1,1)
+      @horizontalDirection = @randy.nextInt(-1,1)
       @timer = 0
       @setInterval()
 
-      movement.vx = 0
-      movement.vy = 0
-      switch @direction
-        when 0
-          movement.vy = -BUNNY_VEL
-        when 1
-          movement.vx = -BUNNY_VEL
-        when 2
-          movement.vy = BUNNY_VEL
-        when 3
-          movement.vx = BUNNY_VEL
+      movement.vx = @horizontalDirection
+      movement.vy = @verticalDirection
 
 class MovementSystem extends makr.IteratingSystem
   constructor: () ->
