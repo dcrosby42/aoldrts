@@ -5,6 +5,7 @@ StopWatch = require './stop_watch.coffee'
 KeyboardController = require './keyboard_controller.coffee'
 PixiWrapper = require './pixi_wrapper.coffee'
 GameRunner = require './game_runner.coffee'
+
 ParkMillerRNG = require './pm_prng.coffee'
 
 EntityInspector = require './entity_inspector.coffee'
@@ -24,9 +25,14 @@ window.gameConfig = ->
     stageWidth: window.screen.width / 2
     stageHeight: window.screen.height / 2
     imageAssets: [
-      "images/bunny.png"
+      "images/bunny.png",
+      "images/EBRobotedit2crMatsuoKaito.png",
+      "images/bunny.png",
+      "images/logo.png",
+      "images/terrain.png",
       ]
     spriteSheetAssets: [
+      "images/terrain.json",
       "images/EBRobotedit2crMatsuoKaito.json"
     ]
     simSimConnection:
@@ -35,7 +41,6 @@ window.gameConfig = ->
   }
   return @_gameConfig
   
-
 window.local =
   vars: {}
   gameRunner: null

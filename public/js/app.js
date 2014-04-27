@@ -37,8 +37,8 @@ window.gameConfig = function() {
   this._gameConfig = {
     stageWidth: window.screen.width / 2,
     stageHeight: window.screen.height / 2,
-    imageAssets: ["images/bunny.png"],
-    spriteSheetAssets: ["images/EBRobotedit2crMatsuoKaito.json"],
+    imageAssets: ["images/bunny.png", "images/EBRobotedit2crMatsuoKaito.png", "images/bunny.png", "images/logo.png", "images/terrain.png"],
+    spriteSheetAssets: ["images/terrain.json", "images/EBRobotedit2crMatsuoKaito.json"],
     simSimConnection: {
       url: "" + scheme + "://" + window.location.hostname,
       secure: useHttps
@@ -264,7 +264,7 @@ EntityInspector = (function() {
   EntityInspector.prototype.update = function(entityId, component) {
     var eid, typeName, _base;
     eid = "" + entityId;
-    typeName = component.constructor.name;
+    typeName = component ? component.constructor ? component.constructor.name : component.toString() : "(!undefined component!)";
     (_base = this._data)[eid] || (_base[eid] = {});
     return this._data[eid][typeName] = component;
   };
@@ -629,9 +629,21 @@ module.exports = RtsInterface;
 
 
 },{}],9:[function(require,module,exports){
-var BUNNY_VEL, ChecksumCalculator, ComponentRegister, ControlMappingSystem, ControlSystem, Controls, EntityFactory, EntityInspectorSystem, HalfPI, Movement, MovementSystem, Player, Position, Robot0Framelist, RtsWorld, Sprite, SpriteSyncSystem, fixFloat,
+var BUNNY_VEL, ChecksumCalculator, ComponentRegister, ControlMappingSystem, ControlSystem, Controls, EntityFactory, EntityInspectorSystem, HalfPI, MapTiles, MapTilesSystem, Movement, MovementSystem, Player, Position, Robot0Framelist, RtsWorld, Sprite, SpriteSyncSystem, fixFloat,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+Array.prototype.compact = function() {
+  var elem, _i, _len, _results;
+  _results = [];
+  for (_i = 0, _len = this.length; _i < _len; _i++) {
+    elem = this[_i];
+    if (elem != null) {
+      _results.push(elem);
+    }
+  }
+  return _results;
+};
 
 ChecksumCalculator = require('./checksum_calculator.coffee');
 
@@ -667,8 +679,9 @@ makr.World.prototype.resurrect = function(entId) {
     entity = this._dead.pop();
     entity._alive = true;
     entity._id = entId;
+    entity._componentMask.reset();
   } else {
-    entity = new makr.Entity(this, entId);
+    entity = new makr.Entity(this, +entId);
   }
   this._alive.push(entity);
   return entity;
@@ -700,6 +713,66 @@ Movement = (function() {
   return Movement;
 
 })();
+
+MapTiles = (function() {
+  function MapTiles(_arg) {
+    this.seed = _arg.seed, this.width = _arg.width, this.height = _arg.height;
+  }
+
+  return MapTiles;
+
+})();
+
+MapTilesSystem = (function(_super) {
+  __extends(MapTilesSystem, _super);
+
+  function MapTilesSystem(pixiWrapper) {
+    this.pixiWrapper = pixiWrapper;
+    makr.IteratingSystem.call(this);
+    this.registerComponent(ComponentRegister.get(MapTiles));
+    this.tilesSprites = void 0;
+  }
+
+  MapTilesSystem.prototype.onRemoved = function(entity) {
+    if (this.tilesSprites != null) {
+      this.pixiWrapper.sprites.removeChild(this.tilesSprites);
+      return this.tilesSprites = void 0;
+    }
+  };
+
+  MapTilesSystem.prototype.process = function(entity, elapsed) {
+    var component;
+    if (this.tilesSprites == null) {
+      component = entity.get(ComponentRegister.get(MapTiles));
+      this.tilesSprites = this.createTiles(component.seed);
+      return this.pixiWrapper.sprites.addChildAt(this.tilesSprites, 0);
+    }
+  };
+
+  MapTilesSystem.prototype.createTiles = function(seed) {
+    var index, tile, tileSize, tiles, x, y, _i, _j;
+    tiles = new PIXI.DisplayObjectContainer();
+    tiles.position.x = 0;
+    tiles.position.y = 0;
+    tileSize = 31;
+    for (x = _i = 0; _i <= 3200; x = _i += tileSize) {
+      for (y = _j = 0; _j <= 3200; y = _j += tileSize) {
+        index = (seed + x * y) % 3;
+        tile = new PIXI.Sprite(PIXI.Texture.fromFrame("dirt" + index + ".png"));
+        tile.position.x = x;
+        tile.position.y = y;
+        tiles.addChild(tile);
+      }
+    }
+    tiles.cacheAsBitmap = true;
+    tiles.position.x = -1600;
+    tiles.position.y = -1600;
+    return tiles;
+  };
+
+  return MapTilesSystem;
+
+})(makr.IteratingSystem);
 
 Sprite = (function() {
   function Sprite(_arg) {
@@ -814,6 +887,9 @@ MovementSystem = (function(_super) {
     var movement, position;
     position = entity.get(ComponentRegister.get(Position));
     movement = entity.get(ComponentRegister.get(Movement));
+    if (position == null) {
+      console.log(entity);
+    }
     position.x += movement.vx;
     return position.y += movement.vy;
   };
@@ -856,7 +932,7 @@ SpriteSyncSystem = (function(_super) {
   };
 
   SpriteSyncSystem.prototype.buildSprite = function(entity, sprite, position) {
-    var frame, pixiSprite, spriteTextures;
+    var container, endIndex, frame, pixiSprite, spriteTextures;
     console.log("ADDING SPRITE FOR " + entity.id);
     pixiSprite = void 0;
     if (sprite.framelist) {
@@ -877,10 +953,13 @@ SpriteSyncSystem = (function(_super) {
       pixiSprite = new PIXI.Sprite(PIXI.Texture.fromFrame(sprite.name));
     }
     pixiSprite.anchor.x = pixiSprite.anchor.y = 0.5;
-    this.pixiWrapper.sprites.addChild(pixiSprite);
-    this.spriteCache[entity.id] = pixiSprite;
     pixiSprite.position.x = position.x;
     pixiSprite.position.y = position.y;
+    container = this.pixiWrapper.sprites;
+    endIndex = container.children.length;
+    container.addChildAt(pixiSprite, endIndex);
+    console.log("ADDING SPRITE FOR " + entity.id + " at child index " + endIndex);
+    this.spriteCache[entity.id] = pixiSprite;
     return sprite.add = false;
   };
 
@@ -928,6 +1007,18 @@ EntityFactory = (function() {
     return bunny;
   };
 
+  EntityFactory.prototype.mapTiles = function(seed, width, height) {
+    var comp, mapTiles;
+    mapTiles = this.ecs.create();
+    comp = new MapTiles({
+      seed: seed,
+      width: width,
+      height: height
+    });
+    mapTiles.add(comp, ComponentRegister.get(MapTiles));
+    return mapTiles;
+  };
+
   return EntityFactory;
 
 })();
@@ -950,6 +1041,7 @@ RtsWorld = (function(_super) {
     if (this.entityInspector) {
       this.setupEntityInspector(this.ecs, this.entityInspector);
     }
+    this.entityFactory.mapTiles((Math.random() * 1000) | 0, 50, 50);
   }
 
   RtsWorld.prototype.setupECS = function(pixieWrapper) {
@@ -959,8 +1051,10 @@ RtsWorld = (function(_super) {
     ComponentRegister.register(Player);
     ComponentRegister.register(Movement);
     ComponentRegister.register(Controls);
+    ComponentRegister.register(MapTiles);
     ecs = new makr.World();
     ecs.registerSystem(new SpriteSyncSystem(this.pixiWrapper));
+    ecs.registerSystem(new MapTilesSystem(this.pixiWrapper));
     ecs.registerSystem(new ControlSystem(this));
     ecs.registerSystem(new MovementSystem());
     ecs.registerSystem(new ControlMappingSystem());
@@ -969,7 +1063,7 @@ RtsWorld = (function(_super) {
 
   RtsWorld.prototype.setupEntityInspector = function(ecs, entityInspector) {
     var componentClass, _i, _len, _ref;
-    _ref = [Position, Player, Movement];
+    _ref = [Position, Player, MapTiles];
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
       componentClass = _ref[_i];
       ecs.registerSystem(new EntityInspectorSystem(entityInspector, componentClass));
@@ -995,17 +1089,6 @@ RtsWorld = (function(_super) {
 
   RtsWorld.prototype.resetData = function() {};
 
-  RtsWorld.prototype.serializeComponent = function(component) {
-    var name, serializedComponent, value;
-    serializedComponent = {};
-    for (name in component) {
-      value = component[name];
-      serializedComponent[name] = value;
-    }
-    serializedComponent['type'] = component.constructor.name;
-    return serializedComponent;
-  };
-
   RtsWorld.prototype.deserializeComponent = function(serializedComponent) {
     return eval("new " + serializedComponent.type + "(serializedComponent)");
   };
@@ -1022,21 +1105,20 @@ RtsWorld = (function(_super) {
 
   RtsWorld.prototype.playerJoined = function(playerId) {
     var bunny;
-    bunny = this.entityFactory.bunny(400, 400);
+    bunny = this.entityFactory.bunny(320, 224);
     bunny.add(new Player({
       id: playerId
     }), ComponentRegister.get(Player));
     this.players[playerId] = bunny.id;
-    return console.log("Player " + playerId + ", " + bunny.id + " JOINED");
+    return console.log("Player " + playerId + ", JOINED, entity id " + bunny.id);
   };
 
   RtsWorld.prototype.playerLeft = function(playerId) {
     var ent;
     ent = this.findEntityById(this.players[playerId]);
-    console.log("KILLING: " + ent.id);
+    console.log("Player " + playerId + " LEFT, killing entity id " + ent.id);
     ent.kill();
-    this.players[playerId] = void 0;
-    return console.log("Player " + playerId + " LEFT");
+    return this.players[playerId] = void 0;
   };
 
   RtsWorld.prototype.theEnd = function() {
@@ -1056,7 +1138,7 @@ RtsWorld = (function(_super) {
     staleEnts = this.ecs._alive.slice(0);
     for (_i = 0, _len = staleEnts.length; _i < _len; _i++) {
       ent = staleEnts[_i];
-      console.log("setData: killing entity " + ent.id);
+      console.log("setData: killing entity " + ent.id, ent);
       ent.kill();
     }
     _ref = data.componentBags;
@@ -1074,6 +1156,7 @@ RtsWorld = (function(_super) {
         }
         return _results1;
       }).call(this);
+      entity._componentMask.reset();
       _results.push((function() {
         var _j, _len1, _results1;
         _results1 = [];
@@ -1097,21 +1180,48 @@ RtsWorld = (function(_super) {
       ent = this.findEntityById(entId);
       if ((ent != null) && ent.alive) {
         componentBags[entId] = (function() {
-          var _i, _len, _results;
+          var _i, _len, _ref1, _results;
+          _ref1 = components.compact();
           _results = [];
-          for (_i = 0, _len = components.length; _i < _len; _i++) {
-            c = components[_i];
+          for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
+            c = _ref1[_i];
             _results.push(this.serializeComponent(c));
           }
           return _results;
         }).call(this);
       }
     }
-    return data = {
+    data = {
       players: this.players,
       componentBags: componentBags,
       nextEntityId: this.ecs._nextEntityID
     };
+    console.log(data);
+    return data;
+  };
+
+  RtsWorld.prototype.serializeComponent = function(component) {
+    var name, serializedComponent, value;
+    serializedComponent = {};
+    if (component) {
+      for (name in component) {
+        value = component[name];
+        if (!(value instanceof Function)) {
+          serializedComponent[name] = value;
+        }
+      }
+      serializedComponent['type'] = component.constructor.name;
+      return serializedComponent;
+    } else {
+      console.log("WTF serializeComponent got undefined component?!", component);
+      return {
+        type: 'BROKEN'
+      };
+    }
+  };
+
+  RtsWorld.prototype.deserializeComponent = function(serializedComponent) {
+    return eval("new " + serializedComponent.type + "(serializedComponent)");
   };
 
   RtsWorld.prototype.getChecksum = function() {
