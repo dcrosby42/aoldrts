@@ -313,9 +313,9 @@ GameRunner = (function() {
           } else if (action === "theirNewRobot") {
             this.simulation.worldProxy("summonTheirRobot", 400, 400);
           } else if (action === "marchMyRobot") {
-            this.simulation.worldProxy("marchMyRobot");
+            this.simulation.worldProxy("commandUnit", "march", 1);
           } else if (action === "marchTheirRobot") {
-            this.simulation.worldProxy("marchTheirRobot");
+            this.simulation.worldProxy("commandUnit", "march", 2);
           }
         }
       }
@@ -635,7 +635,7 @@ module.exports = RtsInterface;
 
 
 },{}],9:[function(require,module,exports){
-var BUNNY_VEL, ChecksumCalculator, ComponentRegister, ControlMappingSystem, ControlSystem, Controls, EntityFactory, EntityInspectorSystem, HalfPI, MapTiles, MapTilesSystem, Movement, MovementSystem, Owned, Position, RtsWorld, Sprite, SpriteSyncSystem, fixFloat,
+var BUNNY_VEL, ChecksumCalculator, CommandQueueSystem, ComponentRegister, ControlMappingSystem, ControlSystem, Controls, EntityFactory, EntityInspectorSystem, HalfPI, MapTiles, MapTilesSystem, Movement, MovementSystem, Owned, Position, RtsWorld, Sprite, SpriteSyncSystem, fixFloat,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
@@ -780,6 +780,44 @@ MapTilesSystem = (function(_super) {
 
 })(makr.IteratingSystem);
 
+CommandQueueSystem = (function(_super) {
+  __extends(CommandQueueSystem, _super);
+
+  function CommandQueueSystem(commandQueue, entityFinder) {
+    this.commandQueue = commandQueue;
+    this.entityFinder = entityFinder;
+    makr.IteratingSystem.call(this);
+  }
+
+  CommandQueueSystem.prototype.processEntities = function() {
+    var cmd, commands, movement, owned, targetEntity, _i, _len, _results;
+    commands = [];
+    while (cmd = this.commandQueue.shift()) {
+      commands.push(cmd);
+    }
+    _results = [];
+    for (_i = 0, _len = commands.length; _i < _len; _i++) {
+      cmd = commands[_i];
+      targetEntity = this.entityFinder.findEntityById(cmd.entityId);
+      owned = targetEntity.get(ComponentRegister.get(Owned));
+      if (owned && (cmd.playerId === owned.playerId)) {
+        if (cmd.command === "march") {
+          movement = targetEntity.get(ComponentRegister.get(Movement));
+          _results.push(movement.vx = 5);
+        } else {
+          _results.push(console.log("CommandQueueSystem: UNKNOWN COMMAND:", cmd));
+        }
+      } else {
+        _results.push(console.log("CommandQueueSystem: ILLEGAL INSTRUCTION, player " + cmd.playerId + " may not command entity " + cmd.entityId + " because it's owned by " + owned.playerId));
+      }
+    }
+    return _results;
+  };
+
+  return CommandQueueSystem;
+
+})(makr.IteratingSystem);
+
 Sprite = (function() {
   function Sprite(_arg) {
     this.name = _arg.name, this.framelist = _arg.framelist;
@@ -876,11 +914,10 @@ MovementSystem = (function(_super) {
 
   MovementSystem.prototype.process = function(entity, elapsed) {
     var movement, position;
-    console.log(elapsed);
     position = entity.get(ComponentRegister.get(Position));
     movement = entity.get(ComponentRegister.get(Movement));
     if (position == null) {
-      console.log(entity);
+      console.log("Y NO Position?", entity);
     }
     position.x += movement.vx * elapsed;
     return position.y += movement.vy * elapsed;
@@ -941,7 +978,6 @@ SpriteSyncSystem = (function(_super) {
 
   SpriteSyncSystem.prototype.buildSprite = function(entity, sprite, position) {
     var container, endIndex, frame, pixiSprite, spriteTextures;
-    console.log("ADDING SPRITE FOR " + entity.id);
     pixiSprite = void 0;
     if (sprite.framelist) {
       spriteTextures = (function() {
@@ -966,7 +1002,6 @@ SpriteSyncSystem = (function(_super) {
     container = this.pixiWrapper.sprites;
     endIndex = container.children.length;
     container.addChildAt(pixiSprite, endIndex);
-    console.log("ADDING SPRITE FOR " + entity.id + " at child index " + endIndex);
     this.spriteCache[entity.id] = pixiSprite;
     return sprite.add = false;
   };
@@ -1034,6 +1069,7 @@ RtsWorld = (function(_super) {
     this.pixiWrapper || (function() {
       throw new Error("Need pixiWrapper");
     })();
+    this.commandQueue = [];
     this.checksumCalculator = new ChecksumCalculator();
     this.ecs = this.setupECS(this.pixieWrapper);
     this.entityFactory = new EntityFactory(this.ecs);
@@ -1042,7 +1078,6 @@ RtsWorld = (function(_super) {
       this.setupEntityInspector(this.ecs, this.entityInspector);
     }
     this.entityFactory.mapTiles((Math.random() * 1000) | 0, 50, 50);
-    this.commandQueue = [];
   }
 
   RtsWorld.prototype.setupECS = function(pixieWrapper) {
@@ -1056,7 +1091,7 @@ RtsWorld = (function(_super) {
     ecs = new makr.World();
     ecs.registerSystem(new SpriteSyncSystem(this.pixiWrapper));
     ecs.registerSystem(new MapTilesSystem(this.pixiWrapper));
-    ecs.registerSystem(new ControlSystem(this));
+    ecs.registerSystem(new CommandQueueSystem(this.commandQueue, this));
     ecs.registerSystem(new MovementSystem());
     ecs.registerSystem(new ControlMappingSystem());
     return ecs;
@@ -1064,7 +1099,7 @@ RtsWorld = (function(_super) {
 
   RtsWorld.prototype.setupEntityInspector = function(ecs, entityInspector) {
     var componentClass, _i, _len, _ref;
-    _ref = [Position, Owned, MapTiles];
+    _ref = [Position, Movement, Owned, MapTiles];
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
       componentClass = _ref[_i];
       ecs.registerSystem(new EntityInspectorSystem(entityInspector, componentClass));
@@ -1109,7 +1144,6 @@ RtsWorld = (function(_super) {
 
   RtsWorld.prototype.summonMyRobot = function(playerId, x, y) {
     var robot, robotAvatar;
-    console.log("summonMyRobot");
     robotAvatar = this.generateRobotFrameList();
     robot = this.entityFactory.robot(x, y, robotAvatar);
     return robot.add(new Owned({
@@ -1119,7 +1153,6 @@ RtsWorld = (function(_super) {
 
   RtsWorld.prototype.summonTheirRobot = function(playerId, x, y) {
     var robot, robotAvatar;
-    console.log("summonTheirRobot");
     robotAvatar = this.generateRobotFrameList();
     robot = this.entityFactory.robot(x, y, robotAvatar);
     return robot.add(new Owned({
@@ -1127,19 +1160,12 @@ RtsWorld = (function(_super) {
     }), ComponentRegister.get(Owned));
   };
 
-  RtsWorld.prototype.marchMyRobot = function(playerId) {
+  RtsWorld.prototype.commandUnit = function(playerId, command, entityId) {
     return this.commandQueue.push({
-      command: "march",
+      command: command,
       playerId: playerId,
-      entityId: 1
+      entityId: entityId
     });
-  };
-
-  RtsWorld.prototype.marchTheirRobot = function(playerId) {
-    var movement, theirRobot;
-    theirRobot = this.findEntityById(2);
-    movement = theirRobot.get(ComponentRegister.get(Movement));
-    return movement.vx = 5;
   };
 
   RtsWorld.prototype.playerJoined = function(playerId) {};

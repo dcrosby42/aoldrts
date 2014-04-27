@@ -23,9 +23,9 @@ class GameRunner
           else if (action == "theirNewRobot")
             @simulation.worldProxy "summonTheirRobot", 400, 400
           else if (action == "marchMyRobot")
-            @simulation.worldProxy "marchMyRobot"
+            @simulation.worldProxy "commandUnit", "march", 1 # DA CHEAT
           else if (action == "marchTheirRobot")
-            @simulation.worldProxy "marchTheirRobot"
+            @simulation.worldProxy "commandUnit", "march", 2
 
       @simulation.update(@stopWatch.elapsedSeconds())
       @pixiWrapper.render()

@@ -79,6 +79,27 @@ class MapTilesSystem extends makr.IteratingSystem
     tiles.position.y = -1600
     tiles
 
+class CommandQueueSystem extends makr.IteratingSystem
+  constructor: (@commandQueue, @entityFinder) ->
+    makr.IteratingSystem.call(@)
+    
+  processEntities: ->
+    commands = []
+    while cmd = @commandQueue.shift()
+      commands.push(cmd)
+    for cmd in commands
+      # command, playerId, entityId
+      targetEntity = @entityFinder.findEntityById(cmd.entityId)
+      owned = targetEntity.get(ComponentRegister.get(Owned))
+      if owned and (cmd.playerId == owned.playerId)
+        if cmd.command == "march"
+          movement = targetEntity.get(ComponentRegister.get(Movement))
+          movement.vx = 5
+        else
+          console.log "CommandQueueSystem: UNKNOWN COMMAND:", cmd
+      else
+        console.log "CommandQueueSystem: ILLEGAL INSTRUCTION, player #{cmd.playerId} may not command entity #{cmd.entityId} because it's owned by #{owned.playerId}"
+          
 
 class Sprite
   constructor: ({@name, @framelist}) ->
@@ -151,10 +172,9 @@ class MovementSystem extends makr.IteratingSystem
     @registerComponent(ComponentRegister.get(Position))
 
   process: (entity, elapsed) ->
-    console.log elapsed
     position = entity.get(ComponentRegister.get(Position))
     movement = entity.get(ComponentRegister.get(Movement))
-    console.log entity unless position?
+    console.log("Y NO Position?", entity) unless position?
     position.x += movement.vx * elapsed
     position.y += movement.vy * elapsed
 
@@ -201,7 +221,6 @@ class SpriteSyncSystem extends makr.IteratingSystem
         sprite.idle = true
     
   buildSprite: (entity, sprite, position) ->
-    console.log "ADDING SPRITE FOR #{entity.id}"
     pixiSprite = undefined
     if sprite.framelist
       spriteTextures = (new PIXI.Texture.fromFrame(frame) for frame in sprite.framelist.right)
@@ -217,7 +236,6 @@ class SpriteSyncSystem extends makr.IteratingSystem
     
     endIndex = container.children.length # ADD ON TOP
     container.addChildAt pixiSprite, endIndex
-    console.log "ADDING SPRITE FOR #{entity.id} at child index #{endIndex}"
 
 
     @spriteCache[entity.id] = pixiSprite
@@ -255,6 +273,7 @@ BUNNY_VEL = 3
 class RtsWorld extends SimSim.WorldBase
   constructor: ({@pixiWrapper, @entityInspector}) ->
     @pixiWrapper or throw new Error("Need pixiWrapper")
+    @commandQueue = []
 
     @checksumCalculator = new ChecksumCalculator()
     @ecs = @setupECS(@pixieWrapper)
@@ -262,7 +281,6 @@ class RtsWorld extends SimSim.WorldBase
     @currentControls = {}
     @setupEntityInspector(@ecs,@entityInspector) if @entityInspector
     @entityFactory.mapTiles((Math.random() * 1000)|0, 50, 50)
-    @commandQueue = []
 
   setupECS: (pixieWrapper) ->
     ComponentRegister.register(Position)
@@ -274,13 +292,13 @@ class RtsWorld extends SimSim.WorldBase
     ecs = new makr.World()
     ecs.registerSystem(new SpriteSyncSystem(@pixiWrapper))
     ecs.registerSystem(new MapTilesSystem(@pixiWrapper))
-    ecs.registerSystem(new ControlSystem(this))
+    ecs.registerSystem(new CommandQueueSystem(@commandQueue, @))  # passing "this" as the entityFinder
     ecs.registerSystem(new MovementSystem())
     ecs.registerSystem(new ControlMappingSystem())
     ecs
 
   setupEntityInspector: (ecs, entityInspector) ->
-    for componentClass in [ Position,Owned,MapTiles ]
+    for componentClass in [ Position,Movement,Owned,MapTiles ]
       ecs.registerSystem(new EntityInspectorSystem(entityInspector, componentClass))
     entityInspector
 
@@ -307,32 +325,24 @@ class RtsWorld extends SimSim.WorldBase
   #
   # Invocable via proxy:
   #
+  # XXX:
   summonMyRobot: (playerId, x, y) ->
-    console.log "summonMyRobot"
     robotAvatar = @generateRobotFrameList()
     robot = @entityFactory.robot(x, y, robotAvatar)
     robot.add(new Owned(playerId: playerId), ComponentRegister.get(Owned))
 
+  # XXX:
   summonTheirRobot: (playerId, x, y) ->
-    console.log "summonTheirRobot"
     robotAvatar = @generateRobotFrameList()
     robot = @entityFactory.robot(x, y, robotAvatar)
     robot.add(new Owned(playerId: "WAT"), ComponentRegister.get(Owned))
 
-  marchMyRobot: (playerId) ->
+  commandUnit: (playerId, command, entityId) ->
     @commandQueue.push(
-      command: "march"
+      command: command,
       playerId: playerId
-      entityId: 1
+      entityId: entityId
     )
-#     myRobot = @findEntityById(1)
-#     movement = myRobot.get(ComponentRegister.get(Movement))
-#     movement.vx = 5
-
-  marchTheirRobot: (playerId) ->
-    theirRobot = @findEntityById(2)
-    movement = theirRobot.get(ComponentRegister.get(Movement))
-    movement.vx = 5
     
   #### SimSim.WorldBase#playerJoined(id)
   playerJoined: (playerId) ->
