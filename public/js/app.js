@@ -857,7 +857,7 @@ SpriteSyncSystem = (function(_super) {
   }
 
   SpriteSyncSystem.prototype.onRemoved = function(entity) {
-    this.pixiWrapper.stage.removeChild(this.spriteCache[entity.id]);
+    this.pixiWrapper.sprites.removeChild(this.spriteCache[entity.id]);
     return this.spriteCache[entity.id] = void 0;
   };
 
@@ -980,7 +980,7 @@ RtsWorld = (function(_super) {
 
   RtsWorld.prototype.setupEntityInspector = function(ecs, entityInspector) {
     var componentClass, _i, _len, _ref;
-    _ref = [Position];
+    _ref = [Position, Player, Movement];
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
       componentClass = _ref[_i];
       ecs.registerSystem(new EntityInspectorSystem(entityInspector, componentClass));
