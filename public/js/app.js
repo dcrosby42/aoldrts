@@ -1016,7 +1016,7 @@ RtsWorld = (function(_super) {
 
   RtsWorld.prototype.setupEntityInspector = function(ecs, entityInspector) {
     var componentClass, _i, _len, _ref;
-    _ref = [Position, Player, Movement];
+    _ref = [Position, Player, MapTiles];
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
       componentClass = _ref[_i];
       ecs.registerSystem(new EntityInspectorSystem(entityInspector, componentClass));

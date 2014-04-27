@@ -244,7 +244,7 @@ class RtsWorld extends SimSim.WorldBase
     ecs
 
   setupEntityInspector: (ecs, entityInspector) ->
-    for componentClass in [ Position,Player,Movement ]
+    for componentClass in [ Position,Player,MapTiles ]
       ecs.registerSystem(new EntityInspectorSystem(entityInspector, componentClass))
     entityInspector
 
