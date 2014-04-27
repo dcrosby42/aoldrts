@@ -2,6 +2,7 @@ Array::compact = ->
   (elem for elem in this when elem?)
 
 ChecksumCalculator = require './checksum_calculator.coffee'
+ParkMillerRNG = require './pm_prng.coffee'
 
 ComponentRegister = (->
   nextType = 0
@@ -65,12 +66,13 @@ class MapTilesSystem extends makr.IteratingSystem
 
   createTiles: (seed) ->
     tiles = new PIXI.DisplayObjectContainer()
+    prng = new ParkMillerRNG(seed)
     tiles.position.x = 0
     tiles.position.y = 0
     tileSize = 31
     for x in [0..3200] by tileSize
       for y in [0..3200] by tileSize
-        index = (seed + x*y) % 3
+        index = prng.nextInt(0, 2)
         tile = new PIXI.Sprite(PIXI.Texture.fromFrame("dirt#{index}.png"))
         tile.position.x = x
         tile.position.y = y
@@ -257,7 +259,7 @@ class RtsWorld extends SimSim.WorldBase
     bunny = @entityFactory.bunny(320,224)
     bunny.add(new Player(id: playerId), ComponentRegister.get(Player))
     @players[playerId] = bunny.id
-    console.log "Player #{playerId}, JOINED, entity id #{ent.id}"
+    console.log "Player #{playerId}, JOINED, entity id #{bunny.id}"
 
   playerLeft: (playerId) ->
     ent = @findEntityById(@players[playerId])
