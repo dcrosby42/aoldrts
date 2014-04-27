@@ -776,10 +776,10 @@ MapTilesSystem = (function(_super) {
 
 Sprite = (function() {
   function Sprite(_arg) {
-    this.name = _arg.name, this.framelist = _arg.framelist;
+    this.name = _arg.name, this.framelist = _arg.framelist, this.facing = _arg.facing;
     this.remove = false;
     this.add = true;
-    this.facing = "down";
+    this.facing || (this.facing = "down");
     this.idle = true;
   }
 
@@ -910,6 +910,7 @@ SpriteSyncSystem = (function(_super) {
     this.registerComponent(ComponentRegister.get(Position));
     this.registerComponent(ComponentRegister.get(Movement));
     this.spriteCache = {};
+    this.spriteFrameCache = {};
   }
 
   SpriteSyncSystem.prototype.onRemoved = function(entity) {
@@ -924,47 +925,65 @@ SpriteSyncSystem = (function(_super) {
     movement = entity.get(ComponentRegister.get(Movement));
     pixiSprite = this.spriteCache[entity.id];
     if (pixiSprite == null) {
-      this.buildSprite(entity, sprite, position);
+      pixiSprite = this.buildSprite(entity, sprite, position);
     } else if (sprite.remove) {
       this.removeSprite(entity, sprite);
     } else {
       pixiSprite.position.x = position.x;
       pixiSprite.position.y = position.y;
     }
-    switch (null) {
-      case movement.vx > 0:
+    switch (false) {
+      case !(movement.vx > 0):
         sprite.facing = "right";
-        return sprite.idle = false;
-      case movement.vx < 0:
+        sprite.idle = false;
+        break;
+      case !(movement.vx < 0):
         sprite.facing = "left";
-        return sprite.idle = false;
-      case movement.vy > 0:
-        sprite.facing = "up";
-        return sprite.idle = false;
-      case movement.vy < 0:
+        sprite.idle = false;
+        break;
+      case !(movement.vy > 0):
         sprite.facing = "down";
-        return sprite.idle = false;
+        sprite.idle = false;
+        break;
+      case !(movement.vy < 0):
+        sprite.facing = "up";
+        sprite.idle = false;
+        break;
       default:
-        return sprite.idle = true;
+        sprite.idle = true;
+    }
+    if (sprite.framelist) {
+      if (sprite.idle) {
+        return pixiSprite.textures = this.spriteFrameCache[sprite.name]["" + sprite.facing + "Idle"];
+      } else {
+        return pixiSprite.textures = this.spriteFrameCache[sprite.name][sprite.facing];
+      }
     }
   };
 
   SpriteSyncSystem.prototype.buildSprite = function(entity, sprite, position) {
-    var container, endIndex, frame, pixiSprite, spriteTextures;
+    var container, endIndex, frame, frameCache, frames, pixiSprite, pose, _ref;
     console.log("ADDING SPRITE FOR " + entity.id);
     pixiSprite = void 0;
     if (sprite.framelist) {
-      spriteTextures = (function() {
-        var _i, _len, _ref, _results;
-        _ref = sprite.framelist.right;
-        _results = [];
-        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-          frame = _ref[_i];
-          _results.push(new PIXI.Texture.fromFrame(frame));
+      if (!this.spriteFrameCache[sprite.name]) {
+        frameCache = {};
+        _ref = sprite.framelist;
+        for (pose in _ref) {
+          frames = _ref[pose];
+          frameCache[pose] = (function() {
+            var _i, _len, _results;
+            _results = [];
+            for (_i = 0, _len = frames.length; _i < _len; _i++) {
+              frame = frames[_i];
+              _results.push(new PIXI.Texture.fromFrame(frame));
+            }
+            return _results;
+          })();
         }
-        return _results;
-      })();
-      pixiSprite = new PIXI.MovieClip(spriteTextures);
+        this.spriteFrameCache[sprite.name] = frameCache;
+      }
+      pixiSprite = new PIXI.MovieClip(this.spriteFrameCache[sprite.name][sprite.facing]);
       pixiSprite.animationSpeed = 0.05;
       pixiSprite.play();
     } else {
@@ -977,8 +996,8 @@ SpriteSyncSystem = (function(_super) {
     endIndex = container.children.length;
     container.addChildAt(pixiSprite, endIndex);
     console.log("ADDING SPRITE FOR " + entity.id + " at child index " + endIndex);
-    this.spriteCache[entity.id] = pixiSprite;
-    return sprite.add = false;
+    sprite.add = false;
+    return this.spriteCache[entity.id] = pixiSprite;
   };
 
   SpriteSyncSystem.prototype.removeSprite = function(entity, sprite) {
@@ -1000,7 +1019,20 @@ EntityFactory = (function() {
     this.ecs = ecs;
   }
 
-  EntityFactory.prototype.robot = function(x, y, framelist) {
+  EntityFactory.prototype.generateRobotFrameList = function(robotName) {
+    return {
+      down: ["" + robotName + "_down_0", "" + robotName + "_down_1", "" + robotName + "_down_2", "" + robotName + "_down_1"],
+      left: ["" + robotName + "_left_0", "" + robotName + "_left_1", "" + robotName + "_left_2", "" + robotName + "_left_1"],
+      up: ["" + robotName + "_up_0", "" + robotName + "_up_1", "" + robotName + "_up_2", "" + robotName + "_up_1"],
+      right: ["" + robotName + "_right_0", "" + robotName + "_right_1", "" + robotName + "_right_2", "" + robotName + "_right_1"],
+      downIdle: ["" + robotName + "_down_1"],
+      leftIdle: ["" + robotName + "_left_1"],
+      upIdle: ["" + robotName + "_up_1"],
+      rightIdle: ["" + robotName + "_right_1"]
+    };
+  };
+
+  EntityFactory.prototype.robot = function(x, y, robotName) {
     var robot;
     robot = this.ecs.create();
     robot.add(new Position({
@@ -1008,7 +1040,8 @@ EntityFactory = (function() {
       y: y
     }), ComponentRegister.get(Position));
     robot.add(new Sprite({
-      framelist: framelist
+      name: robotName,
+      framelist: this.generateRobotFrameList(robotName)
     }), ComponentRegister.get(Sprite));
     robot.add(new Controls(), ComponentRegister.get(Controls));
     robot.add(new Movement({
@@ -1104,19 +1137,6 @@ RtsWorld = (function(_super) {
     return eval("new " + serializedComponent.type + "(serializedComponent)");
   };
 
-  RtsWorld.prototype.generateRobotFrameList = function() {
-    return {
-      down: ["robot_0_down_0", "robot_0_down_1", "robot_0_down_2", "robot_0_down_1"],
-      left: ["robot_0_left_0", "robot_0_left_1", "robot_0_left_2", "robot_0_left_1"],
-      up: ["robot_0_up_0", "robot_0_up_1", "robot_0_up_2", "robot_0_up_1"],
-      right: ["robot_0_right_0", "robot_0_right_1", "robot_0_right_2", "robot_0_right_1"],
-      downIdle: ["robot_0_down_1"],
-      leftIdle: ["robot_0_left_1"],
-      upIdle: ["robot_0_up_1"],
-      rightIdle: ["robot_0_right_1"]
-    };
-  };
-
   RtsWorld.prototype.updateControl = function(id, action, value) {
     var _base, _name;
     (_base = this.currentControls)[_name = this.players[id]] || (_base[_name] = []);
@@ -1128,9 +1148,8 @@ RtsWorld = (function(_super) {
   RtsWorld.prototype.removePlayer = function(playerId) {};
 
   RtsWorld.prototype.playerJoined = function(playerId) {
-    var robot, robotAvatar;
-    robotAvatar = this.generateRobotFrameList();
-    robot = this.entityFactory.robot(320, 224, robotAvatar);
+    var robot;
+    robot = this.entityFactory.robot(320, 224, "robot_0");
     robot.add(new Player({
       id: playerId
     }), ComponentRegister.get(Player));

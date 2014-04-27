@@ -82,10 +82,10 @@ class MapTilesSystem extends makr.IteratingSystem
 
 
 class Sprite
-  constructor: ({@name, @framelist}) ->
+  constructor: ({@name, @framelist, @facing}) ->
     @remove = false
     @add = true
-    @facing = "down"
+    @facing ||= "down"
     @idle = true
 
 class Controls
@@ -162,6 +162,7 @@ class SpriteSyncSystem extends makr.IteratingSystem
     @registerComponent(ComponentRegister.get(Position))
     @registerComponent(ComponentRegister.get(Movement))
     @spriteCache = {}
+    @spriteFrameCache = {}
 
   onRemoved: (entity) ->
     @pixiWrapper.sprites.removeChild(@spriteCache[entity.id])
@@ -174,14 +175,14 @@ class SpriteSyncSystem extends makr.IteratingSystem
 
     pixiSprite = @spriteCache[entity.id]
     unless pixiSprite?
-      @buildSprite(entity, sprite, position)
+      pixiSprite = @buildSprite(entity, sprite, position)
     else if sprite.remove
       @removeSprite(entity, sprite)
     else
       pixiSprite.position.x = position.x
       pixiSprite.position.y = position.y
 
-    switch null
+    switch
       when movement.vx > 0
         sprite.facing = "right"
         sprite.idle = false
@@ -189,20 +190,30 @@ class SpriteSyncSystem extends makr.IteratingSystem
         sprite.facing = "left"
         sprite.idle = false
       when movement.vy > 0
-        sprite.facing = "up"
+        sprite.facing = "down"
         sprite.idle = false
       when movement.vy < 0
-        sprite.facing = "down"
+        sprite.facing = "up"
         sprite.idle = false
       else
         sprite.idle = true
+
+    if sprite.framelist
+      if sprite.idle
+        pixiSprite.textures = @spriteFrameCache[sprite.name]["#{sprite.facing}Idle"]
+      else
+        pixiSprite.textures = @spriteFrameCache[sprite.name][sprite.facing]
     
   buildSprite: (entity, sprite, position) ->
     console.log "ADDING SPRITE FOR #{entity.id}"
     pixiSprite = undefined
     if sprite.framelist
-      spriteTextures = (new PIXI.Texture.fromFrame(frame) for frame in sprite.framelist.right)
-      pixiSprite = new PIXI.MovieClip(spriteTextures)
+      unless @spriteFrameCache[sprite.name]
+        frameCache = {}
+        for pose, frames of sprite.framelist
+          frameCache[pose] = (new PIXI.Texture.fromFrame(frame) for frame in frames)
+        @spriteFrameCache[sprite.name] = frameCache
+      pixiSprite = new PIXI.MovieClip(@spriteFrameCache[sprite.name][sprite.facing])
       pixiSprite.animationSpeed = 0.05
       pixiSprite.play()
     else
@@ -216,9 +227,8 @@ class SpriteSyncSystem extends makr.IteratingSystem
     container.addChildAt pixiSprite, endIndex
     console.log "ADDING SPRITE FOR #{entity.id} at child index #{endIndex}"
 
-
-    @spriteCache[entity.id] = pixiSprite
     sprite.add = false
+    @spriteCache[entity.id] = pixiSprite
 
   removeSprite: (entity, sprite) ->
     @pixiWrapper.sprites.removeChild @spriteCache[entity.id]
@@ -232,10 +242,22 @@ HalfPI = Math.PI/2
 class EntityFactory
   constructor: (@ecs) ->
 
-  robot: (x,y,framelist) ->
+  generateRobotFrameList: (robotName) ->
+    {
+      down: ["#{robotName}_down_0","#{robotName}_down_1","#{robotName}_down_2", "#{robotName}_down_1"]
+      left: ["#{robotName}_left_0","#{robotName}_left_1","#{robotName}_left_2", "#{robotName}_left_1"]
+      up: ["#{robotName}_up_0","#{robotName}_up_1","#{robotName}_up_2", "#{robotName}_up_1"]
+      right: ["#{robotName}_right_0","#{robotName}_right_1","#{robotName}_right_2", "#{robotName}_right_1"]
+      downIdle: ["#{robotName}_down_1"]
+      leftIdle: ["#{robotName}_left_1"]
+      upIdle: ["#{robotName}_up_1"]
+      rightIdle: ["#{robotName}_right_1"]
+    }
+
+  robot: (x,y,robotName) ->
     robot = @ecs.create()
     robot.add(new Position(x: x, y: y), ComponentRegister.get(Position))
-    robot.add(new Sprite(framelist: framelist), ComponentRegister.get(Sprite))
+    robot.add(new Sprite(name: robotName, framelist: @generateRobotFrameList(robotName)), ComponentRegister.get(Sprite))
     robot.add(new Controls(), ComponentRegister.get(Controls))
     robot.add(new Movement(vx: 0, vy: 0), ComponentRegister.get(Movement))
     robot
@@ -289,18 +311,6 @@ class RtsWorld extends SimSim.WorldBase
   deserializeComponent: (serializedComponent) ->
     eval("new #{serializedComponent.type}(serializedComponent)")
 
-  generateRobotFrameList: ->
-    {
-      down: ["robot_0_down_0","robot_0_down_1","robot_0_down_2", "robot_0_down_1"]
-      left: ["robot_0_left_0","robot_0_left_1","robot_0_left_2", "robot_0_left_1"]
-      up: ["robot_0_up_0","robot_0_up_1","robot_0_up_2", "robot_0_up_1"]
-      right: ["robot_0_right_0","robot_0_right_1","robot_0_right_2", "robot_0_right_1"]
-      downIdle: ["robot_0_down_1"]
-      leftIdle: ["robot_0_left_1"]
-      upIdle: ["robot_0_up_1"]
-      rightIdle: ["robot_0_right_1"]
-    }
-
   #
   # Invocable via proxy:
   #
@@ -314,8 +324,7 @@ class RtsWorld extends SimSim.WorldBase
     
   #### SimSim.WorldBase#playerJoined(id)
   playerJoined: (playerId) ->
-    robotAvatar = @generateRobotFrameList()
-    robot = @entityFactory.robot(320,224,robotAvatar)
+    robot = @entityFactory.robot(320,224,"robot_0")
     robot.add(new Player(id: playerId), ComponentRegister.get(Player))
     @players[playerId] = robot.id
     console.log "Player #{playerId}, JOINED, entity id #{robot.id}"
