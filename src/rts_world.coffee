@@ -45,9 +45,9 @@ class MapTiles
     tiles = new PIXI.DisplayObjectContainer();
     tiles.position.x = 0
     tiles.position.y = 0
-    tileSize = 32
-    for x in [0..window.gameConfig().stageWidth] by tileSize
-      for y in [0..window.gameConfig().stageHeight] by tileSize
+    tileSize = 31
+    for x in [0..3200] by tileSize
+      for y in [0..3200] by tileSize
         index = (@seed + x*y) % 3
         tile = new PIXI.Sprite(PIXI.Texture.fromFrame("dirt#{index}.png"))
         tile.position.x = x
@@ -56,7 +56,9 @@ class MapTiles
         # alien.anchor.x = 0.5;
         # alien.anchor.y = 0.5;
     tiles.cacheAsBitmap = true
-    world.pixiWrapper.stage.addChild(tiles)
+    tiles.position.x = -1600
+    tiles.position.y = -1600
+    world.pixiWrapper.sprites.addChild(tiles)
 
 
 class Sprite
@@ -122,14 +124,14 @@ class MovementSystem extends makr.IteratingSystem
 
 class SpriteSyncSystem extends makr.IteratingSystem
   constructor: (@pixiWrapper) ->
-    makr.IteratingSystem.call(@);
+    makr.IteratingSystem.call(@)
     @registerComponent(ComponentRegister.get(Sprite))
     @registerComponent(ComponentRegister.get(Position))
     @spriteCache = {}
 
   process: (entity, elapsed) ->
     position = entity.get(ComponentRegister.get(Position));
-    sprite = entity.get(ComponentRegister.get(Sprite));
+    sprite = entity.get(ComponentRegister.get(Sprite))
 
     pixiSprite = @spriteCache[entity._id]
     unless pixiSprite?
@@ -144,14 +146,14 @@ class SpriteSyncSystem extends makr.IteratingSystem
   buildSprite: (entity, sprite, position) ->
     pixiSprite = new PIXI.Sprite(PIXI.Texture.fromFrame(sprite.name))
     pixiSprite.anchor.x = pixiSprite.anchor.y = 0.5
-    @pixiWrapper.stage.addChild pixiSprite
+    @pixiWrapper.sprites.addChild pixiSprite
     @spriteCache[entity._id] = pixiSprite
     pixiSprite.position.x = position.x
     pixiSprite.position.y = position.y
     sprite.add = false
 
   removeSprite: (entity, sprite) ->
-    @pixiWrapper.stage.removeChild @spriteCache[entity._id]
+    @pixiWrapper.sprites.removeChild @spriteCache[entity._id]
     delete @spriteCache[entity._id]
     sprite.remove = false
 
@@ -205,7 +207,7 @@ class RtsWorld extends SimSim.WorldBase
     ecs
 
   playerJoined: (playerId) ->
-    bunny = @entityFactory.bunny(400,400)
+    bunny = @entityFactory.bunny(320,224)
     bunny.add(new Player(id: playerId), ComponentRegister.get(Player))
     @players[playerId] = bunny._id
     console.log "Player #{playerId}, #{bunny._id} JOINED"

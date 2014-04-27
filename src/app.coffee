@@ -16,12 +16,12 @@ getMeta = (name) ->
 
 window.gameConfig = ->
   return @_gameConfig if @_gameConfig
-  useHttps = getMeta('use-https') == "true"
+  useHttps = !!(window.location.protocol.match(/https/))
   scheme = if useHttps then "https" else "http"
 
   @_gameConfig = {
-    stageWidth: 800
-    stageHeight: 576
+    stageWidth: window.screen.width / 2
+    stageHeight: window.screen.height / 2
     imageAssets: [
       "images/bunny.png",
       "images/EBRobotedit2crMatsuoKaito.png",
