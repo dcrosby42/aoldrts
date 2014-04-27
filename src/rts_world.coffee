@@ -1,4 +1,5 @@
 ChecksumCalculator = require './checksum_calculator.coffee'
+
 ComponentRegister = (->
   nextType = 0
   ctors = []
@@ -49,6 +50,16 @@ class Controls
     @down = false
     @left = false
     @right = false
+
+class EntityInspectorSystem extends makr.IteratingSystem
+  constructor: (@inspector, @componentClass) ->
+    makr.IteratingSystem.call(@)
+    @registerComponent(ComponentRegister.get(@componentClass))
+
+  process: (entity, elapsed) ->
+    component = entity.get(ComponentRegister.get(@componentClass))
+    @inspector.update entity._id, component # should be a COPY of the component?
+
 
 class ControlSystem extends makr.IteratingSystem
   constructor: (@rtsWorld) ->
@@ -156,14 +167,16 @@ class EntityFactory
 
 BUNNY_VEL = 3
 class RtsWorld extends SimSim.WorldBase
-  constructor: (opts={}) ->
-    @checksumCalculator = new ChecksumCalculator()
+  constructor: ({@pixiWrapper, @entityInspector}) ->
+    @pixiWrapper or throw new Error("Need pixiWrapper")
 
-    @pixiWrapper = opts.pixiWrapper or throw new Error("Need opts.pixiWrapper")
+    @checksumCalculator = new ChecksumCalculator()
     @ecs = @setupECS(@pixieWrapper)
     @entityFactory = new EntityFactory(@ecs)
     @players = {}
     @currentControls = {}
+
+    @setupEntityInspector(@ecs,@entityInspector) if @entityInspector
 
   setupECS: (pixieWrapper) ->
     ComponentRegister.register(Position)
@@ -176,7 +189,13 @@ class RtsWorld extends SimSim.WorldBase
     ecs.registerSystem(new ControlSystem(this))
     ecs.registerSystem(new MovementSystem())
     ecs.registerSystem(new ControlMappingSystem())
+
     ecs
+
+  setupEntityInspector: (ecs, entityInspector) ->
+    for componentClass in [ Position ]
+      ecs.registerSystem(new EntityInspectorSystem(entityInspector, componentClass))
+    entityInspector
 
   playerJoined: (playerId) ->
     bunny = @entityFactory.bunny(400,400)

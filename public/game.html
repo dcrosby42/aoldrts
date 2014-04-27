@@ -13,13 +13,29 @@
 	<script type="text/javascript" src="js/lib/makr.js"></script>
 
 	<script type="text/javascript" src="js/app.js"></script>
+  <style>
+    #gameDiv {
+      float: left;
+    }
+    #debugUI {
+      float: left;
+    }
+  </style>
   <meta name="use-https" content="false"/>
 </head>
 <body>
-  <button onclick="takeSnapshot()">Take Snapshot</button>
-  <button onclick="restoreSnapshot()">Restore Snapshot</button>
-  <button onclick="stop()">Stop</button>
-  <button onclick="start()">Start</button>
-  <button id="fullscreen">Fullscreen</button>
+  <div id="gameDiv"></div>
+  <div id="debugUI">
+    <button onclick="takeSnapshot()">Take Snapshot</button>
+    <button onclick="restoreSnapshot()">Restore Snapshot</button>
+    <button onclick="stop()">Stop</button>
+    <button onclick="start()">Start</button>
+    <button id="fullscreen">Fullscreen</button>
+    <button onclick="peek()">Peek</button>
+    <pre id="entityInspectorOutput">
+
+    Hi there
+    </pre>
+  </div>
 </body>
 </html>
