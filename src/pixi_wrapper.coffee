@@ -1,8 +1,13 @@
+RtsInterface = require './rts_interface.coffee'
 class PixiWrapper
   constructor: (opts) ->
     @stage = new PIXI.Stage(0xDDDDDD, true)
     @renderer = PIXI.autoDetectRenderer(opts.width, opts.height, undefined, false)
     @loader = new PIXI.AssetLoader(opts.assets)
+    @sprites = new PIXI.DisplayObjectContainer()
+    @sprites.setInteractive true
+    @stage.addChild @sprites
+    @interface = new RtsInterface(sprites: @sprites, renderer: @renderer)
 
   appendViewTo: (el) ->
     @renderer.view.id = "game"
@@ -35,6 +40,7 @@ class PixiWrapper
     @loader.load()
 
   render: ->
+    @interface.update()
     @renderer.render(@stage)
 
 module.exports = PixiWrapper
