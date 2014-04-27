@@ -3,6 +3,7 @@ class PixiWrapper
   constructor: (opts) ->
     @stage = new PIXI.Stage(0xDDDDDD, true)
     @renderer = PIXI.autoDetectRenderer(opts.width, opts.height, undefined, false)
+    @spriteSheetLoader = new PIXI.SpriteSheetLoader("images/terrain.json")
     @loader = new PIXI.AssetLoader(opts.assets)
     @sprites = new PIXI.DisplayObjectContainer()
     @sprites.setInteractive true
@@ -41,6 +42,7 @@ class PixiWrapper
   loadAssets: (callback) ->
     @loader.onComplete = callback
     @loader.load()
+    @spriteSheetLoader.load()
 
   render: ->
     @interface.update()
