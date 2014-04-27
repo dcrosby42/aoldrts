@@ -30,11 +30,11 @@ window.gameConfig = function() {
   if (this._gameConfig) {
     return this._gameConfig;
   }
-  useHttps = getMeta('use-https') === "true";
+  useHttps = !!(window.location.protocol.match(/https/));
   scheme = useHttps ? "https" : "http";
   this._gameConfig = {
-    stageWidth: 800,
-    stageHeight: 600,
+    stageWidth: window.screen.width / 2,
+    stageHeight: window.screen.height / 2,
     imageAssets: ["images/bunny.png"],
     simSimConnection: {
       url: "" + scheme + "://" + window.location.hostname,
@@ -102,6 +102,18 @@ buildSimulation = function(opts) {
       options: {
         url: opts.url,
         secure: opts.secure
+      }
+    },
+    client: {
+      spyOnOutgoing: function(simulation, message) {
+        if (!message.type.match(/turn/i)) {
+          return console.log("<<< Client SEND", message);
+        }
+      },
+      spyOnIncoming: function(simulation, message) {
+        if (!message.type.match(/turn/i)) {
+          return console.log(">>> Client RECV", message);
+        }
       }
     },
     world: opts.world
@@ -375,7 +387,38 @@ PixiWrapper = (function() {
   }
 
   PixiWrapper.prototype.appendViewTo = function(el) {
-    return el.appendChild(this.renderer.view);
+    var onEnter, onExit;
+    this.renderer.view.id = "game";
+    el.appendChild(this.renderer.view);
+    onEnter = (function(_this) {
+      return function() {
+        return _this.fullscreen();
+      };
+    })(this);
+    onExit = (function(_this) {
+      return function() {
+        return _this.smallscreen();
+      };
+    })(this);
+    return document.getElementById("fullscreen").addEventListener("click", (function() {
+      var element;
+      element = document.getElementById("game");
+      if (BigScreen.enabled) {
+        BigScreen.request(element, onEnter, onExit);
+      } else {
+
+      }
+    }), false);
+  };
+
+  PixiWrapper.prototype.fullscreen = function() {
+    this.renderer.view.style.width = window.screen.width + "px";
+    return this.renderer.view.style.height = window.screen.height + "px";
+  };
+
+  PixiWrapper.prototype.smallscreen = function() {
+    this.renderer.view.style.width = window.screen.width / 2 + "px";
+    return this.renderer.view.style.height = window.screen.height / 2 + "px";
   };
 
   PixiWrapper.prototype.loadAssets = function(callback) {
