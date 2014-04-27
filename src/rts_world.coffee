@@ -223,8 +223,6 @@ class RtsWorld extends SimSim.WorldBase
       ent = @findEntityById(entId)
       if ent? and ent.alive
         componentBags[entId] = (@serializeComponent(c) for c in components)
-      else
-        componentBags[entId] = undefined
 
     data =
       players: @players

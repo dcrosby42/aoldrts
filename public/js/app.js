@@ -916,8 +916,6 @@ RtsWorld = (function(_super) {
           }
           return _results;
         }).call(this);
-      } else {
-        componentBags[entId] = void 0;
       }
     }
     return data = {
