@@ -150,14 +150,10 @@ buildPixiWrapper = function(opts) {
 
 buildKeyboardController = function() {
   return new KeyboardController({
-    w: "up",
-    a: "left",
-    d: "right",
-    s: "down",
-    up: "up",
-    left: "left",
-    right: "right",
-    down: "down"
+    r: "myNewRobot",
+    t: "theirNewRobot",
+    f: "marchMyRobot",
+    g: "marchTheirRobot"
   });
 };
 
@@ -311,7 +307,17 @@ GameRunner = (function() {
       _ref = this.keyboardController.update();
       for (action in _ref) {
         value = _ref[action];
-        this.simulation.worldProxy("updateControl", action, value);
+        if (value) {
+          if (action === "myNewRobot") {
+            this.simulation.worldProxy("summonMyRobot", 200, 100);
+          } else if (action === "theirNewRobot") {
+            this.simulation.worldProxy("summonTheirRobot", 400, 400);
+          } else if (action === "marchMyRobot") {
+            this.simulation.worldProxy("marchMyRobot");
+          } else if (action === "marchTheirRobot") {
+            this.simulation.worldProxy("marchTheirRobot");
+          }
+        }
       }
       this.simulation.update(this.stopWatch.elapsedSeconds());
       this.pixiWrapper.render();
@@ -629,7 +635,7 @@ module.exports = RtsInterface;
 
 
 },{}],9:[function(require,module,exports){
-var BUNNY_VEL, ChecksumCalculator, ComponentRegister, ControlMappingSystem, ControlSystem, Controls, EntityFactory, EntityInspectorSystem, HalfPI, MapTiles, MapTilesSystem, Movement, MovementSystem, Player, Position, RtsWorld, Sprite, SpriteSyncSystem, fixFloat,
+var BUNNY_VEL, ChecksumCalculator, ComponentRegister, ControlMappingSystem, ControlSystem, Controls, EntityFactory, EntityInspectorSystem, HalfPI, MapTiles, MapTilesSystem, Movement, MovementSystem, Owned, Position, RtsWorld, Sprite, SpriteSyncSystem, fixFloat,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
@@ -687,12 +693,12 @@ makr.World.prototype.resurrect = function(entId) {
   return entity;
 };
 
-Player = (function() {
-  function Player(_arg) {
-    this.id = _arg.id;
+Owned = (function() {
+  function Owned(_arg) {
+    this.playerId = _arg.playerId;
   }
 
-  return Player;
+  return Owned;
 
 })();
 
@@ -826,6 +832,7 @@ ControlSystem = (function(_super) {
     this.rtsWorld = rtsWorld;
     makr.IteratingSystem.call(this);
     this.registerComponent(ComponentRegister.get(Controls));
+    this.registerComponent(ComponentRegister.get(Owned));
   }
 
   ControlSystem.prototype.process = function(entity, elapsed) {
@@ -852,25 +859,7 @@ ControlMappingSystem = (function(_super) {
     this.registerComponent(ComponentRegister.get(Controls));
   }
 
-  ControlMappingSystem.prototype.process = function(entity, elapsed) {
-    var controls, movement;
-    movement = entity.get(ComponentRegister.get(Movement));
-    controls = entity.get(ComponentRegister.get(Controls));
-    if (controls.up) {
-      movement.vy = -BUNNY_VEL;
-    } else if (controls.down) {
-      movement.vy = BUNNY_VEL;
-    } else {
-      movement.vy = 0;
-    }
-    if (controls.left) {
-      return movement.vx = -BUNNY_VEL;
-    } else if (controls.right) {
-      return movement.vx = BUNNY_VEL;
-    } else {
-      return movement.vx = 0;
-    }
-  };
+  ControlMappingSystem.prototype.process = function(entity, elapsed) {};
 
   return ControlMappingSystem;
 
@@ -887,13 +876,14 @@ MovementSystem = (function(_super) {
 
   MovementSystem.prototype.process = function(entity, elapsed) {
     var movement, position;
+    console.log(elapsed);
     position = entity.get(ComponentRegister.get(Position));
     movement = entity.get(ComponentRegister.get(Movement));
     if (position == null) {
       console.log(entity);
     }
-    position.x += movement.vx;
-    return position.y += movement.vy;
+    position.x += movement.vx * elapsed;
+    return position.y += movement.vy * elapsed;
   };
 
   return MovementSystem;
@@ -1047,19 +1037,19 @@ RtsWorld = (function(_super) {
     this.checksumCalculator = new ChecksumCalculator();
     this.ecs = this.setupECS(this.pixieWrapper);
     this.entityFactory = new EntityFactory(this.ecs);
-    this.players = {};
     this.currentControls = {};
     if (this.entityInspector) {
       this.setupEntityInspector(this.ecs, this.entityInspector);
     }
     this.entityFactory.mapTiles((Math.random() * 1000) | 0, 50, 50);
+    this.commandQueue = [];
   }
 
   RtsWorld.prototype.setupECS = function(pixieWrapper) {
     var ecs;
     ComponentRegister.register(Position);
     ComponentRegister.register(Sprite);
-    ComponentRegister.register(Player);
+    ComponentRegister.register(Owned);
     ComponentRegister.register(Movement);
     ComponentRegister.register(Controls);
     ComponentRegister.register(MapTiles);
@@ -1074,7 +1064,7 @@ RtsWorld = (function(_super) {
 
   RtsWorld.prototype.setupEntityInspector = function(ecs, entityInspector) {
     var componentClass, _i, _len, _ref;
-    _ref = [Position, Player, MapTiles];
+    _ref = [Position, Owned, MapTiles];
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
       componentClass = _ref[_i];
       ecs.registerSystem(new EntityInspectorSystem(entityInspector, componentClass));
@@ -1117,33 +1107,58 @@ RtsWorld = (function(_super) {
     };
   };
 
-  RtsWorld.prototype.updateControl = function(id, action, value) {
-    var _base, _name;
-    (_base = this.currentControls)[_name = this.players[id]] || (_base[_name] = []);
-    return this.currentControls[this.players[id]].push([action, value]);
-  };
-
-  RtsWorld.prototype.addPlayer = function(playerId) {};
-
-  RtsWorld.prototype.removePlayer = function(playerId) {};
-
-  RtsWorld.prototype.playerJoined = function(playerId) {
+  RtsWorld.prototype.summonMyRobot = function(playerId, x, y) {
     var robot, robotAvatar;
+    console.log("summonMyRobot");
     robotAvatar = this.generateRobotFrameList();
-    robot = this.entityFactory.robot(320, 224, robotAvatar);
-    robot.add(new Player({
-      id: playerId
-    }), ComponentRegister.get(Player));
-    this.players[playerId] = robot.id;
-    return console.log("Player " + playerId + ", JOINED, entity id " + robot.id);
+    robot = this.entityFactory.robot(x, y, robotAvatar);
+    return robot.add(new Owned({
+      playerId: playerId
+    }), ComponentRegister.get(Owned));
   };
+
+  RtsWorld.prototype.summonTheirRobot = function(playerId, x, y) {
+    var robot, robotAvatar;
+    console.log("summonTheirRobot");
+    robotAvatar = this.generateRobotFrameList();
+    robot = this.entityFactory.robot(x, y, robotAvatar);
+    return robot.add(new Owned({
+      playerId: "WAT"
+    }), ComponentRegister.get(Owned));
+  };
+
+  RtsWorld.prototype.marchMyRobot = function(playerId) {
+    return this.commandQueue.push({
+      command: "march",
+      playerId: playerId,
+      entityId: 1
+    });
+  };
+
+  RtsWorld.prototype.marchTheirRobot = function(playerId) {
+    var movement, theirRobot;
+    theirRobot = this.findEntityById(2);
+    movement = theirRobot.get(ComponentRegister.get(Movement));
+    return movement.vx = 5;
+  };
+
+  RtsWorld.prototype.playerJoined = function(playerId) {};
 
   RtsWorld.prototype.playerLeft = function(playerId) {
-    var ent;
-    ent = this.findEntityById(this.players[playerId]);
-    console.log("Player " + playerId + " LEFT, killing entity id " + ent.id);
-    ent.kill();
-    return this.players[playerId] = void 0;
+    var ent, owner, _i, _len, _ref, _results;
+    console.log("Player " + playerId + " LEFT");
+    _ref = this.ecs._alive;
+    _results = [];
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      ent = _ref[_i];
+      owner = ent.get(ComponentRegister.get(Owned));
+      if ((owner != null) && (owner.playerId === playerId)) {
+        _results.push(ent.kill());
+      } else {
+        _results.push(void 0);
+      }
+    }
+    return _results;
   };
 
   RtsWorld.prototype.theEnd = function() {

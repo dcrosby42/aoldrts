@@ -138,16 +138,11 @@ buildPixiWrapper = (opts={})->
 
 buildKeyboardController = ->
   new KeyboardController(
-    w: "up"
-    a: "left"
-    d: "right"
-    s: "down"
-    up: "up"
-    left: "left"
-    right: "right"
-    down: "down"
+    r: "myNewRobot"
+    t: "theirNewRobot"
+    f: "marchMyRobot"
+    g: "marchTheirRobot"
   )
-
 
 
 _copyData = (data) ->

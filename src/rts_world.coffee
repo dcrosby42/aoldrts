@@ -33,9 +33,8 @@ makr.World.prototype.resurrect = (entId) ->
   @_alive.push(entity)
   entity
 
-
-class Player
-  constructor: ({@id}) ->
+class Owned
+  constructor: ({@playerId}) ->
 
 class Position
   constructor: ({@x, @y}) ->
@@ -109,9 +108,12 @@ class ControlSystem extends makr.IteratingSystem
   constructor: (@rtsWorld) ->
     makr.IteratingSystem.call(@)
     @registerComponent(ComponentRegister.get(Controls))
+    @registerComponent(ComponentRegister.get(Owned))
 
   process: (entity, elapsed) ->
     controls = entity.get(ComponentRegister.get(Controls))
+    # owner = entity.get(ComponentRegister.get(Controls))
+
     entityControls = @rtsWorld.currentControls[entity.id] || []
     for [action, value] in entityControls
       controls[action] = value
@@ -126,21 +128,21 @@ class ControlMappingSystem extends makr.IteratingSystem
     @registerComponent(ComponentRegister.get(Controls))
 
   process: (entity, elapsed) ->
-    movement = entity.get(ComponentRegister.get(Movement))
-    controls = entity.get(ComponentRegister.get(Controls))
+    # movement = entity.get(ComponentRegister.get(Movement))
+    # controls = entity.get(ComponentRegister.get(Controls))
 
-    if controls.up
-      movement.vy = -BUNNY_VEL
-    else if controls.down
-      movement.vy = BUNNY_VEL
-    else
-      movement.vy = 0
-    if controls.left
-      movement.vx = -BUNNY_VEL
-    else if controls.right
-      movement.vx = BUNNY_VEL
-    else
-      movement.vx = 0
+    # if controls.up
+    #   movement.vy = -BUNNY_VEL
+    # else if controls.down
+    #   movement.vy = BUNNY_VEL
+    # else
+    #   movement.vy = 0
+    # if controls.left
+    #   movement.vx = -BUNNY_VEL
+    # else if controls.right
+    #   movement.vx = BUNNY_VEL
+    # else
+    #   movement.vx = 0
 
 class MovementSystem extends makr.IteratingSystem
   constructor: () ->
@@ -149,11 +151,12 @@ class MovementSystem extends makr.IteratingSystem
     @registerComponent(ComponentRegister.get(Position))
 
   process: (entity, elapsed) ->
+    console.log elapsed
     position = entity.get(ComponentRegister.get(Position))
     movement = entity.get(ComponentRegister.get(Movement))
     console.log entity unless position?
-    position.x += movement.vx
-    position.y += movement.vy
+    position.x += movement.vx * elapsed
+    position.y += movement.vy * elapsed
 
 class SpriteSyncSystem extends makr.IteratingSystem
   constructor: (@pixiWrapper) ->
@@ -256,15 +259,15 @@ class RtsWorld extends SimSim.WorldBase
     @checksumCalculator = new ChecksumCalculator()
     @ecs = @setupECS(@pixieWrapper)
     @entityFactory = new EntityFactory(@ecs)
-    @players = {}
     @currentControls = {}
     @setupEntityInspector(@ecs,@entityInspector) if @entityInspector
     @entityFactory.mapTiles((Math.random() * 1000)|0, 50, 50)
+    @commandQueue = []
 
   setupECS: (pixieWrapper) ->
     ComponentRegister.register(Position)
     ComponentRegister.register(Sprite)
-    ComponentRegister.register(Player)
+    ComponentRegister.register(Owned)
     ComponentRegister.register(Movement)
     ComponentRegister.register(Controls)
     ComponentRegister.register(MapTiles)
@@ -277,7 +280,7 @@ class RtsWorld extends SimSim.WorldBase
     ecs
 
   setupEntityInspector: (ecs, entityInspector) ->
-    for componentClass in [ Position,Player,MapTiles ]
+    for componentClass in [ Position,Owned,MapTiles ]
       ecs.registerSystem(new EntityInspectorSystem(entityInspector, componentClass))
     entityInspector
 
@@ -304,28 +307,42 @@ class RtsWorld extends SimSim.WorldBase
   #
   # Invocable via proxy:
   #
-  updateControl: (id, action,value) ->
-    @currentControls[@players[id]] ||= []
-    @currentControls[@players[id]].push([action, value])
+  summonMyRobot: (playerId, x, y) ->
+    console.log "summonMyRobot"
+    robotAvatar = @generateRobotFrameList()
+    robot = @entityFactory.robot(x, y, robotAvatar)
+    robot.add(new Owned(playerId: playerId), ComponentRegister.get(Owned))
 
-  addPlayer: (playerId) ->
+  summonTheirRobot: (playerId, x, y) ->
+    console.log "summonTheirRobot"
+    robotAvatar = @generateRobotFrameList()
+    robot = @entityFactory.robot(x, y, robotAvatar)
+    robot.add(new Owned(playerId: "WAT"), ComponentRegister.get(Owned))
 
-  removePlayer: (playerId) ->
+  marchMyRobot: (playerId) ->
+    @commandQueue.push(
+      command: "march"
+      playerId: playerId
+      entityId: 1
+    )
+#     myRobot = @findEntityById(1)
+#     movement = myRobot.get(ComponentRegister.get(Movement))
+#     movement.vx = 5
+
+  marchTheirRobot: (playerId) ->
+    theirRobot = @findEntityById(2)
+    movement = theirRobot.get(ComponentRegister.get(Movement))
+    movement.vx = 5
     
   #### SimSim.WorldBase#playerJoined(id)
   playerJoined: (playerId) ->
-    robotAvatar = @generateRobotFrameList()
-    robot = @entityFactory.robot(320,224,robotAvatar)
-    robot.add(new Player(id: playerId), ComponentRegister.get(Player))
-    @players[playerId] = robot.id
-    console.log "Player #{playerId}, JOINED, entity id #{robot.id}"
 
   #### SimSim.WorldBase#playerLeft(id)
   playerLeft: (playerId) ->
-    ent = @findEntityById(@players[playerId])
-    console.log "Player #{playerId} LEFT, killing entity id #{ent.id}"
-    ent.kill()
-    @players[playerId] = undefined
+    console.log "Player #{playerId} LEFT"
+    for ent in @ecs._alive
+      owner = ent.get(ComponentRegister.get(Owned))
+      ent.kill() if owner? && (owner.playerId == playerId)
 
   #### SimSim.WorldBase#theEnd()
   theEnd: ->
