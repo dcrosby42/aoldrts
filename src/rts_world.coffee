@@ -298,10 +298,15 @@ class RtsWorld extends SimSim.WorldBase
   serializeComponent: (component) ->
     console.log(component)
     serializedComponent = {}
-    for name, value of component
-      serializedComponent[name] = value unless value instanceof Function
-    serializedComponent['type'] = component.constructor.name
-    serializedComponent
+    if component
+      for name, value of component
+        serializedComponent[name] = value unless value instanceof Function
+      serializedComponent['type'] = component.constructor.name
+      serializedComponent
+    else
+      console.log "WTF serializeComponent got undefined component?!", component
+      {type:'BROKEN'}
+
 
   deserializeComponent: (serializedComponent) ->
     c = eval("new #{serializedComponent.type}(serializedComponent)")

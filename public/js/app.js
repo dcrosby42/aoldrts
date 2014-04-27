@@ -189,7 +189,6 @@ window.watchData = function() {
   insp = window.local.entityInspector;
   pre = document.getElementById("entityInspectorOutput");
   txt = "";
-  console.log(insp.componentsByEntity());
   _ref = insp.componentsByEntity();
   for (entityId in _ref) {
     components = _ref[entityId];
@@ -250,7 +249,7 @@ EntityInspector = (function() {
   EntityInspector.prototype.update = function(entityId, component) {
     var eid, typeName, _base;
     eid = "" + entityId;
-    typeName = component.constructor.name;
+    typeName = component ? component.constructor ? component.constructor.name : component.toString() : "(!undefined component!)";
     (_base = this._data)[eid] || (_base[eid] = {});
     return this._data[eid][typeName] = component;
   };
@@ -1098,14 +1097,21 @@ RtsWorld = (function(_super) {
     var name, serializedComponent, value;
     console.log(component);
     serializedComponent = {};
-    for (name in component) {
-      value = component[name];
-      if (!(value instanceof Function)) {
-        serializedComponent[name] = value;
+    if (component) {
+      for (name in component) {
+        value = component[name];
+        if (!(value instanceof Function)) {
+          serializedComponent[name] = value;
+        }
       }
+      serializedComponent['type'] = component.constructor.name;
+      return serializedComponent;
+    } else {
+      console.log("WTF serializeComponent got undefined component?!", component);
+      return {
+        type: 'BROKEN'
+      };
     }
-    serializedComponent['type'] = component.constructor.name;
-    return serializedComponent;
   };
 
   RtsWorld.prototype.deserializeComponent = function(serializedComponent) {

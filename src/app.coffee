@@ -166,7 +166,6 @@ window.watchData = ->
   pre = document.getElementById("entityInspectorOutput")
 
   txt = ""
-  console.log insp.componentsByEntity()
   for entityId, components of insp.componentsByEntity()
     txt += "Entity #{entityId}:\n"
     for compType, comp of components
