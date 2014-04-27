@@ -194,7 +194,6 @@ class RtsWorld extends SimSim.WorldBase
 
 
   setupECS: (pixieWrapper) ->
-    ComponentRegister.register(MapTiles)
     ComponentRegister.register(Position)
     ComponentRegister.register(Sprite)
     ComponentRegister.register(Player)
@@ -205,6 +204,7 @@ class RtsWorld extends SimSim.WorldBase
     ecs.registerSystem(new ControlSystem(this))
     ecs.registerSystem(new MovementSystem())
     ecs.registerSystem(new ControlMappingSystem())
+    ComponentRegister.register(MapTiles)
     ecs
 
   playerJoined: (playerId) ->
