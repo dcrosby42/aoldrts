@@ -35,7 +35,7 @@ window.gameConfig = function() {
   this._gameConfig = {
     stageWidth: window.screen.width / 2,
     stageHeight: window.screen.height / 2,
-    imageAssets: ["images/bunny.png"],
+    imageAssets: ["images/bunny.png", "images/EBRobotedit2crMatsuoKaito.png", "images/bunny.png", "images/logo.png", "images/terrain.png"],
     simSimConnection: {
       url: "" + scheme + "://" + window.location.hostname,
       secure: useHttps
@@ -385,6 +385,7 @@ PixiWrapper = (function() {
   function PixiWrapper(opts) {
     this.stage = new PIXI.Stage(0xDDDDDD, true);
     this.renderer = PIXI.autoDetectRenderer(opts.width, opts.height, void 0, false);
+    this.spriteSheetLoader = new PIXI.SpriteSheetLoader("images/terrain.json");
     this.loader = new PIXI.AssetLoader(opts.assets);
     this.sprites = new PIXI.DisplayObjectContainer();
     this.sprites.setInteractive(true);
@@ -432,7 +433,8 @@ PixiWrapper = (function() {
 
   PixiWrapper.prototype.loadAssets = function(callback) {
     this.loader.onComplete = callback;
-    return this.loader.load();
+    this.loader.load();
+    return this.spriteSheetLoader.load();
   };
 
   PixiWrapper.prototype.render = function() {
@@ -526,7 +528,7 @@ module.exports = RtsInterface;
 
 
 },{}],8:[function(require,module,exports){
-var BUNNY_VEL, ChecksumCalculator, ComponentRegister, ControlMappingSystem, ControlSystem, Controls, EntityFactory, HalfPI, Movement, MovementSystem, Player, Position, RtsWorld, Sprite, SpriteSyncSystem, fixFloat,
+var BUNNY_VEL, ChecksumCalculator, ComponentRegister, ControlMappingSystem, ControlSystem, Controls, EntityFactory, HalfPI, MapTiles, Movement, MovementSystem, Player, Position, RtsWorld, Sprite, SpriteSyncSystem, fixFloat,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
@@ -595,6 +597,36 @@ Movement = (function() {
   }
 
   return Movement;
+
+})();
+
+MapTiles = (function() {
+  function MapTiles(_arg) {
+    this.seed = _arg.seed, this.width = _arg.width, this.height = _arg.height;
+  }
+
+  MapTiles.prototype.existialize = function(world) {
+    var index, tile, tileSize, tiles, x, y, _i, _j;
+    tiles = new PIXI.DisplayObjectContainer();
+    tiles.position.x = 0;
+    tiles.position.y = 0;
+    tileSize = 31;
+    for (x = _i = 0; _i <= 3200; x = _i += tileSize) {
+      for (y = _j = 0; _j <= 3200; y = _j += tileSize) {
+        index = (this.seed + x * y) % 3;
+        tile = new PIXI.Sprite(PIXI.Texture.fromFrame("dirt" + index + ".png"));
+        tile.position.x = x;
+        tile.position.y = y;
+        tiles.addChild(tile);
+      }
+    }
+    tiles.cacheAsBitmap = true;
+    tiles.position.x = -1600;
+    tiles.position.y = -1600;
+    return world.pixiWrapper.sprites.addChild(tiles);
+  };
+
+  return MapTiles;
 
 })();
 
@@ -779,6 +811,17 @@ EntityFactory = (function() {
     return bunny;
   };
 
+  EntityFactory.prototype.mapTiles = function(seed, width, height) {
+    var mapTiles;
+    mapTiles = this.ecs.create();
+    mapTiles.add(new MapTiles({
+      seed: seed,
+      width: width,
+      height: height
+    }), ComponentRegister.get(MapTiles));
+    return mapTiles;
+  };
+
   return EntityFactory;
 
 })();
@@ -800,10 +843,12 @@ RtsWorld = (function(_super) {
     this.entityFactory = new EntityFactory(this.ecs);
     this.players = {};
     this.currentControls = {};
+    this.entityFactory.mapTiles((Math.random() * 1000) | 0, 50, 50);
   }
 
   RtsWorld.prototype.setupECS = function(pixieWrapper) {
     var ecs;
+    ComponentRegister.register(MapTiles);
     ComponentRegister.register(Position);
     ComponentRegister.register(Sprite);
     ComponentRegister.register(Player);
@@ -819,7 +864,7 @@ RtsWorld = (function(_super) {
 
   RtsWorld.prototype.playerJoined = function(playerId) {
     var bunny;
-    bunny = this.entityFactory.bunny(400, 400);
+    bunny = this.entityFactory.bunny(320, 224);
     bunny.add(new Player({
       id: playerId
     }), ComponentRegister.get(Player));
@@ -929,6 +974,7 @@ RtsWorld = (function(_super) {
 
   RtsWorld.prototype.serializeComponent = function(component) {
     var name, serializedComponent, value;
+    console.log(component);
     serializedComponent = {};
     for (name in component) {
       value = component[name];
@@ -939,7 +985,13 @@ RtsWorld = (function(_super) {
   };
 
   RtsWorld.prototype.deserializeComponent = function(serializedComponent) {
-    return eval("new " + serializedComponent.type + "(serializedComponent)");
+    var c;
+    c = eval("new " + serializedComponent.type + "(serializedComponent)");
+    if (c.existialize) {
+      c.existialize(this);
+    }
+    console.log(c);
+    return c;
   };
 
   RtsWorld.prototype.getChecksum = function() {

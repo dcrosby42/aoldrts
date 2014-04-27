@@ -45,9 +45,9 @@ class MapTiles
     tiles = new PIXI.DisplayObjectContainer();
     tiles.position.x = 0
     tiles.position.y = 0
-    tileSize = 32
-    for x in [0..window.gameConfig().stageWidth] by tileSize
-      for y in [0..window.gameConfig().stageHeight] by tileSize
+    tileSize = 31
+    for x in [0..3200] by tileSize
+      for y in [0..3200] by tileSize
         index = (@seed + x*y) % 3
         tile = new PIXI.Sprite(PIXI.Texture.fromFrame("dirt#{index}.png"))
         tile.position.x = x
@@ -56,7 +56,9 @@ class MapTiles
         # alien.anchor.x = 0.5;
         # alien.anchor.y = 0.5;
     tiles.cacheAsBitmap = true
-    world.pixiWrapper.stage.addChild(tiles)
+    tiles.position.x = -1600
+    tiles.position.y = -1600
+    world.pixiWrapper.sprites.addChild(tiles)
 
 
 class Sprite
@@ -208,7 +210,7 @@ class RtsWorld extends SimSim.WorldBase
     ecs
 
   playerJoined: (playerId) ->
-    bunny = @entityFactory.bunny(400,400)
+    bunny = @entityFactory.bunny(320,224)
     bunny.add(new Player(id: playerId), ComponentRegister.get(Player))
     @players[playerId] = bunny.id
     console.log "Player #{playerId}, #{bunny.id} JOINED"
