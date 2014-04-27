@@ -85,8 +85,12 @@ buildSimulation = (opts={})->
       options:
         url: opts.url
         secure: opts.secure
+    client:
+      spyOnOutgoing: (simulation, message) ->
+        console.log("<<< Client SEND", message) unless message.type.match(/turn/i)
+      spyOnIncoming: (simulation, message) ->
+        console.log(">>> Client RECV", message) unless message.type.match(/turn/i)
 
-    world: opts.world
     # spyOnDataIn: (simulation, data) ->
     #   step = "?"
     #   step = simulation.simState.step if simulation.simState
@@ -95,6 +99,8 @@ buildSimulation = (opts={})->
     #   step = "?"
     #   step = simulation.simState.step if simulation.simState
     #   console.log ">> turn: #{simulation.currentTurnNumber} step: #{simulation.simState.step} data:", data
+
+    world: opts.world
   )
 
 setupStats = ->
