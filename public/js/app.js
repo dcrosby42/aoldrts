@@ -532,6 +532,18 @@ var BUNNY_VEL, ChecksumCalculator, ComponentRegister, ControlMappingSystem, Cont
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
+Array.prototype.compact = function() {
+  var elem, _i, _len, _results;
+  _results = [];
+  for (_i = 0, _len = this.length; _i < _len; _i++) {
+    elem = this[_i];
+    if (elem != null) {
+      _results.push(elem);
+    }
+  }
+  return _results;
+};
+
 ChecksumCalculator = require('./checksum_calculator.coffee');
 
 ComponentRegister = (function() {
@@ -814,11 +826,10 @@ EntityFactory = (function() {
   EntityFactory.prototype.mapTiles = function(seed, width, height) {
     var mapTiles;
     mapTiles = this.ecs.create();
-    mapTiles.add(new MapTiles({
-      seed: seed,
-      width: width,
-      height: height
-    }), ComponentRegister.get(MapTiles));
+    mapTiles.add(new Position({
+      x: 1,
+      y: 2
+    }), ComponentRegister.get(Position));
     return mapTiles;
   };
 
@@ -848,12 +859,12 @@ RtsWorld = (function(_super) {
 
   RtsWorld.prototype.setupECS = function(pixieWrapper) {
     var ecs;
-    ComponentRegister.register(MapTiles);
     ComponentRegister.register(Position);
     ComponentRegister.register(Sprite);
     ComponentRegister.register(Player);
     ComponentRegister.register(Movement);
     ComponentRegister.register(Controls);
+    ComponentRegister.register(MapTiles);
     ecs = new makr.World();
     ecs.registerSystem(new SpriteSyncSystem(this.pixiWrapper));
     ecs.registerSystem(new ControlSystem(this));
@@ -953,16 +964,15 @@ RtsWorld = (function(_super) {
       ent = this.findEntityById(entId);
       if ((ent != null) && ent.alive) {
         componentBags[entId] = (function() {
-          var _i, _len, _results;
+          var _i, _len, _ref1, _results;
+          _ref1 = components.compact();
           _results = [];
-          for (_i = 0, _len = components.length; _i < _len; _i++) {
-            c = components[_i];
+          for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
+            c = _ref1[_i];
             _results.push(this.serializeComponent(c));
           }
           return _results;
         }).call(this);
-      } else {
-        componentBags[entId] = void 0;
       }
     }
     return data = {
@@ -978,7 +988,9 @@ RtsWorld = (function(_super) {
     serializedComponent = {};
     for (name in component) {
       value = component[name];
-      serializedComponent[name] = value;
+      if (!(value instanceof Function)) {
+        serializedComponent[name] = value;
+      }
     }
     serializedComponent['type'] = component.constructor.name;
     return serializedComponent;

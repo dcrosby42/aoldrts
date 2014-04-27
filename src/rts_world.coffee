@@ -1,3 +1,6 @@
+Array::compact = ->
+  (elem for elem in this when elem?)
+
 ChecksumCalculator = require './checksum_calculator.coffee'
 ComponentRegister = (->
   nextType = 0
@@ -42,7 +45,7 @@ class MapTiles
   constructor: ({@seed, @width, @height}) ->
 
   existialize: (world) ->
-    tiles = new PIXI.DisplayObjectContainer();
+    tiles = new PIXI.DisplayObjectContainer()
     tiles.position.x = 0
     tiles.position.y = 0
     tileSize = 31
@@ -52,7 +55,7 @@ class MapTiles
         tile = new PIXI.Sprite(PIXI.Texture.fromFrame("dirt#{index}.png"))
         tile.position.x = x
         tile.position.y = y
-        tiles.addChild(tile);
+        tiles.addChild(tile)
         # alien.anchor.x = 0.5;
         # alien.anchor.y = 0.5;
     tiles.cacheAsBitmap = true
@@ -178,8 +181,9 @@ class EntityFactory
 
   mapTiles: (seed, width, height) ->
     mapTiles = @ecs.create()
-    # mapTiles.add(new Position(0, 0), ComponentRegister.get(Position))
-    mapTiles.add(new MapTiles(seed: seed, width: width, height: height), ComponentRegister.get(MapTiles))
+    # comp = new MapTiles(seed: seed, width: width, height: height)
+    # mapTiles.add(comp, ComponentRegister.get(MapTiles))
+    mapTiles.add(new Position(x: 1, y:2), ComponentRegister.get(Position))
     mapTiles
 
 BUNNY_VEL = 3
@@ -201,12 +205,12 @@ class RtsWorld extends SimSim.WorldBase
     ComponentRegister.register(Player)
     ComponentRegister.register(Movement)
     ComponentRegister.register(Controls)
+    ComponentRegister.register(MapTiles)
     ecs = new makr.World()
     ecs.registerSystem(new SpriteSyncSystem(@pixiWrapper))
     ecs.registerSystem(new ControlSystem(this))
     ecs.registerSystem(new MovementSystem())
     ecs.registerSystem(new ControlMappingSystem())
-    ComponentRegister.register(MapTiles)
     ecs
 
   playerJoined: (playerId) ->
@@ -253,9 +257,7 @@ class RtsWorld extends SimSim.WorldBase
     for entId, components of @ecs._componentBags
       ent = @findEntityById(entId)
       if ent? and ent.alive
-        componentBags[entId] = (@serializeComponent(c) for c in components)
-      else
-        componentBags[entId] = undefined
+        componentBags[entId] = (@serializeComponent(c) for c in components.compact())
 
     data =
       players: @players
@@ -266,7 +268,7 @@ class RtsWorld extends SimSim.WorldBase
     console.log(component)
     serializedComponent = {}
     for name, value of component
-      serializedComponent[name] = value
+      serializedComponent[name] = value unless value instanceof Function
     serializedComponent['type'] = component.constructor.name
     serializedComponent
 
