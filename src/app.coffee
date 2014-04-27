@@ -32,8 +32,8 @@ window.gameConfig = ->
       "images/terrain.png",
       ]
     spriteSheetAssets: [
-      "images/terrain.json",
-      "images/EBRobotedit2crMatsuoKaito.json"
+      "images/EBRobotedit2crMatsuoKaito.json",
+      "images/terrain.json"
     ]
     simSimConnection:
       url: "#{scheme}://#{window.location.hostname}"#:#{window.location.port}"

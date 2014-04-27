@@ -38,7 +38,7 @@ window.gameConfig = function() {
     stageWidth: window.screen.width / 2,
     stageHeight: window.screen.height / 2,
     imageAssets: ["images/bunny.png", "images/EBRobotedit2crMatsuoKaito.png", "images/bunny.png", "images/logo.png", "images/terrain.png"],
-    spriteSheetAssets: ["images/terrain.json", "images/EBRobotedit2crMatsuoKaito.json"],
+    spriteSheetAssets: ["images/EBRobotedit2crMatsuoKaito.json", "images/terrain.json"],
     simSimConnection: {
       url: "" + scheme + "://" + window.location.hostname,
       secure: useHttps
