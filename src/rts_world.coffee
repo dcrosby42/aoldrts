@@ -23,7 +23,7 @@ makr.World.prototype.resurrect = (entId) ->
   if (@_dead.length > 0)
     entity = @_dead.pop()
     entity._alive = true
-    entity.id = entId
+    entity._id = entId
   else
     entity = new makr.Entity(@, entId)
 
@@ -53,6 +53,16 @@ class Controls
     @down = false
     @left = false
     @right = false
+
+class EntityInspectorSystem extends makr.IteratingSystem
+  constructor: (@inspector, @componentClass) ->
+    makr.IteratingSystem.call(@)
+    @registerComponent(ComponentRegister.get(@componentClass))
+
+  process: (entity, elapsed) ->
+    component = entity.get(ComponentRegister.get(@componentClass))
+    @inspector.update entity.id, component # should be a COPY of the component?
+
 
 class ControlSystem extends makr.IteratingSystem
   constructor: (@rtsWorld) ->
@@ -143,7 +153,7 @@ class SpriteSyncSystem extends makr.IteratingSystem
     @spriteCache = {}
 
   onRemoved: (entity) ->
-    @pixiWrapper.stage.removeChild @spriteCache[entity.id]
+    @pixiWrapper.sprites.removeChild @spriteCache[entity.id]
     @spriteCache[entity.id] = undefined
 
   process: (entity, elapsed) ->
@@ -164,14 +174,14 @@ class SpriteSyncSystem extends makr.IteratingSystem
     pixiSprite = new PIXI.Sprite(PIXI.Texture.fromFrame(sprite.name))
     pixiSprite.anchor.x = pixiSprite.anchor.y = 0.5
     @pixiWrapper.sprites.addChild pixiSprite
-    @spriteCache[entity._id] = pixiSprite
+    @spriteCache[entity.id] = pixiSprite
     pixiSprite.position.x = position.x
     pixiSprite.position.y = position.y
     sprite.add = false
 
   removeSprite: (entity, sprite) ->
-    @pixiWrapper.sprites.removeChild @spriteCache[entity._id]
-    delete @spriteCache[entity._id]
+    @pixiWrapper.sprites.removeChild @spriteCache[entity.id]
+    delete @spriteCache[entity.id]
     sprite.remove = false
 
 # vec2 = (x,y) -> new Box2D.Common.Math.b2Vec2(x,y)
@@ -199,16 +209,17 @@ class EntityFactory
 
 BUNNY_VEL = 3
 class RtsWorld extends SimSim.WorldBase
-  constructor: (opts={}) ->
-    @checksumCalculator = new ChecksumCalculator()
+  constructor: ({@pixiWrapper, @entityInspector}) ->
+    @pixiWrapper or throw new Error("Need pixiWrapper")
 
-    @pixiWrapper = opts.pixiWrapper or throw new Error("Need opts.pixiWrapper")
+    @checksumCalculator = new ChecksumCalculator()
     @ecs = @setupECS(@pixieWrapper)
     @entityFactory = new EntityFactory(@ecs)
     @players = {}
     @currentControls = {}
 
- 
+    @setupEntityInspector(@ecs,@entityInspector) if @entityInspector
+
   setupECS: (pixieWrapper) ->
     ComponentRegister.register(Position)
     ComponentRegister.register(Sprite)
@@ -223,6 +234,11 @@ class RtsWorld extends SimSim.WorldBase
     ecs.registerSystem(new ControlMappingSystem())
     ecs.registerSystem(new WanderControlMappingSystem())
     ecs
+
+  setupEntityInspector: (ecs, entityInspector) ->
+    for componentClass in [ Position,Player,Movement ]
+      ecs.registerSystem(new EntityInspectorSystem(entityInspector, componentClass))
+    entityInspector
 
   playerJoined: (playerId) ->
     bunny = @entityFactory.bunny(400,400)
@@ -257,14 +273,18 @@ class RtsWorld extends SimSim.WorldBase
   setData: (data) ->
     @players = data.players
     @ecs._nextEntityID = data.nextEntityId
+    console.log "setData: @ecs._nextEntityID set to #{@ecs._nextEntityID}"
     staleEnts = @ecs._alive.slice(0)
     for ent in staleEnts
+      console.log "setData: killing entity #{ent.id}"
       ent.kill()
 
     for entId, components of data.componentBags
       entity = @ecs.resurrect(entId)
+      console.log "setData: resurrected entity for entId=#{entId}:", entity
       comps = (@deserializeComponent(c) for c in components)
       for comp in comps
+        console.log "setData: adding component to #{entity.id}:", comp
         entity.add(comp, ComponentRegister.get(comp.constructor))
     
   resetData: ->

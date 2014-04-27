@@ -7,6 +7,8 @@ PixiWrapper = require './pixi_wrapper.coffee'
 GameRunner = require './game_runner.coffee'
 ParkMillerRNG = require './pm_prng.coffee'
 
+EntityInspector = require './entity_inspector.coffee'
+
 getMeta = (name) ->
   for meta in document.getElementsByTagName('meta')
     if meta.getAttribute("name") == name
@@ -34,6 +36,7 @@ window.gameConfig = ->
 window.local =
   vars: {}
   gameRunner: null
+  entityInspector: null
 
 window.onload = ->
   gameConfig = window.gameConfig()
@@ -46,11 +49,15 @@ window.onload = ->
     assets: gameConfig.imageAssets
   )
 
-  pixiWrapper.appendViewTo(document.body)
+  pixiWrapper.appendViewTo(document.getElementById('gameDiv'))
+
 
   pixiWrapper.loadAssets ->
+    entityInspector = new EntityInspector()
+
     world = new RtsWorld(
       pixiWrapper:pixiWrapper
+      entityInspector: entityInspector
     )
 
     simulation = buildSimulation(
@@ -69,9 +76,13 @@ window.onload = ->
       stopWatch: stopWatch
     )
 
+    window.local.entityInspector = entityInspector
     window.local.gameRunner = gameRunner
+    window.local.pixiWrapper = pixiWrapper
 
     gameRunner.start()
+    window.watchData()
+    window.mouseScrollingChanged()
 
 buildStopWatch = ->
   stopWatch = new StopWatch()
@@ -87,9 +98,11 @@ buildSimulation = (opts={})->
         secure: opts.secure
     client:
       spyOnOutgoing: (simulation, message) ->
-        console.log("<<< Client SEND", message) unless message.type.match(/turn/i)
+        if !message.type.match(/turn/i) and !(message['data'] and message.data['method'] and message.data.method == "updateControl")
+          console.log("<<< Client SEND", message)
       spyOnIncoming: (simulation, message) ->
-        console.log(">>> Client RECV", message) unless message.type.match(/turn/i)
+        if !message.type.match(/turn/i) and !(message['data'] and message.data['method'] and message.data.method == "updateControl")
+          console.log(">>> Client RECV", message)
 
     # spyOnDataIn: (simulation, data) ->
     #   step = "?"
@@ -105,7 +118,7 @@ buildSimulation = (opts={})->
 
 setupStats = ->
   container = document.createElement("div")
-  document.body.appendChild(container)
+  document.getElementById("gameDiv").appendChild(container)
   stats = new Stats()
   container.appendChild(stats.domElement)
   stats.domElement.style.position = "absolute"
@@ -146,3 +159,25 @@ window.stop = ->
 
 window.start = ->
   window.local.gameRunner.start()
+
+window.mouseScrollingChanged = ->
+  onOff = document.getElementById("mouseScrolling").checked
+  window.local.pixiWrapper.setMouseScrollingOn(onOff)
+
+window.watchData = ->
+  insp = window.local.entityInspector
+  pre = document.getElementById("entityInspectorOutput")
+
+  txt = ""
+  for entityId, components of insp.componentsByEntity()
+    txt += "Entity #{entityId}:\n"
+    for compType, comp of components
+      txt += "  #{compType}:\n"
+      for k,v of comp
+        txt += "    #{k}: #{v} (#{typeof v})\n"
+  pre.textContent = txt
+
+  insp.reset()
+
+  setTimeout(window.watchData, 500)
+  
