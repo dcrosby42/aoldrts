@@ -86,8 +86,10 @@ window.onload = function() {
     });
     window.local.entityInspector = entityInspector;
     window.local.gameRunner = gameRunner;
+    window.local.pixiWrapper = pixiWrapper;
     gameRunner.start();
-    return window.watchData();
+    window.watchData();
+    return window.mouseScrollingChanged();
   });
 };
 
@@ -182,6 +184,12 @@ window.stop = function() {
 
 window.start = function() {
   return window.local.gameRunner.start();
+};
+
+window.mouseScrollingChanged = function() {
+  var onOff;
+  onOff = document.getElementById("mouseScrolling").checked;
+  return window.local.pixiWrapper.setMouseScrollingOn(onOff);
 };
 
 window.watchData = function() {
@@ -477,6 +485,10 @@ PixiWrapper = (function() {
     }), false);
   };
 
+  PixiWrapper.prototype.setMouseScrollingOn = function(onOff) {
+    return this["interface"].setMouseScrollingOn(onOff);
+  };
+
   PixiWrapper.prototype.fullscreen = function() {
     this.renderer.view.style.width = window.screen.width + "px";
     return this.renderer.view.style.height = window.screen.height + "px";
@@ -542,9 +554,13 @@ RtsInterface = (function() {
     height = this.renderer.height;
     buffer = 32;
     speed = 8;
+    this.on = true;
     this.sprites.mousemove = (function(_this) {
       return function(data) {
         var negSpeed, posSpeed, x, y;
+        if (!_this.on) {
+          return;
+        }
         x = data.global.x;
         y = data.global.y;
         negSpeed = function(p, b, speed) {
@@ -572,8 +588,14 @@ RtsInterface = (function() {
   }
 
   RtsInterface.prototype.update = function() {
-    this.sprites.position.x += this.x_move;
-    return this.sprites.position.y += this.y_move;
+    if (this.on) {
+      this.sprites.position.x += this.x_move;
+      return this.sprites.position.y += this.y_move;
+    }
+  };
+
+  RtsInterface.prototype.setMouseScrollingOn = function(onOff) {
+    return this.on = onOff;
   };
 
   return RtsInterface;
