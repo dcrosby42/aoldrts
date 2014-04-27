@@ -61,7 +61,7 @@ class MapTilesSystem extends makr.IteratingSystem
     unless @tilesSprites?
       component = entity.get(ComponentRegister.get(MapTiles))
       @tilesSprites = @createTiles(component.seed)
-      @pixiWrapper.sprites.addChild(@tilesSprites)
+      @pixiWrapper.sprites.addChildAt(@tilesSprites,0) # ADD ALL THE WAY AT THE BOTTOM
 
   createTiles: (seed) ->
     tiles = new PIXI.DisplayObjectContainer()
@@ -178,13 +178,18 @@ class SpriteSyncSystem extends makr.IteratingSystem
       pixiSprite.position.y = position.y
     
   buildSprite: (entity, sprite, position) ->
-    console.log "ADDING SPRITE FOR #{entity.id}"
     pixiSprite = new PIXI.Sprite(PIXI.Texture.fromFrame(sprite.name))
     pixiSprite.anchor.x = pixiSprite.anchor.y = 0.5
-    @pixiWrapper.sprites.addChild pixiSprite
-    @spriteCache[entity.id] = pixiSprite
     pixiSprite.position.x = position.x
     pixiSprite.position.y = position.y
+    container = @pixiWrapper.sprites
+    
+    endIndex = container.children.length # ADD ON TOP
+    container.addChildAt pixiSprite, endIndex
+    console.log "ADDING SPRITE FOR #{entity.id} at child index #{endIndex}"
+
+
+    @spriteCache[entity.id] = pixiSprite
     sprite.add = false
 
   removeSprite: (entity, sprite) ->

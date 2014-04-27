@@ -727,7 +727,7 @@ MapTilesSystem = (function(_super) {
     if (this.tilesSprites == null) {
       component = entity.get(ComponentRegister.get(MapTiles));
       this.tilesSprites = this.createTiles(component.seed);
-      return this.pixiWrapper.sprites.addChild(this.tilesSprites);
+      return this.pixiWrapper.sprites.addChildAt(this.tilesSprites, 0);
     }
   };
 
@@ -912,14 +912,16 @@ SpriteSyncSystem = (function(_super) {
   };
 
   SpriteSyncSystem.prototype.buildSprite = function(entity, sprite, position) {
-    var pixiSprite;
-    console.log("ADDING SPRITE FOR " + entity.id);
+    var container, endIndex, pixiSprite;
     pixiSprite = new PIXI.Sprite(PIXI.Texture.fromFrame(sprite.name));
     pixiSprite.anchor.x = pixiSprite.anchor.y = 0.5;
-    this.pixiWrapper.sprites.addChild(pixiSprite);
-    this.spriteCache[entity.id] = pixiSprite;
     pixiSprite.position.x = position.x;
     pixiSprite.position.y = position.y;
+    container = this.pixiWrapper.sprites;
+    endIndex = container.children.length;
+    container.addChildAt(pixiSprite, endIndex);
+    console.log("ADDING SPRITE FOR " + entity.id + " at child index " + endIndex);
+    this.spriteCache[entity.id] = pixiSprite;
     return sprite.add = false;
   };
 
