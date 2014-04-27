@@ -21,7 +21,7 @@ makr.World.prototype.resurrect = (entId) ->
   if (@_dead.length > 0)
     entity = @_dead.pop()
     entity._alive = true
-    entity._id = entId
+    entity.id = entId
   else
     entity = new makr.Entity(@, entId)
 
@@ -57,11 +57,11 @@ class ControlSystem extends makr.IteratingSystem
 
   process: (entity, elapsed) ->
     controls = entity.get(ComponentRegister.get(Controls))
-    entityControls = @rtsWorld.currentControls[entity._id] || []
+    entityControls = @rtsWorld.currentControls[entity.id] || []
     for [action, value] in entityControls
       controls[action] = value
 
-    @rtsWorld.currentControls[entity._id] = []
+    @rtsWorld.currentControls[entity.id] = []
 
 
 class ControlMappingSystem extends makr.IteratingSystem
@@ -101,18 +101,21 @@ class MovementSystem extends makr.IteratingSystem
 
 class SpriteSyncSystem extends makr.IteratingSystem
   constructor: (@pixiWrapper) ->
-    makr.IteratingSystem.call(@);
+    makr.IteratingSystem.call(@)
     @registerComponent(ComponentRegister.get(Sprite))
     @registerComponent(ComponentRegister.get(Position))
     @spriteCache = {}
 
-  process: (entity, elapsed) ->
-    position = entity.get(ComponentRegister.get(Position));
-    sprite = entity.get(ComponentRegister.get(Sprite));
+  onRemoved: (entity) ->
+    @pixiWrapper.stage.removeChild @spriteCache[entity.id]
+    @spriteCache[entity.id] = undefined
 
-    pixiSprite = @spriteCache[entity._id]
+  process: (entity, elapsed) ->
+    position = entity.get(ComponentRegister.get(Position))
+    sprite = entity.get(ComponentRegister.get(Sprite))
+
+    pixiSprite = @spriteCache[entity.id]
     unless pixiSprite?
-      console.log "ADDING SPRITE FOR #{entity._id}"
       @buildSprite(entity, sprite, position)
     else if sprite.remove
       @removeSprite(entity, sprite)
@@ -121,6 +124,7 @@ class SpriteSyncSystem extends makr.IteratingSystem
       pixiSprite.position.y = position.y
     
   buildSprite: (entity, sprite, position) ->
+    console.log "ADDING SPRITE FOR #{entity.id}"
     pixiSprite = new PIXI.Sprite(PIXI.Texture.fromFrame(sprite.name))
     pixiSprite.anchor.x = pixiSprite.anchor.y = 0.5
     @pixiWrapper.sprites.addChild pixiSprite
@@ -133,7 +137,6 @@ class SpriteSyncSystem extends makr.IteratingSystem
     @pixiWrapper.sprites.removeChild @spriteCache[entity._id]
     delete @spriteCache[entity._id]
     sprite.remove = false
-
 
 # vec2 = (x,y) -> new Box2D.Common.Math.b2Vec2(x,y)
 fixFloat = SimSim.Util.fixFloat
@@ -178,16 +181,19 @@ class RtsWorld extends SimSim.WorldBase
   playerJoined: (playerId) ->
     bunny = @entityFactory.bunny(400,400)
     bunny.add(new Player(id: playerId), ComponentRegister.get(Player))
-    @players[playerId] = bunny._id
-    console.log "Player #{playerId}, #{bunny._id} JOINED"
+    @players[playerId] = bunny.id
+    console.log "Player #{playerId}, #{bunny.id} JOINED"
 
   playerLeft: (playerId) ->
-    @ecs._alive.filter((ent) =>
-      ent._id == @players[playerId]
-    )[0].kill
+    ent = @findEntityById(@players[playerId])
+    console.log "KILLING: #{ent.id}"
+    ent.kill()
 
-    delete @players[playerId]
+    @players[playerId] = undefined
     console.log "Player #{playerId} LEFT"
+
+  findEntityById: (id) ->
+    (entity for entity in @ecs._alive when "#{entity.id}" == "#{id}")[0]
     
   theEnd: ->
     @resetData()
@@ -201,7 +207,7 @@ class RtsWorld extends SimSim.WorldBase
     @ecs._nextEntityID = data.nextEntityId
     staleEnts = @ecs._alive.slice(0)
     for ent in staleEnts
-      ent.kill
+      ent.kill()
 
     for entId, components of data.componentBags
       entity = @ecs.resurrect(entId)
@@ -214,7 +220,11 @@ class RtsWorld extends SimSim.WorldBase
   getData: ->
     componentBags = {}
     for entId, components of @ecs._componentBags
-      componentBags[entId] = (@serializeComponent(c) for c in components)
+      ent = @findEntityById(entId)
+      if ent? and ent.alive
+        componentBags[entId] = (@serializeComponent(c) for c in components)
+      else
+        componentBags[entId] = undefined
 
     data =
       players: @players
