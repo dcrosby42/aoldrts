@@ -178,8 +178,9 @@ window.watchData = ->
       txt += "  #{compType}:\n"
       for k,v of comp
         txt += "    #{k}: #{v} (#{typeof v})\n"
-
   pre.textContent = txt
+
+  insp.reset()
 
   setTimeout(window.watchData, 500)
   
