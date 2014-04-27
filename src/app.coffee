@@ -15,12 +15,12 @@ getMeta = (name) ->
 
 window.gameConfig = ->
   return @_gameConfig if @_gameConfig
-  useHttps = getMeta('use-https') == "true"
+  useHttps = !!(window.location.protocol.match(/https/))
   scheme = if useHttps then "https" else "http"
 
   @_gameConfig = {
-    stageWidth: 800
-    stageHeight: 600
+    stageWidth: window.screen.width / 2
+    stageHeight: window.screen.height / 2
     imageAssets: [
       "images/bunny.png"
       ]
@@ -85,8 +85,12 @@ buildSimulation = (opts={})->
       options:
         url: opts.url
         secure: opts.secure
+    client:
+      spyOnOutgoing: (simulation, message) ->
+        console.log("<<< Client SEND", message) unless message.type.match(/turn/i)
+      spyOnIncoming: (simulation, message) ->
+        console.log(">>> Client RECV", message) unless message.type.match(/turn/i)
 
-    world: opts.world
     # spyOnDataIn: (simulation, data) ->
     #   step = "?"
     #   step = simulation.simState.step if simulation.simState
@@ -95,6 +99,8 @@ buildSimulation = (opts={})->
     #   step = "?"
     #   step = simulation.simState.step if simulation.simState
     #   console.log ">> turn: #{simulation.currentTurnNumber} step: #{simulation.simState.step} data:", data
+
+    world: opts.world
   )
 
 setupStats = ->
