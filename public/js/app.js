@@ -611,7 +611,7 @@ module.exports = RtsInterface;
 
 
 },{}],9:[function(require,module,exports){
-var BUNNY_VEL, ChecksumCalculator, ComponentRegister, ControlMappingSystem, ControlSystem, Controls, EntityFactory, EntityInspectorSystem, HalfPI, MapTiles, Movement, MovementSystem, Player, Position, RtsWorld, Sprite, SpriteSyncSystem, fixFloat,
+var BUNNY_VEL, ChecksumCalculator, ComponentRegister, ControlMappingSystem, ControlSystem, Controls, EntityFactory, EntityInspectorSystem, HalfPI, MapTiles, MapTilesSystem, Movement, MovementSystem, Player, Position, RtsWorld, Sprite, SpriteSyncSystem, fixFloat,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
@@ -701,7 +701,37 @@ MapTiles = (function() {
     this.seed = _arg.seed, this.width = _arg.width, this.height = _arg.height;
   }
 
-  MapTiles.prototype.existialize = function(world) {
+  return MapTiles;
+
+})();
+
+MapTilesSystem = (function(_super) {
+  __extends(MapTilesSystem, _super);
+
+  function MapTilesSystem(pixiWrapper) {
+    this.pixiWrapper = pixiWrapper;
+    makr.IteratingSystem.call(this);
+    this.registerComponent(ComponentRegister.get(MapTiles));
+    this.tilesSprites = void 0;
+  }
+
+  MapTilesSystem.prototype.onRemoved = function(entity) {
+    if (this.tilesSprites != null) {
+      this.pixiWrapper.sprites.removeChild(this.tilesSprites);
+      return this.tilesSprites = void 0;
+    }
+  };
+
+  MapTilesSystem.prototype.process = function(entity, elapsed) {
+    var component;
+    if (this.tilesSprites == null) {
+      component = entity.get(ComponentRegister.get(MapTiles));
+      this.tilesSprites = this.createTiles(component.seed);
+      return this.pixiWrapper.sprites.addChild(this.tilesSprites);
+    }
+  };
+
+  MapTilesSystem.prototype.createTiles = function(seed) {
     var index, tile, tileSize, tiles, x, y, _i, _j;
     tiles = new PIXI.DisplayObjectContainer();
     tiles.position.x = 0;
@@ -709,7 +739,7 @@ MapTiles = (function() {
     tileSize = 31;
     for (x = _i = 0; _i <= 3200; x = _i += tileSize) {
       for (y = _j = 0; _j <= 3200; y = _j += tileSize) {
-        index = (this.seed + x * y) % 3;
+        index = (seed + x * y) % 3;
         tile = new PIXI.Sprite(PIXI.Texture.fromFrame("dirt" + index + ".png"));
         tile.position.x = x;
         tile.position.y = y;
@@ -719,12 +749,12 @@ MapTiles = (function() {
     tiles.cacheAsBitmap = true;
     tiles.position.x = -1600;
     tiles.position.y = -1600;
-    return world.pixiWrapper.sprites.addChild(tiles);
+    return tiles;
   };
 
-  return MapTiles;
+  return MapTilesSystem;
 
-})();
+})(makr.IteratingSystem);
 
 Sprite = (function() {
   function Sprite(_arg) {
@@ -961,10 +991,10 @@ RtsWorld = (function(_super) {
     this.entityFactory = new EntityFactory(this.ecs);
     this.players = {};
     this.currentControls = {};
-    this.entityFactory.mapTiles((Math.random() * 1000) | 0, 50, 50);
     if (this.entityInspector) {
       this.setupEntityInspector(this.ecs, this.entityInspector);
     }
+    this.entityFactory.mapTiles((Math.random() * 1000) | 0, 50, 50);
   }
 
   RtsWorld.prototype.setupECS = function(pixieWrapper) {
@@ -977,6 +1007,7 @@ RtsWorld = (function(_super) {
     ComponentRegister.register(MapTiles);
     ecs = new makr.World();
     ecs.registerSystem(new SpriteSyncSystem(this.pixiWrapper));
+    ecs.registerSystem(new MapTilesSystem(this.pixiWrapper));
     ecs.registerSystem(new ControlSystem(this));
     ecs.registerSystem(new MovementSystem());
     ecs.registerSystem(new ControlMappingSystem());
@@ -1112,7 +1143,6 @@ RtsWorld = (function(_super) {
 
   RtsWorld.prototype.serializeComponent = function(component) {
     var name, serializedComponent, value;
-    console.log(component);
     serializedComponent = {};
     if (component) {
       for (name in component) {
@@ -1132,13 +1162,7 @@ RtsWorld = (function(_super) {
   };
 
   RtsWorld.prototype.deserializeComponent = function(serializedComponent) {
-    var c;
-    c = eval("new " + serializedComponent.type + "(serializedComponent)");
-    if (c.existialize) {
-      c.existialize(this);
-    }
-    console.log(c);
-    return c;
+    return eval("new " + serializedComponent.type + "(serializedComponent)");
   };
 
   RtsWorld.prototype.getChecksum = function() {
