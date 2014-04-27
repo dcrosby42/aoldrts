@@ -1026,24 +1026,6 @@ RtsWorld = (function(_super) {
     return entityInspector;
   };
 
-  RtsWorld.prototype.playerJoined = function(playerId) {
-    var bunny;
-    bunny = this.entityFactory.bunny(320, 224);
-    bunny.add(new Player({
-      id: playerId
-    }), ComponentRegister.get(Player));
-    this.players[playerId] = bunny.id;
-    return console.log("Player " + playerId + ", JOINED, entity id " + ent.id);
-  };
-
-  RtsWorld.prototype.playerLeft = function(playerId) {
-    var ent;
-    ent = this.findEntityById(this.players[playerId]);
-    console.log("Player " + playerId + " LEFT, killing entity id " + ent.id);
-    ent.kill();
-    return this.players[playerId] = void 0;
-  };
-
   RtsWorld.prototype.findEntityById = function(id) {
     var entity;
     return ((function() {
@@ -1058,6 +1040,40 @@ RtsWorld = (function(_super) {
       }
       return _results;
     }).call(this))[0];
+  };
+
+  RtsWorld.prototype.resetData = function() {};
+
+  RtsWorld.prototype.deserializeComponent = function(serializedComponent) {
+    return eval("new " + serializedComponent.type + "(serializedComponent)");
+  };
+
+  RtsWorld.prototype.updateControl = function(id, action, value) {
+    var _base, _name;
+    (_base = this.currentControls)[_name = this.players[id]] || (_base[_name] = []);
+    return this.currentControls[this.players[id]].push([action, value]);
+  };
+
+  RtsWorld.prototype.addPlayer = function(playerId) {};
+
+  RtsWorld.prototype.removePlayer = function(playerId) {};
+
+  RtsWorld.prototype.playerJoined = function(playerId) {
+    var bunny;
+    bunny = this.entityFactory.bunny(320, 224);
+    bunny.add(new Player({
+      id: playerId
+    }), ComponentRegister.get(Player));
+    this.players[playerId] = bunny.id;
+    return console.log("Player " + playerId + ", JOINED, entity id " + bunny.id);
+  };
+
+  RtsWorld.prototype.playerLeft = function(playerId) {
+    var ent;
+    ent = this.findEntityById(this.players[playerId]);
+    console.log("Player " + playerId + " LEFT, killing entity id " + ent.id);
+    ent.kill();
+    return this.players[playerId] = void 0;
   };
 
   RtsWorld.prototype.theEnd = function() {
@@ -1109,8 +1125,6 @@ RtsWorld = (function(_super) {
     }
     return _results;
   };
-
-  RtsWorld.prototype.resetData = function() {};
 
   RtsWorld.prototype.getData = function() {
     var c, componentBags, components, data, ent, entId, _ref;
@@ -1168,16 +1182,6 @@ RtsWorld = (function(_super) {
   RtsWorld.prototype.getChecksum = function() {
     return 0;
   };
-
-  RtsWorld.prototype.updateControl = function(id, action, value) {
-    var _base, _name;
-    (_base = this.currentControls)[_name = this.players[id]] || (_base[_name] = []);
-    return this.currentControls[this.players[id]].push([action, value]);
-  };
-
-  RtsWorld.prototype.addPlayer = function(playerId) {};
-
-  RtsWorld.prototype.removePlayer = function(playerId) {};
 
   return RtsWorld;
 
