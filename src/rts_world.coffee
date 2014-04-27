@@ -197,12 +197,40 @@ class RtsWorld extends SimSim.WorldBase
       ecs.registerSystem(new EntityInspectorSystem(entityInspector, componentClass))
     entityInspector
 
+  findEntityById: (id) ->
+    (entity for entity in @ecs._alive when "#{entity.id}" == "#{id}")[0]
+
+  resetData: ->
+
+  serializeComponent: (component) ->
+    serializedComponent = {}
+    for name, value of component
+      serializedComponent[name] = value
+    serializedComponent['type'] = component.constructor.name
+    serializedComponent
+
+  deserializeComponent: (serializedComponent) ->
+    eval("new #{serializedComponent.type}(serializedComponent)")
+
+  #
+  # Invocable via proxy:
+  #
+  updateControl: (id, action,value) ->
+    @currentControls[@players[id]] ||= []
+    @currentControls[@players[id]].push([action, value])
+
+  addPlayer: (playerId) ->
+
+  removePlayer: (playerId) ->
+    
+  #### SimSim.WorldBase#playerJoined(id)
   playerJoined: (playerId) ->
     bunny = @entityFactory.bunny(400,400)
     bunny.add(new Player(id: playerId), ComponentRegister.get(Player))
     @players[playerId] = bunny.id
     console.log "Player #{playerId}, #{bunny.id} JOINED"
 
+  #### SimSim.WorldBase#playerLeft(id)
   playerLeft: (playerId) ->
     ent = @findEntityById(@players[playerId])
     console.log "KILLING: #{ent.id}"
@@ -211,16 +239,16 @@ class RtsWorld extends SimSim.WorldBase
     @players[playerId] = undefined
     console.log "Player #{playerId} LEFT"
 
-  findEntityById: (id) ->
-    (entity for entity in @ecs._alive when "#{entity.id}" == "#{id}")[0]
-    
+  #### SimSim.WorldBase#theEnd()
   theEnd: ->
     @resetData()
     console.log "THE END"
 
+  #### SimSim.WorldBase#step(data)
   step: (dt) ->
     @ecs.update(dt)
   
+  #### SimSim.WorldBase#setData()
   setData: (data) ->
     @players = data.players
     @ecs._nextEntityID = data.nextEntityId
@@ -237,9 +265,8 @@ class RtsWorld extends SimSim.WorldBase
       for comp in comps
         console.log "setData: adding component to #{entity.id}:", comp
         entity.add(comp, ComponentRegister.get(comp.constructor))
-    
-  resetData: ->
 
+  #### SimSim.WorldBase#getData()
   getData: ->
     componentBags = {}
     for entId, components of @ecs._componentBags
@@ -252,29 +279,9 @@ class RtsWorld extends SimSim.WorldBase
       componentBags: componentBags
       nextEntityId: @ecs._nextEntityID
 
-  serializeComponent: (component) ->
-    serializedComponent = {}
-    for name, value of component
-      serializedComponent[name] = value
-    serializedComponent['type'] = component.constructor.name
-    serializedComponent
-
-  deserializeComponent: (serializedComponent) ->
-    eval("new #{serializedComponent.type}(serializedComponent)")
-
+  #### SimSim.WorldBase#getChecksum()
   getChecksum: ->
     # @checksumCalculator.calculate JSON.stringify(@getData())
     0
-
-  #
-  # Invocable via proxy:
-  #
-  updateControl: (id, action,value) ->
-    @currentControls[@players[id]] ||= []
-    @currentControls[@players[id]].push([action, value])
-
-  addPlayer: (playerId) ->
-
-  removePlayer: (playerId) ->
 
 module.exports = RtsWorld
