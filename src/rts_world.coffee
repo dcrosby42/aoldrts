@@ -123,14 +123,14 @@ class SpriteSyncSystem extends makr.IteratingSystem
   buildSprite: (entity, sprite, position) ->
     pixiSprite = new PIXI.Sprite(PIXI.Texture.fromFrame(sprite.name))
     pixiSprite.anchor.x = pixiSprite.anchor.y = 0.5
-    @pixiWrapper.stage.addChild pixiSprite
+    @pixiWrapper.sprites.addChild pixiSprite
     @spriteCache[entity._id] = pixiSprite
     pixiSprite.position.x = position.x
     pixiSprite.position.y = position.y
     sprite.add = false
 
   removeSprite: (entity, sprite) ->
-    @pixiWrapper.stage.removeChild @spriteCache[entity._id]
+    @pixiWrapper.sprites.removeChild @spriteCache[entity._id]
     delete @spriteCache[entity._id]
     sprite.remove = false
 
