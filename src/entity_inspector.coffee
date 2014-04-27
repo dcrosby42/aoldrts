@@ -1,5 +1,8 @@
 class EntityInspector
   constructor: ->
+    @reset()
+
+  reset: ->
     @_data = {}
 
   update: (entityId, component) ->
