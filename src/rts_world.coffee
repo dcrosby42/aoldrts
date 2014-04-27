@@ -22,7 +22,7 @@ makr.World.prototype.resurrect = (entId) ->
   if (@_dead.length > 0)
     entity = @_dead.pop()
     entity._alive = true
-    entity.id = entId
+    entity._id = entId
   else
     entity = new makr.Entity(@, entId)
 
@@ -58,7 +58,7 @@ class EntityInspectorSystem extends makr.IteratingSystem
 
   process: (entity, elapsed) ->
     component = entity.get(ComponentRegister.get(@componentClass))
-    @inspector.update entity._id, component # should be a COPY of the component?
+    @inspector.update entity.id, component # should be a COPY of the component?
 
 
 class ControlSystem extends makr.IteratingSystem
@@ -139,14 +139,14 @@ class SpriteSyncSystem extends makr.IteratingSystem
     pixiSprite = new PIXI.Sprite(PIXI.Texture.fromFrame(sprite.name))
     pixiSprite.anchor.x = pixiSprite.anchor.y = 0.5
     @pixiWrapper.sprites.addChild pixiSprite
-    @spriteCache[entity._id] = pixiSprite
+    @spriteCache[entity.id] = pixiSprite
     pixiSprite.position.x = position.x
     pixiSprite.position.y = position.y
     sprite.add = false
 
   removeSprite: (entity, sprite) ->
-    @pixiWrapper.sprites.removeChild @spriteCache[entity._id]
-    delete @spriteCache[entity._id]
+    @pixiWrapper.sprites.removeChild @spriteCache[entity.id]
+    delete @spriteCache[entity.id]
     sprite.remove = false
 
 # vec2 = (x,y) -> new Box2D.Common.Math.b2Vec2(x,y)
@@ -224,14 +224,18 @@ class RtsWorld extends SimSim.WorldBase
   setData: (data) ->
     @players = data.players
     @ecs._nextEntityID = data.nextEntityId
+    console.log "setData: @ecs._nextEntityID set to #{@ecs._nextEntityID}"
     staleEnts = @ecs._alive.slice(0)
     for ent in staleEnts
+      console.log "setData: killing entity #{ent.id}"
       ent.kill()
 
     for entId, components of data.componentBags
       entity = @ecs.resurrect(entId)
+      console.log "setData: resurrected entity for entId=#{entId}:", entity
       comps = (@deserializeComponent(c) for c in components)
       for comp in comps
+        console.log "setData: adding component to #{entity.id}:", comp
         entity.add(comp, ComponentRegister.get(comp.constructor))
     
   resetData: ->

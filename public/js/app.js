@@ -115,12 +115,12 @@ buildSimulation = function(opts) {
     },
     client: {
       spyOnOutgoing: function(simulation, message) {
-        if (!message.type.match(/turn/i)) {
+        if (!message.type.match(/turn/i) && !(message['data'] && message.data['method'] && message.data.method === "updateControl")) {
           return console.log("<<< Client SEND", message);
         }
       },
       spyOnIncoming: function(simulation, message) {
-        if (!message.type.match(/turn/i)) {
+        if (!message.type.match(/turn/i) && !(message['data'] && message.data['method'] && message.data.method === "updateControl")) {
           return console.log(">>> Client RECV", message);
         }
       }
@@ -211,6 +211,7 @@ window.watchData = function() {
     }
   }
   pre.textContent = txt;
+  insp.reset();
   return setTimeout(window.watchData, 500);
 };
 
@@ -251,8 +252,12 @@ var EntityInspector;
 
 EntityInspector = (function() {
   function EntityInspector() {
-    this._data = {};
+    this.reset();
   }
+
+  EntityInspector.prototype.reset = function() {
+    return this._data = {};
+  };
 
   EntityInspector.prototype.update = function(entityId, component) {
     var eid, typeName, _base;
@@ -641,7 +646,7 @@ makr.World.prototype.resurrect = function(entId) {
   if (this._dead.length > 0) {
     entity = this._dead.pop();
     entity._alive = true;
-    entity.id = entId;
+    entity._id = entId;
   } else {
     entity = new makr.Entity(this, entId);
   }
@@ -712,7 +717,7 @@ EntityInspectorSystem = (function(_super) {
   EntityInspectorSystem.prototype.process = function(entity, elapsed) {
     var component;
     component = entity.get(ComponentRegister.get(this.componentClass));
-    return this.inspector.update(entity._id, component);
+    return this.inspector.update(entity.id, component);
   };
 
   return EntityInspectorSystem;
@@ -809,7 +814,7 @@ SpriteSyncSystem = (function(_super) {
   }
 
   SpriteSyncSystem.prototype.onRemoved = function(entity) {
-    this.pixiWrapper.stage.removeChild(this.spriteCache[entity.id]);
+    this.pixiWrapper.sprites.removeChild(this.spriteCache[entity.id]);
     return this.spriteCache[entity.id] = void 0;
   };
 
@@ -834,15 +839,15 @@ SpriteSyncSystem = (function(_super) {
     pixiSprite = new PIXI.Sprite(PIXI.Texture.fromFrame(sprite.name));
     pixiSprite.anchor.x = pixiSprite.anchor.y = 0.5;
     this.pixiWrapper.sprites.addChild(pixiSprite);
-    this.spriteCache[entity._id] = pixiSprite;
+    this.spriteCache[entity.id] = pixiSprite;
     pixiSprite.position.x = position.x;
     pixiSprite.position.y = position.y;
     return sprite.add = false;
   };
 
   SpriteSyncSystem.prototype.removeSprite = function(entity, sprite) {
-    this.pixiWrapper.sprites.removeChild(this.spriteCache[entity._id]);
-    delete this.spriteCache[entity._id];
+    this.pixiWrapper.sprites.removeChild(this.spriteCache[entity.id]);
+    delete this.spriteCache[entity.id];
     return sprite.remove = false;
   };
 
@@ -918,7 +923,7 @@ RtsWorld = (function(_super) {
 
   RtsWorld.prototype.setupEntityInspector = function(ecs, entityInspector) {
     var componentClass, _i, _len, _ref;
-    _ref = [Position];
+    _ref = [Position, Player, Movement];
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
       componentClass = _ref[_i];
       ecs.registerSystem(new EntityInspectorSystem(entityInspector, componentClass));
@@ -974,9 +979,11 @@ RtsWorld = (function(_super) {
     var c, comp, components, comps, ent, entId, entity, staleEnts, _i, _len, _ref, _results;
     this.players = data.players;
     this.ecs._nextEntityID = data.nextEntityId;
+    console.log("setData: @ecs._nextEntityID set to " + this.ecs._nextEntityID);
     staleEnts = this.ecs._alive.slice(0);
     for (_i = 0, _len = staleEnts.length; _i < _len; _i++) {
       ent = staleEnts[_i];
+      console.log("setData: killing entity " + ent.id);
       ent.kill();
     }
     _ref = data.componentBags;
@@ -984,6 +991,7 @@ RtsWorld = (function(_super) {
     for (entId in _ref) {
       components = _ref[entId];
       entity = this.ecs.resurrect(entId);
+      console.log("setData: resurrected entity for entId=" + entId + ":", entity);
       comps = (function() {
         var _j, _len1, _results1;
         _results1 = [];
@@ -998,6 +1006,7 @@ RtsWorld = (function(_super) {
         _results1 = [];
         for (_j = 0, _len1 = comps.length; _j < _len1; _j++) {
           comp = comps[_j];
+          console.log("setData: adding component to " + entity.id + ":", comp);
           _results1.push(entity.add(comp, ComponentRegister.get(comp.constructor)));
         }
         return _results1;
