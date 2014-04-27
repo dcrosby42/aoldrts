@@ -102,9 +102,11 @@ buildSimulation = (opts={})->
         secure: opts.secure
     client:
       spyOnOutgoing: (simulation, message) ->
-        console.log("<<< Client SEND", message) unless message.type.match(/turn/i)
+        if !message.type.match(/turn/i) and !(message['data'] and message.data['method'] and message.data.method == "updateControl")
+          console.log("<<< Client SEND", message)
       spyOnIncoming: (simulation, message) ->
-        console.log(">>> Client RECV", message) unless message.type.match(/turn/i)
+        if !message.type.match(/turn/i) and !(message['data'] and message.data['method'] and message.data.method == "updateControl")
+          console.log(">>> Client RECV", message)
 
     # spyOnDataIn: (simulation, data) ->
     #   step = "?"

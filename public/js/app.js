@@ -115,12 +115,12 @@ buildSimulation = function(opts) {
     },
     client: {
       spyOnOutgoing: function(simulation, message) {
-        if (!message.type.match(/turn/i)) {
+        if (!message.type.match(/turn/i) && !(message['data'] && message.data['method'] && message.data.method === "updateControl")) {
           return console.log("<<< Client SEND", message);
         }
       },
       spyOnIncoming: function(simulation, message) {
-        if (!message.type.match(/turn/i)) {
+        if (!message.type.match(/turn/i) && !(message['data'] && message.data['method'] && message.data.method === "updateControl")) {
           return console.log(">>> Client RECV", message);
         }
       }
@@ -660,7 +660,7 @@ makr.World.prototype.resurrect = function(entId) {
   if (this._dead.length > 0) {
     entity = this._dead.pop();
     entity._alive = true;
-    entity.id = entId;
+    entity._id = entId;
     entity._componentMask.reset();
   } else {
     entity = new makr.Entity(this, +entId);
@@ -762,7 +762,7 @@ EntityInspectorSystem = (function(_super) {
   EntityInspectorSystem.prototype.process = function(entity, elapsed) {
     var component;
     component = entity.get(ComponentRegister.get(this.componentClass));
-    return this.inspector.update(entity._id, component);
+    return this.inspector.update(entity.id, component);
   };
 
   return EntityInspectorSystem;
@@ -887,15 +887,15 @@ SpriteSyncSystem = (function(_super) {
     pixiSprite = new PIXI.Sprite(PIXI.Texture.fromFrame(sprite.name));
     pixiSprite.anchor.x = pixiSprite.anchor.y = 0.5;
     this.pixiWrapper.sprites.addChild(pixiSprite);
-    this.spriteCache[entity._id] = pixiSprite;
+    this.spriteCache[entity.id] = pixiSprite;
     pixiSprite.position.x = position.x;
     pixiSprite.position.y = position.y;
     return sprite.add = false;
   };
 
   SpriteSyncSystem.prototype.removeSprite = function(entity, sprite) {
-    this.pixiWrapper.sprites.removeChild(this.spriteCache[entity._id]);
-    delete this.spriteCache[entity._id];
+    this.pixiWrapper.sprites.removeChild(this.spriteCache[entity.id]);
+    delete this.spriteCache[entity.id];
     return sprite.remove = false;
   };
 
@@ -1042,12 +1042,11 @@ RtsWorld = (function(_super) {
     var c, comp, components, comps, ent, entId, entity, staleEnts, _i, _len, _ref, _results;
     this.players = data.players;
     this.ecs._nextEntityID = data.nextEntityId;
+    console.log("setData: @ecs._nextEntityID set to " + this.ecs._nextEntityID);
     staleEnts = this.ecs._alive.slice(0);
     for (_i = 0, _len = staleEnts.length; _i < _len; _i++) {
       ent = staleEnts[_i];
-      console.log("killing staleEnt");
-      console.log(ent);
-      ent._componentMask.reset();
+      console.log("setData: killing entity " + ent.id, ent);
       ent.kill();
     }
     _ref = data.componentBags;
@@ -1055,8 +1054,7 @@ RtsWorld = (function(_super) {
     for (entId in _ref) {
       components = _ref[entId];
       entity = this.ecs.resurrect(entId);
-      console.log("resurrected ent");
-      console.log(entity);
+      console.log("setData: resurrected entity for entId=" + entId + ":", entity);
       comps = (function() {
         var _j, _len1, _results1;
         _results1 = [];
@@ -1072,6 +1070,7 @@ RtsWorld = (function(_super) {
         _results1 = [];
         for (_j = 0, _len1 = comps.length; _j < _len1; _j++) {
           comp = comps[_j];
+          console.log("setData: adding component to " + entity.id + ":", comp);
           _results1.push(entity.add(comp, ComponentRegister.get(comp.constructor)));
         }
         return _results1;
@@ -1096,15 +1095,6 @@ RtsWorld = (function(_super) {
           _results = [];
           for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
             c = _ref1[_i];
-            _results.push(this.serializeComponent(c));
-          }
-          return _results;
-        }).call(this);
-        componentBags[entId] = (function() {
-          var _i, _len, _results;
-          _results = [];
-          for (_i = 0, _len = components.length; _i < _len; _i++) {
-            c = components[_i];
             _results.push(this.serializeComponent(c));
           }
           return _results;
