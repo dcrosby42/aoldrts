@@ -578,8 +578,9 @@ makr.World.prototype.resurrect = function(entId) {
     entity = this._dead.pop();
     entity._alive = true;
     entity.id = entId;
+    entity._componentMask.reset();
   } else {
-    entity = new makr.Entity(this, entId);
+    entity = new makr.Entity(this, +entId);
   }
   this._alive.push(entity);
   return entity;
@@ -735,6 +736,9 @@ MovementSystem = (function(_super) {
     var movement, position;
     position = entity.get(ComponentRegister.get(Position));
     movement = entity.get(ComponentRegister.get(Movement));
+    if (position == null) {
+      console.log(entity);
+    }
     position.x += movement.vx;
     return position.y += movement.vy;
   };
@@ -824,12 +828,14 @@ EntityFactory = (function() {
   };
 
   EntityFactory.prototype.mapTiles = function(seed, width, height) {
-    var mapTiles;
+    var comp, mapTiles;
     mapTiles = this.ecs.create();
-    mapTiles.add(new Position({
-      x: 1,
-      y: 2
-    }), ComponentRegister.get(Position));
+    comp = new MapTiles({
+      seed: seed,
+      width: width,
+      height: height
+    });
+    mapTiles.add(comp, ComponentRegister.get(MapTiles));
     return mapTiles;
   };
 
@@ -886,7 +892,8 @@ RtsWorld = (function(_super) {
   RtsWorld.prototype.playerLeft = function(playerId) {
     var ent;
     ent = this.findEntityById(this.players[playerId]);
-    console.log("KILLING: " + ent.id);
+    console.log("player left: KILLING");
+    console.log(ent);
     ent.kill();
     this.players[playerId] = void 0;
     return console.log("Player " + playerId + " LEFT");
@@ -918,12 +925,16 @@ RtsWorld = (function(_super) {
   };
 
   RtsWorld.prototype.setData = function(data) {
+    debugger;
     var c, comp, components, comps, ent, entId, entity, staleEnts, _i, _len, _ref, _results;
     this.players = data.players;
     this.ecs._nextEntityID = data.nextEntityId;
     staleEnts = this.ecs._alive.slice(0);
     for (_i = 0, _len = staleEnts.length; _i < _len; _i++) {
       ent = staleEnts[_i];
+      console.log("killing staleEnt");
+      console.log(ent);
+      ent._componentMask.reset();
       ent.kill();
     }
     _ref = data.componentBags;
@@ -931,6 +942,8 @@ RtsWorld = (function(_super) {
     for (entId in _ref) {
       components = _ref[entId];
       entity = this.ecs.resurrect(entId);
+      console.log("resurrected ent");
+      console.log(entity);
       comps = (function() {
         var _j, _len1, _results1;
         _results1 = [];
@@ -940,6 +953,7 @@ RtsWorld = (function(_super) {
         }
         return _results1;
       }).call(this);
+      entity._componentMask.reset();
       _results.push((function() {
         var _j, _len1, _results1;
         _results1 = [];
@@ -975,11 +989,13 @@ RtsWorld = (function(_super) {
         }).call(this);
       }
     }
-    return data = {
+    data = {
       players: this.players,
       componentBags: componentBags,
       nextEntityId: this.ecs._nextEntityID
     };
+    console.log(data);
+    return data;
   };
 
   RtsWorld.prototype.serializeComponent = function(component) {

@@ -25,8 +25,9 @@ makr.World.prototype.resurrect = (entId) ->
     entity = @_dead.pop()
     entity._alive = true
     entity.id = entId
+    entity._componentMask.reset()
   else
-    entity = new makr.Entity(@, entId)
+    entity = new makr.Entity(@, +entId)
 
   @_alive.push(entity)
   entity
@@ -122,6 +123,7 @@ class MovementSystem extends makr.IteratingSystem
   process: (entity, elapsed) ->
     position = entity.get(ComponentRegister.get(Position))
     movement = entity.get(ComponentRegister.get(Movement))
+    console.log entity unless position?
     position.x += movement.vx
     position.y += movement.vy
 
@@ -181,9 +183,9 @@ class EntityFactory
 
   mapTiles: (seed, width, height) ->
     mapTiles = @ecs.create()
-    # comp = new MapTiles(seed: seed, width: width, height: height)
-    # mapTiles.add(comp, ComponentRegister.get(MapTiles))
-    mapTiles.add(new Position(x: 1, y:2), ComponentRegister.get(Position))
+    comp = new MapTiles(seed: seed, width: width, height: height)
+    mapTiles.add(comp, ComponentRegister.get(MapTiles))
+    # mapTiles.add(new Position(x: 1, y:2), ComponentRegister.get(Position))
     mapTiles
 
 BUNNY_VEL = 3
@@ -221,7 +223,8 @@ class RtsWorld extends SimSim.WorldBase
 
   playerLeft: (playerId) ->
     ent = @findEntityById(@players[playerId])
-    console.log "KILLING: #{ent.id}"
+    console.log "player left: KILLING"
+    console.log ent
     ent.kill()
 
     @players[playerId] = undefined
@@ -238,15 +241,22 @@ class RtsWorld extends SimSim.WorldBase
     @ecs.update(dt)
   
   setData: (data) ->
+    debugger
     @players = data.players
     @ecs._nextEntityID = data.nextEntityId
-    staleEnts = @ecs._alive.slice(0)
+    staleEnts = @ecs._alive[..]
     for ent in staleEnts
+      console.log "killing staleEnt"
+      console.log ent
+      ent._componentMask.reset() # shouldn't be needed
       ent.kill()
 
     for entId, components of data.componentBags
       entity = @ecs.resurrect(entId)
+      console.log "resurrected ent"
+      console.log entity
       comps = (@deserializeComponent(c) for c in components)
+      entity._componentMask.reset()
       for comp in comps
         entity.add(comp, ComponentRegister.get(comp.constructor))
     
@@ -263,6 +273,8 @@ class RtsWorld extends SimSim.WorldBase
       players: @players
       componentBags: componentBags
       nextEntityId: @ecs._nextEntityID
+    console.log data
+    data
 
   serializeComponent: (component) ->
     console.log(component)
