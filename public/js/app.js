@@ -211,6 +211,7 @@ window.watchData = function() {
     }
   }
   pre.textContent = txt;
+  insp.reset();
   return setTimeout(window.watchData, 500);
 };
 
@@ -251,8 +252,12 @@ var EntityInspector;
 
 EntityInspector = (function() {
   function EntityInspector() {
-    this._data = {};
+    this.reset();
   }
+
+  EntityInspector.prototype.reset = function() {
+    return this._data = {};
+  };
 
   EntityInspector.prototype.update = function(entityId, component) {
     var eid, typeName, _base;
