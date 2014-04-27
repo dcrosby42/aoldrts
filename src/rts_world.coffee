@@ -42,24 +42,39 @@ class Movement
 class MapTiles
   constructor: ({@seed, @width, @height}) ->
 
-  existialize: (world) ->
+class MapTilesSystem extends makr.IteratingSystem
+  constructor: (@pixiWrapper) ->
+    makr.IteratingSystem.call(@)
+    @registerComponent(ComponentRegister.get(MapTiles))
+    @tilesSprites = undefined
+
+  onRemoved: (entity) ->
+    if @tilesSprites?
+      @pixiWrapper.sprites.removeChild(@tilesSprites)
+      @tilesSprites = undefined
+    
+  process: (entity, elapsed) ->
+    unless @tilesSprites?
+      component = entity.get(ComponentRegister.get(MapTiles))
+      @tilesSprites = @createTiles(component.seed)
+      @pixiWrapper.sprites.addChild(@tilesSprites)
+
+  createTiles: (seed) ->
     tiles = new PIXI.DisplayObjectContainer();
     tiles.position.x = 0
     tiles.position.y = 0
     tileSize = 31
     for x in [0..3200] by tileSize
       for y in [0..3200] by tileSize
-        index = (@seed + x*y) % 3
+        index = (seed + x*y) % 3
         tile = new PIXI.Sprite(PIXI.Texture.fromFrame("dirt#{index}.png"))
         tile.position.x = x
         tile.position.y = y
         tiles.addChild(tile);
-        # alien.anchor.x = 0.5;
-        # alien.anchor.y = 0.5;
     tiles.cacheAsBitmap = true
     tiles.position.x = -1600
     tiles.position.y = -1600
-    world.pixiWrapper.sprites.addChild(tiles)
+    tiles
 
 
 class Sprite
@@ -141,7 +156,7 @@ class SpriteSyncSystem extends makr.IteratingSystem
     @spriteCache = {}
 
   onRemoved: (entity) ->
-    @pixiWrapper.stage.removeChild @spriteCache[entity.id]
+    @pixiWrapper.sprites.removeChild(@spriteCache[entity.id])
     @spriteCache[entity.id] = undefined
 
   process: (entity, elapsed) ->
@@ -168,7 +183,7 @@ class SpriteSyncSystem extends makr.IteratingSystem
     sprite.add = false
 
   removeSprite: (entity, sprite) ->
-    @pixiWrapper.sprites.removeChild @spriteCache[entity._id]
+    @pixiWrapper.sprites.removeChild(@spriteCache[entity._id])
     delete @spriteCache[entity._id]
     sprite.remove = false
 
@@ -189,7 +204,7 @@ class EntityFactory
 
   mapTiles: (seed, width, height) ->
     mapTiles = @ecs.create()
-    # mapTiles.add(new Position(0, 0), ComponentRegister.get(Position))
+    # mapTiles.add(new Position(x: 0, y: 0), ComponentRegister.get(Position))
     mapTiles.add(new MapTiles(seed: seed, width: width, height: height), ComponentRegister.get(MapTiles))
     mapTiles
 
@@ -203,10 +218,8 @@ class RtsWorld extends SimSim.WorldBase
     @entityFactory = new EntityFactory(@ecs)
     @players = {}
     @currentControls = {}
-    @entityFactory.mapTiles((Math.random() * 1000)|0, 50, 50)
-
-
     @setupEntityInspector(@ecs,@entityInspector) if @entityInspector
+    @entityFactory.mapTiles((Math.random() * 1000)|0, 50, 50)
 
   setupECS: (pixieWrapper) ->
     ComponentRegister.register(Position)
@@ -217,6 +230,7 @@ class RtsWorld extends SimSim.WorldBase
     ComponentRegister.register(MapTiles)
     ecs = new makr.World()
     ecs.registerSystem(new SpriteSyncSystem(@pixiWrapper))
+    ecs.registerSystem(new MapTilesSystem(@pixiWrapper))
     ecs.registerSystem(new ControlSystem(this))
     ecs.registerSystem(new MovementSystem())
     ecs.registerSystem(new ControlMappingSystem())
@@ -271,7 +285,7 @@ class RtsWorld extends SimSim.WorldBase
     for entId, components of @ecs._componentBags
       ent = @findEntityById(entId)
       if ent? and ent.alive
-        componentBags[entId] = (@serializeComponent(c) for c in components)
+        componentBags[entId] = (@serializeComponent(components[i]) for i of components)
 
     data =
       players: @players
@@ -279,7 +293,6 @@ class RtsWorld extends SimSim.WorldBase
       nextEntityId: @ecs._nextEntityID
 
   serializeComponent: (component) ->
-    console.log(component)
     serializedComponent = {}
     for name, value of component
       serializedComponent[name] = value
@@ -287,11 +300,7 @@ class RtsWorld extends SimSim.WorldBase
     serializedComponent
 
   deserializeComponent: (serializedComponent) ->
-    c = eval("new #{serializedComponent.type}(serializedComponent)")
-    if c.existialize
-      c.existialize(@)
-    console.log(c)
-    c
+    eval("new #{serializedComponent.type}(serializedComponent)")
 
   getChecksum: ->
     # @checksumCalculator.calculate JSON.stringify(@getData())
