@@ -214,7 +214,7 @@ class SpriteSyncSystem extends makr.IteratingSystem
           frameCache[pose] = (new PIXI.Texture.fromFrame(frame) for frame in frames)
         @spriteFrameCache[sprite.name] = frameCache
       pixiSprite = new PIXI.MovieClip(@spriteFrameCache[sprite.name][sprite.facing])
-      pixiSprite.animationSpeed = 0.05
+      pixiSprite.animationSpeed = 0.0825
       pixiSprite.play()
     else
       pixiSprite = new PIXI.Sprite(PIXI.Texture.fromFrame(sprite.name))
@@ -243,16 +243,28 @@ class EntityFactory
   constructor: (@ecs) ->
 
   generateRobotFrameList: (robotName) ->
-    {
-      down: ["#{robotName}_down_0","#{robotName}_down_1","#{robotName}_down_2", "#{robotName}_down_1"]
-      left: ["#{robotName}_left_0","#{robotName}_left_1","#{robotName}_left_2", "#{robotName}_left_1"]
-      up: ["#{robotName}_up_0","#{robotName}_up_1","#{robotName}_up_2", "#{robotName}_up_1"]
-      right: ["#{robotName}_right_0","#{robotName}_right_1","#{robotName}_right_2", "#{robotName}_right_1"]
-      downIdle: ["#{robotName}_down_1"]
-      leftIdle: ["#{robotName}_left_1"]
-      upIdle: ["#{robotName}_up_1"]
-      rightIdle: ["#{robotName}_right_1"]
-    }
+    if robotName.indexOf("floaty") == 0
+      {
+        down: ["#{robotName}_frame_0","#{robotName}_frame_1","#{robotName}_frame_2", "#{robotName}_frame_1"]
+        left: ["#{robotName}_frame_0","#{robotName}_frame_1","#{robotName}_frame_2", "#{robotName}_frame_1"]
+        up: ["#{robotName}_frame_0","#{robotName}_frame_1","#{robotName}_frame_2", "#{robotName}_frame_1"]
+        right: ["#{robotName}_frame_0","#{robotName}_frame_1","#{robotName}_frame_2", "#{robotName}_frame_1"]
+        downIdle: ["#{robotName}_frame_0","#{robotName}_frame_1","#{robotName}_frame_2", "#{robotName}_frame_1"]
+        leftIdle: ["#{robotName}_frame_0","#{robotName}_frame_1","#{robotName}_frame_2", "#{robotName}_frame_1"]
+        upIdle: ["#{robotName}_frame_0","#{robotName}_frame_1","#{robotName}_frame_2", "#{robotName}_frame_1"]
+        rightIdle: ["#{robotName}_frame_0","#{robotName}_frame_1","#{robotName}_frame_2", "#{robotName}_frame_1"]
+      }
+    else
+      {
+        down: ["#{robotName}_down_0","#{robotName}_down_1","#{robotName}_down_2", "#{robotName}_down_1"]
+        left: ["#{robotName}_left_0","#{robotName}_left_1","#{robotName}_left_2", "#{robotName}_left_1"]
+        up: ["#{robotName}_up_0","#{robotName}_up_1","#{robotName}_up_2", "#{robotName}_up_1"]
+        right: ["#{robotName}_right_0","#{robotName}_right_1","#{robotName}_right_2", "#{robotName}_right_1"]
+        downIdle: ["#{robotName}_down_1"]
+        leftIdle: ["#{robotName}_left_1"]
+        upIdle: ["#{robotName}_up_1"]
+        rightIdle: ["#{robotName}_right_1"]
+      }
 
   robot: (x,y,robotName) ->
     robot = @ecs.create()
@@ -324,7 +336,7 @@ class RtsWorld extends SimSim.WorldBase
     
   #### SimSim.WorldBase#playerJoined(id)
   playerJoined: (playerId) ->
-    robot = @entityFactory.robot(320,224,"robot_6")
+    robot = @entityFactory.robot(320,224,"robot_0")
     robot.add(new Player(id: playerId), ComponentRegister.get(Player))
     @players[playerId] = robot.id
     console.log "Player #{playerId}, JOINED, entity id #{robot.id}"
