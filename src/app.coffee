@@ -8,6 +8,8 @@ GameRunner = require './game_runner.coffee'
 
 ParkMillerRNG = require './pm_prng.coffee'
 
+EntityInspector = require './entity_inspector.coffee'
+
 getMeta = (name) ->
   for meta in document.getElementsByTagName('meta')
     if meta.getAttribute("name") == name
@@ -38,6 +40,7 @@ window.gameConfig = ->
 window.local =
   vars: {}
   gameRunner: null
+  entityInspector: null
 
 window.onload = ->
   gameConfig = window.gameConfig()
@@ -50,11 +53,15 @@ window.onload = ->
     assets: gameConfig.imageAssets
   )
 
-  pixiWrapper.appendViewTo(document.body)
+  pixiWrapper.appendViewTo(document.getElementById('gameDiv'))
+
 
   pixiWrapper.loadAssets ->
+    entityInspector = new EntityInspector()
+
     world = new RtsWorld(
       pixiWrapper:pixiWrapper
+      entityInspector: entityInspector
     )
 
     simulation = buildSimulation(
@@ -73,9 +80,11 @@ window.onload = ->
       stopWatch: stopWatch
     )
 
+    window.local.entityInspector = entityInspector
     window.local.gameRunner = gameRunner
 
     gameRunner.start()
+    window.watchData()
 
 buildStopWatch = ->
   stopWatch = new StopWatch()
@@ -109,7 +118,7 @@ buildSimulation = (opts={})->
 
 setupStats = ->
   container = document.createElement("div")
-  document.body.appendChild(container)
+  document.getElementById("gameDiv").appendChild(container)
   stats = new Stats()
   container.appendChild(stats.domElement)
   stats.domElement.style.position = "absolute"
@@ -151,3 +160,21 @@ window.stop = ->
 
 window.start = ->
   window.local.gameRunner.start()
+
+window.watchData = ->
+  insp = window.local.entityInspector
+  pre = document.getElementById("entityInspectorOutput")
+
+  txt = ""
+  console.log insp.componentsByEntity()
+  for entityId, components of insp.componentsByEntity()
+    txt += "Entity #{entityId}:\n"
+    for compType, comp of components
+      txt += "  #{compType}:\n"
+      for k,v of comp
+        txt += "    #{k}: #{v} (#{typeof v})\n"
+
+  pre.textContent = txt
+
+  setTimeout(window.watchData, 500)
+  
