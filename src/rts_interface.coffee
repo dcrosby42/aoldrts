@@ -9,8 +9,10 @@ class RtsInterface
     buffer = 32
 
     speed = 8
+    @on = true
 
     @sprites.mousemove = (data) =>
+      return unless @on
       x = data.global.x
       y = data.global.y
 
@@ -34,7 +36,11 @@ class RtsInterface
         @y_move = 0
 
   update: ->
-    @sprites.position.x += @x_move
-    @sprites.position.y += @y_move
+    if @on
+      @sprites.position.x += @x_move
+      @sprites.position.y += @y_move
+
+  setMouseScrollingOn: (onOff) ->
+    @on = onOff
 
 module.exports = RtsInterface

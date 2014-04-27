@@ -1,3 +1,6 @@
+Array::compact = ->
+  (elem for elem in this when elem?)
+
 ChecksumCalculator = require './checksum_calculator.coffee'
 
 ComponentRegister = (->
@@ -23,8 +26,9 @@ makr.World.prototype.resurrect = (entId) ->
     entity = @_dead.pop()
     entity._alive = true
     entity.id = entId
+    entity._componentMask.reset()
   else
-    entity = new makr.Entity(@, entId)
+    entity = new makr.Entity(@, +entId)
 
   @_alive.push(entity)
   entity
@@ -60,7 +64,7 @@ class MapTilesSystem extends makr.IteratingSystem
       @pixiWrapper.sprites.addChild(@tilesSprites)
 
   createTiles: (seed) ->
-    tiles = new PIXI.DisplayObjectContainer();
+    tiles = new PIXI.DisplayObjectContainer()
     tiles.position.x = 0
     tiles.position.y = 0
     tileSize = 31
@@ -70,7 +74,7 @@ class MapTilesSystem extends makr.IteratingSystem
         tile = new PIXI.Sprite(PIXI.Texture.fromFrame("dirt#{index}.png"))
         tile.position.x = x
         tile.position.y = y
-        tiles.addChild(tile);
+        tiles.addChild(tile)
     tiles.cacheAsBitmap = true
     tiles.position.x = -1600
     tiles.position.y = -1600
@@ -145,6 +149,7 @@ class MovementSystem extends makr.IteratingSystem
   process: (entity, elapsed) ->
     position = entity.get(ComponentRegister.get(Position))
     movement = entity.get(ComponentRegister.get(Movement))
+    console.log entity unless position?
     position.x += movement.vx
     position.y += movement.vy
 
@@ -205,7 +210,9 @@ class EntityFactory
   mapTiles: (seed, width, height) ->
     mapTiles = @ecs.create()
     # mapTiles.add(new Position(x: 0, y: 0), ComponentRegister.get(Position))
-    mapTiles.add(new MapTiles(seed: seed, width: width, height: height), ComponentRegister.get(MapTiles))
+    comp = new MapTiles(seed: seed, width: width, height: height)
+    mapTiles.add(comp, ComponentRegister.get(MapTiles))
+    # mapTiles.add(new Position(x: 1, y:2), ComponentRegister.get(Position))
     mapTiles
 
 BUNNY_VEL = 3
@@ -237,7 +244,7 @@ class RtsWorld extends SimSim.WorldBase
     ecs
 
   setupEntityInspector: (ecs, entityInspector) ->
-    for componentClass in [ Position ]
+    for componentClass in [ Position,Player,Movement ]
       ecs.registerSystem(new EntityInspectorSystem(entityInspector, componentClass))
     entityInspector
 
@@ -249,7 +256,8 @@ class RtsWorld extends SimSim.WorldBase
 
   playerLeft: (playerId) ->
     ent = @findEntityById(@players[playerId])
-    console.log "KILLING: #{ent.id}"
+    console.log "player left: KILLING"
+    console.log ent
     ent.kill()
 
     @players[playerId] = undefined
@@ -268,13 +276,19 @@ class RtsWorld extends SimSim.WorldBase
   setData: (data) ->
     @players = data.players
     @ecs._nextEntityID = data.nextEntityId
-    staleEnts = @ecs._alive.slice(0)
+    staleEnts = @ecs._alive[..]
     for ent in staleEnts
+      console.log "killing staleEnt"
+      console.log ent
+      ent._componentMask.reset() # shouldn't be needed
       ent.kill()
 
     for entId, components of data.componentBags
       entity = @ecs.resurrect(entId)
+      console.log "resurrected ent"
+      console.log entity
       comps = (@deserializeComponent(c) for c in components)
+      entity._componentMask.reset()
       for comp in comps
         entity.add(comp, ComponentRegister.get(comp.constructor))
     
@@ -285,19 +299,26 @@ class RtsWorld extends SimSim.WorldBase
     for entId, components of @ecs._componentBags
       ent = @findEntityById(entId)
       if ent? and ent.alive
-        componentBags[entId] = (@serializeComponent(components[i]) for i of components)
+        componentBags[entId] = (@serializeComponent(c) for c in components.compact())
 
     data =
       players: @players
       componentBags: componentBags
       nextEntityId: @ecs._nextEntityID
+    console.log data
+    data
 
   serializeComponent: (component) ->
     serializedComponent = {}
-    for name, value of component
-      serializedComponent[name] = value
-    serializedComponent['type'] = component.constructor.name
-    serializedComponent
+    if component
+      for name, value of component
+        serializedComponent[name] = value unless value instanceof Function
+      serializedComponent['type'] = component.constructor.name
+      serializedComponent
+    else
+      console.log "WTF serializeComponent got undefined component?!", component
+      {type:'BROKEN'}
+
 
   deserializeComponent: (serializedComponent) ->
     eval("new #{serializedComponent.type}(serializedComponent)")

@@ -82,9 +82,11 @@ window.onload = ->
 
     window.local.entityInspector = entityInspector
     window.local.gameRunner = gameRunner
+    window.local.pixiWrapper = pixiWrapper
 
     gameRunner.start()
     window.watchData()
+    window.mouseScrollingChanged()
 
 buildStopWatch = ->
   stopWatch = new StopWatch()
@@ -161,20 +163,24 @@ window.stop = ->
 window.start = ->
   window.local.gameRunner.start()
 
+window.mouseScrollingChanged = ->
+  onOff = document.getElementById("mouseScrolling").checked
+  window.local.pixiWrapper.setMouseScrollingOn(onOff)
+
 window.watchData = ->
   insp = window.local.entityInspector
   pre = document.getElementById("entityInspectorOutput")
 
   txt = ""
-  console.log insp.componentsByEntity()
   for entityId, components of insp.componentsByEntity()
     txt += "Entity #{entityId}:\n"
     for compType, comp of components
       txt += "  #{compType}:\n"
       for k,v of comp
         txt += "    #{k}: #{v} (#{typeof v})\n"
-
   pre.textContent = txt
+
+  insp.reset()
 
   setTimeout(window.watchData, 500)
   

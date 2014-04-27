@@ -28,6 +28,9 @@ class PixiWrapper
       return
     ), false
 
+  setMouseScrollingOn: (onOff) ->
+    @interface.setMouseScrollingOn(onOff)
+    
   fullscreen: ->
     @renderer.view.style.width = window.screen.width + "px"
     @renderer.view.style.height = window.screen.height + "px"
