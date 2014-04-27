@@ -236,7 +236,7 @@ class RtsWorld extends SimSim.WorldBase
   playerLeft: (playerId) ->
     @ecs._alive.filter((ent) =>
       ent._id == @players[playerId]
-    )[0].kill
+    )[0].kill()
 
     delete @players[playerId]
     console.log "Player #{playerId} LEFT"
@@ -253,7 +253,7 @@ class RtsWorld extends SimSim.WorldBase
     @ecs._nextEntityID = data.nextEntityId
     staleEnts = @ecs._alive.slice(0)
     for ent in staleEnts
-      ent.kill
+      ent.kill()
 
     for entId, components of data.componentBags
       entity = @ecs.resurrect(entId)

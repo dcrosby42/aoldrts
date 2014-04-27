@@ -796,7 +796,7 @@ RtsWorld = (function(_super) {
       return function(ent) {
         return ent._id === _this.players[playerId];
       };
-    })(this))[0].kill;
+    })(this))[0].kill();
     delete this.players[playerId];
     return console.log("Player " + playerId + " LEFT");
   };
@@ -817,7 +817,7 @@ RtsWorld = (function(_super) {
     staleEnts = this.ecs._alive.slice(0);
     for (_i = 0, _len = staleEnts.length; _i < _len; _i++) {
       ent = staleEnts[_i];
-      ent.kill;
+      ent.kill();
     }
     _ref = data.componentBags;
     _results = [];
