@@ -1033,17 +1033,15 @@ RtsWorld = (function(_super) {
       id: playerId
     }), ComponentRegister.get(Player));
     this.players[playerId] = bunny.id;
-    return console.log("Player " + playerId + ", " + bunny.id + " JOINED");
+    return console.log("Player " + playerId + ", JOINED, entity id " + ent.id);
   };
 
   RtsWorld.prototype.playerLeft = function(playerId) {
     var ent;
     ent = this.findEntityById(this.players[playerId]);
-    console.log("player left: KILLING");
-    console.log(ent);
+    console.log("Player " + playerId + " LEFT, killing entity id " + ent.id);
     ent.kill();
-    this.players[playerId] = void 0;
-    return console.log("Player " + playerId + " LEFT");
+    return this.players[playerId] = void 0;
   };
 
   RtsWorld.prototype.findEntityById = function(id) {

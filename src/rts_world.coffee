@@ -257,16 +257,13 @@ class RtsWorld extends SimSim.WorldBase
     bunny = @entityFactory.bunny(320,224)
     bunny.add(new Player(id: playerId), ComponentRegister.get(Player))
     @players[playerId] = bunny.id
-    console.log "Player #{playerId}, #{bunny.id} JOINED"
+    console.log "Player #{playerId}, JOINED, entity id #{ent.id}"
 
   playerLeft: (playerId) ->
     ent = @findEntityById(@players[playerId])
-    console.log "player left: KILLING"
-    console.log ent
+    console.log "Player #{playerId} LEFT, killing entity id #{ent.id}"
     ent.kill()
-
     @players[playerId] = undefined
-    console.log "Player #{playerId} LEFT"
 
   findEntityById: (id) ->
     (entity for entity in @ecs._alive when "#{entity.id}" == "#{id}")[0]
