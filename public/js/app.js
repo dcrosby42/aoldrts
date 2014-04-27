@@ -1013,7 +1013,6 @@ RtsWorld = (function(_super) {
   };
 
   RtsWorld.prototype.setData = function(data) {
-    debugger;
     var c, comp, components, comps, ent, entId, entity, staleEnts, _i, _len, _ref, _results;
     this.players = data.players;
     this.ecs._nextEntityID = data.nextEntityId;

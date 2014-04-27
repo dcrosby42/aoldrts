@@ -260,7 +260,6 @@ class RtsWorld extends SimSim.WorldBase
     @ecs.update(dt)
   
   setData: (data) ->
-    debugger
     @players = data.players
     @ecs._nextEntityID = data.nextEntityId
     staleEnts = @ecs._alive[..]
