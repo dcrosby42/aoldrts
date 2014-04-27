@@ -104,6 +104,18 @@ buildSimulation = function(opts) {
         secure: opts.secure
       }
     },
+    client: {
+      spyOnOutgoing: function(simulation, message) {
+        if (!message.type.match(/turn/i)) {
+          return console.log("<<< Client SEND", message);
+        }
+      },
+      spyOnIncoming: function(simulation, message) {
+        if (!message.type.match(/turn/i)) {
+          return console.log(">>> Client RECV", message);
+        }
+      }
+    },
     world: opts.world
   });
 };
