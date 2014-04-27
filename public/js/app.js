@@ -781,7 +781,7 @@ RtsWorld = (function(_super) {
       _results = [];
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         entity = _ref[_i];
-        if (entity.id === id) {
+        if (("" + entity.id) === ("" + id)) {
           _results.push(entity);
         }
       }

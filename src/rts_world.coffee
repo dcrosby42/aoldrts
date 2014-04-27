@@ -195,7 +195,7 @@ class RtsWorld extends SimSim.WorldBase
     console.log "Player #{playerId} LEFT"
 
   findEntityById: (id) ->
-    (entity for entity in @ecs._alive when entity.id is id)[0]
+    (entity for entity in @ecs._alive when "#{entity.id}" == "#{id}")[0]
     
   theEnd: ->
     @resetData()
