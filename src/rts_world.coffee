@@ -2,6 +2,7 @@ Array::compact = ->
   (elem for elem in this when elem?)
 
 ChecksumCalculator = require './checksum_calculator.coffee'
+ParkMillerRNG = require './pm_prng.coffee'
 
 ComponentRegister = (->
   nextType = 0
@@ -62,18 +63,35 @@ class MapTilesSystem extends makr.IteratingSystem
       @tilesSprites = @createTiles(component.seed)
       @pixiWrapper.sprites.addChildAt(@tilesSprites,0) # ADD ALL THE WAY AT THE BOTTOM
 
+  createTile: (tiles, frame, x, y) ->
+    tile = new PIXI.Sprite(PIXI.Texture.fromFrame(frame))
+    tile.position.x = x
+    tile.position.y = y
+    tile
+
   createTiles: (seed) ->
+    tile_sets = ["gray_set_", "orange_set_", "dark_brown_set_", "dark_set_"]
+    features = [["", 90], ["feature0", 4], ["feature1", 4], ["feature2", 2]]
+    bases = [["basic0", 5], ["basic1", 50], ["basic2", 50]]
+
     tiles = new PIXI.DisplayObjectContainer()
+    prng = new ParkMillerRNG(seed)
+    tile_set = prng.choose(tile_sets)
     tiles.position.x = 0
     tiles.position.y = 0
     tileSize = 31
-    for x in [0..3200] by tileSize
-      for y in [0..3200] by tileSize
-        index = (seed + x*y) % 3
-        tile = new PIXI.Sprite(PIXI.Texture.fromFrame("dirt#{index}.png"))
-        tile.position.x = x
-        tile.position.y = y
-        tiles.addChild(tile)
+    # tile backwards so that bigger features are overlaid right
+    for x in [3200..0] by -tileSize
+      for y in [3200..0] by -tileSize
+        base = prng.weighted_choose(bases)
+        frame = tile_set + base + ".png"
+        tiles.addChild(@createTile(tiles, frame, x, y))
+
+        feature = prng.weighted_choose(features)
+        if feature != ""
+          feature_frame = tile_set + feature + ".png"
+          tiles.addChild(@createTile(tiles, feature_frame, x, y))
+
     tiles.cacheAsBitmap = true
     tiles.position.x = -1600
     tiles.position.y = -1600
@@ -136,6 +154,12 @@ class ControlSystem extends makr.IteratingSystem
     # owner = entity.get(ComponentRegister.get(Controls))
 
     entityControls = @rtsWorld.currentControls[entity.id] || []
+
+    # If there are two events of the same type, only the last one in the list
+    # will end up having an effect in the system.
+    #
+    # TODO: Consider figuring out a way to explicitly cycle these events
+    # through the system.
     for [action, value] in entityControls
       controls[action] = value
 
@@ -263,10 +287,8 @@ class EntityFactory
 
   mapTiles: (seed, width, height) ->
     mapTiles = @ecs.create()
-    # mapTiles.add(new Position(x: 0, y: 0), ComponentRegister.get(Position))
     comp = new MapTiles(seed: seed, width: width, height: height)
     mapTiles.add(comp, ComponentRegister.get(MapTiles))
-    # mapTiles.add(new Position(x: 1, y:2), ComponentRegister.get(Position))
     mapTiles
 
 BUNNY_VEL = 3
