@@ -146,7 +146,7 @@ class SpriteSyncSystem extends makr.IteratingSystem
     @spriteCache = {}
 
   onRemoved: (entity) ->
-    @pixiWrapper.stage.removeChild @spriteCache[entity.id]
+    @pixiWrapper.sprites.removeChild @spriteCache[entity.id]
     @spriteCache[entity.id] = undefined
 
   process: (entity, elapsed) ->
@@ -230,7 +230,7 @@ class RtsWorld extends SimSim.WorldBase
     ecs
 
   setupEntityInspector: (ecs, entityInspector) ->
-    for componentClass in [ Position ]
+    for componentClass in [ Position,Player,Movement ]
       ecs.registerSystem(new EntityInspectorSystem(entityInspector, componentClass))
     entityInspector
 
