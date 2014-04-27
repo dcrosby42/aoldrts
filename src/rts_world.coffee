@@ -129,6 +129,12 @@ class ControlSystem extends makr.IteratingSystem
   process: (entity, elapsed) ->
     controls = entity.get(ComponentRegister.get(Controls))
     entityControls = @rtsWorld.currentControls[entity.id] || []
+
+    # If there are two events of the same type, only the last one in the list
+    # will end up having an effect in the system.
+    #
+    # TODO: Consider figuring out a way to explicitly cycle these events
+    # through the system.
     for [action, value] in entityControls
       controls[action] = value
 

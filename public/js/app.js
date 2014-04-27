@@ -335,7 +335,10 @@ KeyboardWrapper = (function() {
     _ref = this.keys;
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
       key = _ref[_i];
-      this.downs[key] = false;
+      this.downs[key] = {
+        queued: [],
+        last: false
+      };
       this._bind(key);
     }
   }
@@ -354,17 +357,22 @@ KeyboardWrapper = (function() {
   };
 
   KeyboardWrapper.prototype._keyDown = function(key) {
-    this.downs[key] = true;
+    this.downs[key]['queued'].push(true);
     return false;
   };
 
   KeyboardWrapper.prototype._keyUp = function(key) {
-    this.downs[key] = false;
+    this.downs[key]['queued'].push(false);
     return false;
   };
 
   KeyboardWrapper.prototype.isActive = function(key) {
-    return this.downs[key];
+    var v;
+    if (this.downs[key]['queued'].length > 0) {
+      v = this.downs[key]['queued'].shift();
+      this.downs[key]['last'] = v;
+    }
+    return this.downs[key]['last'];
   };
 
   return KeyboardWrapper;
@@ -539,6 +547,31 @@ ParkMillerRNG = (function() {
     return Math.round(min + ((max - min) * this.gen() / 2147483647.0));
   };
 
+  ParkMillerRNG.prototype.choose = function(list) {
+    var i;
+    i = this.nextInt(0, list.length - 1);
+    return list[i];
+  };
+
+  ParkMillerRNG.prototype.weighted_choose = function(list) {
+    var current_weight, next_weight, target_weight, total_weight, value, weight, _i, _j, _len, _len1, _ref, _ref1;
+    total_weight = 0;
+    for (_i = 0, _len = list.length; _i < _len; _i++) {
+      _ref = list[_i], value = _ref[0], weight = _ref[1];
+      total_weight += weight;
+    }
+    target_weight = this.nextInt(0, total_weight);
+    current_weight = 0;
+    for (_j = 0, _len1 = list.length; _j < _len1; _j++) {
+      _ref1 = list[_j], value = _ref1[0], weight = _ref1[1];
+      next_weight = current_weight + weight;
+      if (target_weight <= (weight + current_weight)) {
+        return value;
+      }
+      current_weight = next_weight;
+    }
+  };
+
   return ParkMillerRNG;
 
 })();
@@ -611,7 +644,7 @@ module.exports = RtsInterface;
 
 
 },{}],9:[function(require,module,exports){
-var BUNNY_VEL, ChecksumCalculator, ComponentRegister, ControlMappingSystem, ControlSystem, Controls, EntityFactory, EntityInspectorSystem, HalfPI, MapTiles, MapTilesSystem, Movement, MovementSystem, Player, Position, RtsWorld, Sprite, SpriteSyncSystem, fixFloat,
+var BUNNY_VEL, ChecksumCalculator, ComponentRegister, ControlMappingSystem, ControlSystem, Controls, EntityFactory, EntityInspectorSystem, HalfPI, MapTiles, MapTilesSystem, Movement, MovementSystem, ParkMillerRNG, Player, Position, RtsWorld, Sprite, SpriteSyncSystem, fixFloat,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
@@ -628,6 +661,8 @@ Array.prototype.compact = function() {
 };
 
 ChecksumCalculator = require('./checksum_calculator.coffee');
+
+ParkMillerRNG = require('./pm_prng.coffee');
 
 ComponentRegister = (function() {
   var ctors, nextType, types;
@@ -731,19 +766,35 @@ MapTilesSystem = (function(_super) {
     }
   };
 
+  MapTilesSystem.prototype.createTile = function(tiles, frame, x, y) {
+    var tile;
+    tile = new PIXI.Sprite(PIXI.Texture.fromFrame(frame));
+    tile.position.x = x;
+    tile.position.y = y;
+    return tile;
+  };
+
   MapTilesSystem.prototype.createTiles = function(seed) {
-    var index, tile, tileSize, tiles, x, y, _i, _j;
+    var base, bases, feature, feature_frame, features, frame, prng, tileSize, tile_set, tile_sets, tiles, x, y, _i, _j;
+    tile_sets = ["gray_set_", "orange_set_", "dark_brown_set_", "dark_set_"];
+    features = [["", 90], ["feature0", 4], ["feature1", 4], ["feature2", 2]];
+    bases = [["basic0", 5], ["basic1", 50], ["basic2", 50]];
     tiles = new PIXI.DisplayObjectContainer();
+    prng = new ParkMillerRNG(seed);
+    tile_set = prng.choose(tile_sets);
     tiles.position.x = 0;
     tiles.position.y = 0;
     tileSize = 31;
-    for (x = _i = 0; _i <= 3200; x = _i += tileSize) {
-      for (y = _j = 0; _j <= 3200; y = _j += tileSize) {
-        index = (seed + x * y) % 3;
-        tile = new PIXI.Sprite(PIXI.Texture.fromFrame("dirt" + index + ".png"));
-        tile.position.x = x;
-        tile.position.y = y;
-        tiles.addChild(tile);
+    for (x = _i = 3200; _i >= 0; x = _i += -tileSize) {
+      for (y = _j = 3200; _j >= 0; y = _j += -tileSize) {
+        base = prng.weighted_choose(bases);
+        frame = tile_set + base + ".png";
+        tiles.addChild(this.createTile(tiles, frame, x, y));
+        feature = prng.weighted_choose(features);
+        if (feature !== "") {
+          feature_frame = tile_set + feature + ".png";
+          tiles.addChild(this.createTile(tiles, feature_frame, x, y));
+        }
       }
     }
     tiles.cacheAsBitmap = true;
@@ -1033,7 +1084,7 @@ RtsWorld = (function(_super) {
       id: playerId
     }), ComponentRegister.get(Player));
     this.players[playerId] = bunny.id;
-    return console.log("Player " + playerId + ", JOINED, entity id " + ent.id);
+    return console.log("Player " + playerId + ", JOINED, entity id " + bunny.id);
   };
 
   RtsWorld.prototype.playerLeft = function(playerId) {
@@ -1186,7 +1237,7 @@ RtsWorld = (function(_super) {
 module.exports = RtsWorld;
 
 
-},{"./checksum_calculator.coffee":2}],10:[function(require,module,exports){
+},{"./checksum_calculator.coffee":2,"./pm_prng.coffee":7}],10:[function(require,module,exports){
 var StopWatch;
 
 StopWatch = (function() {
