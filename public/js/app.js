@@ -1149,7 +1149,7 @@ RtsWorld = (function(_super) {
 
   RtsWorld.prototype.playerJoined = function(playerId) {
     var robot;
-    robot = this.entityFactory.robot(320, 224, "robot_0");
+    robot = this.entityFactory.robot(320, 224, "robot_6");
     robot.add(new Player({
       id: playerId
     }), ComponentRegister.get(Player));

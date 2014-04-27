@@ -324,7 +324,7 @@ class RtsWorld extends SimSim.WorldBase
     
   #### SimSim.WorldBase#playerJoined(id)
   playerJoined: (playerId) ->
-    robot = @entityFactory.robot(320,224,"robot_0")
+    robot = @entityFactory.robot(320,224,"robot_6")
     robot.add(new Player(id: playerId), ComponentRegister.get(Player))
     @players[playerId] = robot.id
     console.log "Player #{playerId}, JOINED, entity id #{robot.id}"
