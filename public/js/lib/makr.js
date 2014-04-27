@@ -360,12 +360,16 @@ World.prototype.registerSystem = function World_registerSystem(system) {
  */
 World.prototype.create = function World_create() {
   var entity;
+  var id = this._nextEntityID++;
   if (this._dead.length > 0) {
     // Revive entity
     entity = this._dead.pop();
     entity._alive = true;
+    entity._id = id;
+    console.log("makr.js: World.prototype.create: REVIVED Entity id="+entity.id, entity);
   } else {
-    entity = new Entity(this, this._nextEntityID++);
+    entity = new Entity(this, id);
+    console.log("makr.js: World.prototype.create: new Entity id="+entity.id, entity);
   }
 
   this._alive.push(entity);
