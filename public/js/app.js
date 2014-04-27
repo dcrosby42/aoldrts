@@ -629,7 +629,7 @@ module.exports = RtsInterface;
 
 
 },{}],9:[function(require,module,exports){
-var BUNNY_VEL, ChecksumCalculator, ComponentRegister, ControlMappingSystem, ControlSystem, Controls, EntityFactory, EntityInspectorSystem, HalfPI, MapTiles, MapTilesSystem, Movement, MovementSystem, Player, Position, Robot0Framelist, RtsWorld, Sprite, SpriteSyncSystem, fixFloat,
+var BUNNY_VEL, ChecksumCalculator, ComponentRegister, ControlMappingSystem, ControlSystem, Controls, EntityFactory, EntityInspectorSystem, HalfPI, MapTiles, MapTilesSystem, Movement, MovementSystem, Player, Position, RtsWorld, Sprite, SpriteSyncSystem, fixFloat,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
@@ -779,6 +779,8 @@ Sprite = (function() {
     this.name = _arg.name, this.framelist = _arg.framelist;
     this.remove = false;
     this.add = true;
+    this.facing = "down";
+    this.idle = true;
   }
 
   return Sprite;
@@ -906,6 +908,7 @@ SpriteSyncSystem = (function(_super) {
     makr.IteratingSystem.call(this);
     this.registerComponent(ComponentRegister.get(Sprite));
     this.registerComponent(ComponentRegister.get(Position));
+    this.registerComponent(ComponentRegister.get(Movement));
     this.spriteCache = {};
   }
 
@@ -915,19 +918,34 @@ SpriteSyncSystem = (function(_super) {
   };
 
   SpriteSyncSystem.prototype.process = function(entity, elapsed) {
-    var deltaX, deltaY, pixiSprite, position, sprite;
+    var movement, pixiSprite, position, sprite;
     position = entity.get(ComponentRegister.get(Position));
     sprite = entity.get(ComponentRegister.get(Sprite));
+    movement = entity.get(ComponentRegister.get(Movement));
     pixiSprite = this.spriteCache[entity.id];
     if (pixiSprite == null) {
-      return this.buildSprite(entity, sprite, position);
+      this.buildSprite(entity, sprite, position);
     } else if (sprite.remove) {
-      return this.removeSprite(entity, sprite);
+      this.removeSprite(entity, sprite);
     } else {
-      deltaX = position.x - pixiSprite.position.x;
-      deltaY = position.y - pixiSprite.position.y;
       pixiSprite.position.x = position.x;
-      return pixiSprite.position.y = position.y;
+      pixiSprite.position.y = position.y;
+    }
+    switch (null) {
+      case movement.vx > 0:
+        sprite.facing = "right";
+        return sprite.idle = false;
+      case movement.vx < 0:
+        sprite.facing = "left";
+        return sprite.idle = false;
+      case movement.vy > 0:
+        sprite.facing = "up";
+        return sprite.idle = false;
+      case movement.vy < 0:
+        sprite.facing = "down";
+        return sprite.idle = false;
+      default:
+        return sprite.idle = true;
     }
   };
 
@@ -977,34 +995,27 @@ fixFloat = SimSim.Util.fixFloat;
 
 HalfPI = Math.PI / 2;
 
-Robot0Framelist = {
-  down: ["robot0_down_0.png", "robot0_down_1.png", "robot0_down_2.png", "robot0_down_1.png"],
-  left: ["robot0_left_0.png", "robot0_left_1.png", "robot0_left_2.png", "robot0_left_1.png"],
-  up: ["robot0_up_0.png", "robot0_up_1.png", "robot0_up_2.png", "robot0_up_1.png"],
-  right: ["robot0_right_0.png", "robot0_right_1.png", "robot0_right_2.png", "robot0_right_1.png"]
-};
-
 EntityFactory = (function() {
   function EntityFactory(ecs) {
     this.ecs = ecs;
   }
 
-  EntityFactory.prototype.bunny = function(x, y) {
-    var bunny;
-    bunny = this.ecs.create();
-    bunny.add(new Position({
+  EntityFactory.prototype.robot = function(x, y, framelist) {
+    var robot;
+    robot = this.ecs.create();
+    robot.add(new Position({
       x: x,
       y: y
     }), ComponentRegister.get(Position));
-    bunny.add(new Sprite({
-      framelist: Robot0Framelist
+    robot.add(new Sprite({
+      framelist: framelist
     }), ComponentRegister.get(Sprite));
-    bunny.add(new Controls(), ComponentRegister.get(Controls));
-    bunny.add(new Movement({
+    robot.add(new Controls(), ComponentRegister.get(Controls));
+    robot.add(new Movement({
       vx: 0,
       vy: 0
     }), ComponentRegister.get(Movement));
-    return bunny;
+    return robot;
   };
 
   EntityFactory.prototype.mapTiles = function(seed, width, height) {
@@ -1093,6 +1104,19 @@ RtsWorld = (function(_super) {
     return eval("new " + serializedComponent.type + "(serializedComponent)");
   };
 
+  RtsWorld.prototype.generateRobotFrameList = function() {
+    return {
+      down: ["robot_0_down_0", "robot_0_down_1", "robot_0_down_2", "robot_0_down_1"],
+      left: ["robot_0_left_0", "robot_0_left_1", "robot_0_left_2", "robot_0_left_1"],
+      up: ["robot_0_up_0", "robot_0_up_1", "robot_0_up_2", "robot_0_up_1"],
+      right: ["robot_0_right_0", "robot_0_right_1", "robot_0_right_2", "robot_0_right_1"],
+      downIdle: ["robot_0_down_1"],
+      leftIdle: ["robot_0_left_1"],
+      upIdle: ["robot_0_up_1"],
+      rightIdle: ["robot_0_right_1"]
+    };
+  };
+
   RtsWorld.prototype.updateControl = function(id, action, value) {
     var _base, _name;
     (_base = this.currentControls)[_name = this.players[id]] || (_base[_name] = []);
@@ -1104,13 +1128,14 @@ RtsWorld = (function(_super) {
   RtsWorld.prototype.removePlayer = function(playerId) {};
 
   RtsWorld.prototype.playerJoined = function(playerId) {
-    var bunny;
-    bunny = this.entityFactory.bunny(320, 224);
-    bunny.add(new Player({
+    var robot, robotAvatar;
+    robotAvatar = this.generateRobotFrameList();
+    robot = this.entityFactory.robot(320, 224, robotAvatar);
+    robot.add(new Player({
       id: playerId
     }), ComponentRegister.get(Player));
-    this.players[playerId] = bunny.id;
-    return console.log("Player " + playerId + ", JOINED, entity id " + bunny.id);
+    this.players[playerId] = robot.id;
+    return console.log("Player " + playerId + ", JOINED, entity id " + robot.id);
   };
 
   RtsWorld.prototype.playerLeft = function(playerId) {
