@@ -86,7 +86,8 @@ window.onload = function() {
     });
     window.local.entityInspector = entityInspector;
     window.local.gameRunner = gameRunner;
-    return gameRunner.start();
+    gameRunner.start();
+    return window.watchData();
   });
 };
 
@@ -183,7 +184,7 @@ window.start = function() {
   return window.local.gameRunner.start();
 };
 
-window.peek = function() {
+window.watchData = function() {
   var comp, compType, components, entityId, insp, k, pre, txt, v, _ref;
   insp = window.local.entityInspector;
   pre = document.getElementById("entityInspectorOutput");
@@ -202,7 +203,8 @@ window.peek = function() {
       }
     }
   }
-  return pre.textContent = txt;
+  pre.textContent = txt;
+  return setTimeout(window.watchData, 500);
 };
 
 

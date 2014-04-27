@@ -80,6 +80,7 @@ window.onload = ->
     window.local.gameRunner = gameRunner
 
     gameRunner.start()
+    window.watchData()
 
 buildStopWatch = ->
   stopWatch = new StopWatch()
@@ -156,7 +157,7 @@ window.stop = ->
 window.start = ->
   window.local.gameRunner.start()
 
-window.peek = ->
+window.watchData = ->
   insp = window.local.entityInspector
   pre = document.getElementById("entityInspectorOutput")
 
@@ -171,5 +172,5 @@ window.peek = ->
 
   pre.textContent = txt
 
-  
+  setTimeout(window.watchData, 500)
   
