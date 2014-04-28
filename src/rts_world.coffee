@@ -64,7 +64,8 @@ eachMapTile = (prng, width, height, f) ->
     for y in [height*tileSize..0] by -tileSize
       base = prng.weighted_choose(bases)
       feature = prng.weighted_choose(features)
-      f(x - offset_x, y - offset_y, tile_set, base, feature)
+      spare_seed = prng.gen()
+      f(x - offset_x, y - offset_y, tile_set, base, feature, spare_seed)
 
 class MapTilesSystem extends makr.IteratingSystem
   constructor: (@pixiWrapper) ->
@@ -331,18 +332,17 @@ class EntityFactory
     robot
 
   powerup: (x, y, powerup_type) ->
+    crystal_frames = ["#{powerup_type}-crystal0", "#{powerup_type}-crystal1", "#{powerup_type}-crystal2", "#{powerup_type}-crystal3", "#{powerup_type}-crystal4", "#{powerup_type}-crystal5", "#{powerup_type}-crystal6", "#{powerup_type}-crystal7"]
     powerup_frames = {
-      blue: {
-        downIdle: ["blue-crystal0", "blue-crystal1", "blue-crystal2", "blue-crystal3", "blue-crystal4", "blue-crystal5", "blue-crystal6", "blue-crystal7"]
-        down: ["blue-crystal0", "blue-crystal1", "blue-crystal2", "blue-crystal3", "blue-crystal4", "blue-crystal5", "blue-crystal6", "blue-crystal7"]
-      }
+      downIdle: crystal_frames
+      down: crystal_frames
     }
     p = @ecs.create()
     p.add(new Position(x: x, y: y), ComponentRegister.get(Position))
     # movement just added 
     p.add(new Movement(vx: 0, vy: 0), ComponentRegister.get(Movement))
     p.add(new Powerup(powerup_type: powerup_type), ComponentRegister.get(Powerup))
-    p.add(new Sprite(name: "blue-crystal", framelist: powerup_frames[powerup_type]), ComponentRegister.get(Sprite))
+    p.add(new Sprite(name: "#{powerup_type}-crystal", framelist: powerup_frames), ComponentRegister.get(Sprite))
     p
 
   mapTiles: (seed, width, height) ->
@@ -350,9 +350,12 @@ class EntityFactory
     comp = new MapTiles(seed: seed, width: width, height: height)
     mapTiles.add(comp, ComponentRegister.get(MapTiles))
     prng = new ParkMillerRNG(seed)
-    eachMapTile prng, width, height, (x, y, tile_set, base, feature) =>
+    eachMapTile prng, width, height, (x, y, tile_set, base, feature, spare) =>
+      sparePRNG = new ParkMillerRNG(spare)
       if feature == "crater"
-        @powerup(x + 32, y + 32, "blue")
+        p = sparePRNG.weighted_choose([["blue", 25], ["green", 25], [null, 50]])
+        if p?
+          @powerup(x + 32, y + 32, p)
 
     mapTiles
 

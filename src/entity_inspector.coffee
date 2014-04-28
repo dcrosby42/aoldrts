@@ -23,6 +23,8 @@ class EntityInspector
   getEntity: (entityId) ->
     @_data["#{entityId}"]
 
+  entityCount: ->
+    Object.keys(@_data).length
 
 
 
