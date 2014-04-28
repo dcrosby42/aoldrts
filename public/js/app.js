@@ -859,7 +859,7 @@ MapTilesSystem = (function(_super) {
     tile_set = prng.choose(tile_sets);
     tiles.position.x = 0;
     tiles.position.y = 0;
-    tileSize = 31;
+    tileSize = 32;
     for (x = _i = 3200; _i >= 0; x = _i += -tileSize) {
       for (y = _j = 3200; _j >= 0; y = _j += -tileSize) {
         base = prng.weighted_choose(bases);

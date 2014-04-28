@@ -79,7 +79,7 @@ class MapTilesSystem extends makr.IteratingSystem
     tile_set = prng.choose(tile_sets)
     tiles.position.x = 0
     tiles.position.y = 0
-    tileSize = 31
+    tileSize = 32
     # tile backwards so that bigger features are overlaid right
     for x in [3200..0] by -tileSize
       for y in [3200..0] by -tileSize
