@@ -1289,16 +1289,16 @@ EntityFactory = (function() {
   }
 
   EntityFactory.prototype.generateRobotFrameList = function(robotName) {
-    if (robotName.indexOf("floaty") === 0) {
+    if (robotName.indexOf("robot_4") === 0) {
       return {
-        down: ["" + robotName + "_frame_0", "" + robotName + "_frame_1", "" + robotName + "_frame_2", "" + robotName + "_frame_1"],
-        left: ["" + robotName + "_frame_0", "" + robotName + "_frame_1", "" + robotName + "_frame_2", "" + robotName + "_frame_1"],
-        up: ["" + robotName + "_frame_0", "" + robotName + "_frame_1", "" + robotName + "_frame_2", "" + robotName + "_frame_1"],
-        right: ["" + robotName + "_frame_0", "" + robotName + "_frame_1", "" + robotName + "_frame_2", "" + robotName + "_frame_1"],
-        downIdle: ["" + robotName + "_frame_0", "" + robotName + "_frame_1", "" + robotName + "_frame_2", "" + robotName + "_frame_1"],
-        leftIdle: ["" + robotName + "_frame_0", "" + robotName + "_frame_1", "" + robotName + "_frame_2", "" + robotName + "_frame_1"],
-        upIdle: ["" + robotName + "_frame_0", "" + robotName + "_frame_1", "" + robotName + "_frame_2", "" + robotName + "_frame_1"],
-        rightIdle: ["" + robotName + "_frame_0", "" + robotName + "_frame_1", "" + robotName + "_frame_2", "" + robotName + "_frame_1"]
+        down: ["" + robotName + "_down_0", "" + robotName + "_down_1", "" + robotName + "_down_2", "" + robotName + "_down_1"],
+        left: ["" + robotName + "_left_0", "" + robotName + "_left_1", "" + robotName + "_left_2", "" + robotName + "_left_1"],
+        up: ["" + robotName + "_up_0", "" + robotName + "_up_1", "" + robotName + "_up_2", "" + robotName + "_up_1"],
+        right: ["" + robotName + "_right_0", "" + robotName + "_right_1", "" + robotName + "_right_2", "" + robotName + "_right_1"],
+        downIdle: ["" + robotName + "_down_0", "" + robotName + "_down_1", "" + robotName + "_down_2", "" + robotName + "_down_1"],
+        leftIdle: ["" + robotName + "_left_0", "" + robotName + "_left_1", "" + robotName + "_left_2", "" + robotName + "_left_1"],
+        upIdle: ["" + robotName + "_up_0", "" + robotName + "_up_1", "" + robotName + "_up_2", "" + robotName + "_up_1"],
+        rightIdle: ["" + robotName + "_right_0", "" + robotName + "_right_1", "" + robotName + "_right_2", "" + robotName + "_right_1"]
       };
     } else {
       return {
