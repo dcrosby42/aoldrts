@@ -1,4 +1,4 @@
-RtsInterface = require './rts_interface.coffee'
+Viewport = require './viewport.coffee'
 class PixiWrapper extends SimSim.EventEmitter
   constructor: (opts) ->
     @stage = new PIXI.Stage(0xDDDDDD, true)
@@ -8,7 +8,10 @@ class PixiWrapper extends SimSim.EventEmitter
     @sprites = new PIXI.DisplayObjectContainer()
     @sprites.setInteractive true
     @stage.addChild @sprites
-    @interface = new RtsInterface(sprites: @sprites, renderer: @renderer)
+    @viewport = new Viewport
+      sprites: @sprites
+      width: @renderer.width
+      height: @renderer.height
 
     # @stage.mousedown = (data) ->
     #   console.log "Stage mouse down!", data, data.getLocalPosition(data.target)
@@ -39,7 +42,7 @@ class PixiWrapper extends SimSim.EventEmitter
     ), false
 
   setMouseScrollingOn: (onOff) ->
-    @interface.setMouseScrollingOn(onOff)
+    @viewport.setMouseScrollingOn(onOff)
     
   fullscreen: ->
     @renderer.view.style.width = window.screen.width + "px"
@@ -56,7 +59,7 @@ class PixiWrapper extends SimSim.EventEmitter
     null
 
   render: ->
-    @interface.update()
+    @viewport.update()
     @renderer.render(@stage)
 
 module.exports = PixiWrapper

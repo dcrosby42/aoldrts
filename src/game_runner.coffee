@@ -1,13 +1,19 @@
 
 class GameRunner
-  constructor: ({@window,@simulation,@pixiWrapper,@stats,@stopWatch,@keyboardController}) ->
+  constructor: ({@window,@simulation,@pixiWrapper,@stats,@stopWatch,@keyboardController,@entityInspector}) ->
     @shouldRun = false
     @worldProxyQueue = []
 
     @pixiWrapper.on "spriteClicked", (data,entityId) =>
       @worldProxyQueue.push =>
-        @simulation.worldProxy "commandUnit", "march", entityId
-
+        entity = @entityInspector.getEntity(entityId)
+        owned = entity['Owned']
+        if owned.playerId == @simulation.clientId()
+          movement = entity['Movement']
+          if movement.vx > 0
+            @simulation.worldProxy "commandUnit", "march", entityId, direction: "left"
+          else
+            @simulation.worldProxy "commandUnit", "march", entityId, direction: "right"
 
   start: ->
     @simulation.start()

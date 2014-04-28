@@ -1,15 +1,16 @@
-class RtsInterface
-  constructor: ({@sprites, @renderer}) ->
+class Viewport
+  constructor: ({@sprites, width, height}) ->
     @x_move = 0
     @y_move = 0
-
-    width = @renderer.width
-    height = @renderer.height
 
     buffer = 32
 
     speed = 8
     @on = true
+
+    @sprites.mouseout = (data) =>
+      @x_move = 0
+      @y_move = 0
 
     @sprites.mousemove = (data) =>
       return unless @on
@@ -34,6 +35,7 @@ class RtsInterface
         @y_move = posSpeed(y, buffer, height, speed)
       else
         @y_move = 0
+      false
 
   update: ->
     if @on
@@ -41,6 +43,8 @@ class RtsInterface
       @sprites.position.y += @y_move
 
   setMouseScrollingOn: (onOff) ->
+    document.getElementById("game").setAttribute('tabindex', 1)
+    document.getElementById("game").focus()
     @on = onOff
 
-module.exports = RtsInterface
+module.exports = Viewport

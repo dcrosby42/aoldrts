@@ -85,7 +85,8 @@ window.onload = function() {
       pixiWrapper: pixiWrapper,
       keyboardController: keyboardController,
       stats: stats,
-      stopWatch: stopWatch
+      stopWatch: stopWatch,
+      entityInspector: entityInspector
     });
     window.local.entityInspector = entityInspector;
     window.local.gameRunner = gameRunner;
@@ -215,7 +216,7 @@ window.watchData = function() {
 };
 
 
-},{"./entity_inspector.coffee":3,"./game_runner.coffee":4,"./keyboard_controller.coffee":5,"./pixi_wrapper.coffee":6,"./pm_prng.coffee":7,"./rts_world.coffee":9,"./stop_watch.coffee":10}],2:[function(require,module,exports){
+},{"./entity_inspector.coffee":3,"./game_runner.coffee":4,"./keyboard_controller.coffee":5,"./pixi_wrapper.coffee":6,"./pm_prng.coffee":7,"./rts_world.coffee":8,"./stop_watch.coffee":9}],2:[function(require,module,exports){
 var CRC32_TABLE, ChecksumCalculator;
 
 CRC32_TABLE = "00000000 77073096 EE0E612C 990951BA 076DC419 706AF48F E963A535 9E6495A3 0EDB8832 79DCB8A4 E0D5E91E 97D2D988 09B64C2B 7EB17CBD E7B82D07 90BF1D91 1DB71064 6AB020F2 F3B97148 84BE41DE 1ADAD47D 6DDDE4EB F4D4B551 83D385C7 136C9856 646BA8C0 FD62F97A 8A65C9EC 14015C4F 63066CD9 FA0F3D63 8D080DF5 3B6E20C8 4C69105E D56041E4 A2677172 3C03E4D1 4B04D447 D20D85FD A50AB56B 35B5A8FA 42B2986C DBBBC9D6 ACBCF940 32D86CE3 45DF5C75 DCD60DCF ABD13D59 26D930AC 51DE003A C8D75180 BFD06116 21B4F4B5 56B3C423 CFBA9599 B8BDA50F 2802B89E 5F058808 C60CD9B2 B10BE924 2F6F7C87 58684C11 C1611DAB B6662D3D 76DC4190 01DB7106 98D220BC EFD5102A 71B18589 06B6B51F 9FBFE4A5 E8B8D433 7807C9A2 0F00F934 9609A88E E10E9818 7F6A0DBB 086D3D2D 91646C97 E6635C01 6B6B51F4 1C6C6162 856530D8 F262004E 6C0695ED 1B01A57B 8208F4C1 F50FC457 65B0D9C6 12B7E950 8BBEB8EA FCB9887C 62DD1DDF 15DA2D49 8CD37CF3 FBD44C65 4DB26158 3AB551CE A3BC0074 D4BB30E2 4ADFA541 3DD895D7 A4D1C46D D3D6F4FB 4369E96A 346ED9FC AD678846 DA60B8D0 44042D73 33031DE5 AA0A4C5F DD0D7CC9 5005713C 270241AA BE0B1010 C90C2086 5768B525 206F85B3 B966D409 CE61E49F 5EDEF90E 29D9C998 B0D09822 C7D7A8B4 59B33D17 2EB40D81 B7BD5C3B C0BA6CAD EDB88320 9ABFB3B6 03B6E20C 74B1D29A EAD54739 9DD277AF 04DB2615 73DC1683 E3630B12 94643B84 0D6D6A3E 7A6A5AA8 E40ECF0B 9309FF9D 0A00AE27 7D079EB1 F00F9344 8708A3D2 1E01F268 6906C2FE F762575D 806567CB 196C3671 6E6B06E7 FED41B76 89D32BE0 10DA7A5A 67DD4ACC F9B9DF6F 8EBEEFF9 17B7BE43 60B08ED5 D6D6A3E8 A1D1937E 38D8C2C4 4FDFF252 D1BB67F1 A6BC5767 3FB506DD 48B2364B D80D2BDA AF0A1B4C 36034AF6 41047A60 DF60EFC3 A867DF55 316E8EEF 4669BE79 CB61B38C BC66831A 256FD2A0 5268E236 CC0C7795 BB0B4703 220216B9 5505262F C5BA3BBE B2BD0B28 2BB45A92 5CB36A04 C2D7FFA7 B5D0CF31 2CD99E8B 5BDEAE1D 9B64C2B0 EC63F226 756AA39C 026D930A 9C0906A9 EB0E363F 72076785 05005713 95BF4A82 E2B87A14 7BB12BAE 0CB61B38 92D28E9B E5D5BE0D 7CDCEFB7 0BDBDF21 86D3D2D4 F1D4E242 68DDB3F8 1FDA836E 81BE16CD F6B9265B 6FB077E1 18B74777 88085AE6 FF0F6A70 66063BCA 11010B5C 8F659EFF F862AE69 616BFFD3 166CCF45 A00AE278 D70DD2EE 4E048354 3903B3C2 A7672661 D06016F7 4969474D 3E6E77DB AED16A4A D9D65ADC 40DF0B66 37D83BF0 A9BCAE53 DEBB9EC5 47B2CF7F 30B5FFE9 BDBDF21C CABAC28A 53B39330 24B4A3A6 BAD03605 CDD70693 54DE5729 23D967BF B3667A2E C4614AB8 5D681B02 2A6F2B94 B40BBE37 C30C8EA1 5A05DF1B 2D02EF8D";
@@ -270,6 +271,10 @@ EntityInspector = (function() {
     return this._data;
   };
 
+  EntityInspector.prototype.getEntity = function(entityId) {
+    return this._data["" + entityId];
+  };
+
   return EntityInspector;
 
 })();
@@ -282,13 +287,27 @@ var GameRunner;
 
 GameRunner = (function() {
   function GameRunner(_arg) {
-    this.window = _arg.window, this.simulation = _arg.simulation, this.pixiWrapper = _arg.pixiWrapper, this.stats = _arg.stats, this.stopWatch = _arg.stopWatch, this.keyboardController = _arg.keyboardController;
+    this.window = _arg.window, this.simulation = _arg.simulation, this.pixiWrapper = _arg.pixiWrapper, this.stats = _arg.stats, this.stopWatch = _arg.stopWatch, this.keyboardController = _arg.keyboardController, this.entityInspector = _arg.entityInspector;
     this.shouldRun = false;
     this.worldProxyQueue = [];
     this.pixiWrapper.on("spriteClicked", (function(_this) {
       return function(data, entityId) {
         return _this.worldProxyQueue.push(function() {
-          return _this.simulation.worldProxy("commandUnit", "march", entityId);
+          var entity, movement, owned;
+          entity = _this.entityInspector.getEntity(entityId);
+          owned = entity['Owned'];
+          if (owned.playerId === _this.simulation.clientId()) {
+            movement = entity['Movement'];
+            if (movement.vx > 0) {
+              return _this.simulation.worldProxy("commandUnit", "march", entityId, {
+                direction: "left"
+              });
+            } else {
+              return _this.simulation.worldProxy("commandUnit", "march", entityId, {
+                direction: "right"
+              });
+            }
+          }
         });
       };
     })(this));
@@ -470,11 +489,11 @@ module.exports = KeyboardController;
 
 
 },{}],6:[function(require,module,exports){
-var PixiWrapper, RtsInterface,
+var PixiWrapper, Viewport,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-RtsInterface = require('./rts_interface.coffee');
+Viewport = require('./viewport.coffee');
 
 PixiWrapper = (function(_super) {
   __extends(PixiWrapper, _super);
@@ -497,9 +516,10 @@ PixiWrapper = (function(_super) {
     this.sprites = new PIXI.DisplayObjectContainer();
     this.sprites.setInteractive(true);
     this.stage.addChild(this.sprites);
-    this["interface"] = new RtsInterface({
+    this.viewport = new Viewport({
       sprites: this.sprites,
-      renderer: this.renderer
+      width: this.renderer.width,
+      height: this.renderer.height
     });
   }
 
@@ -540,7 +560,7 @@ PixiWrapper = (function(_super) {
   };
 
   PixiWrapper.prototype.setMouseScrollingOn = function(onOff) {
-    return this["interface"].setMouseScrollingOn(onOff);
+    return this.viewport.setMouseScrollingOn(onOff);
   };
 
   PixiWrapper.prototype.fullscreen = function() {
@@ -566,7 +586,7 @@ PixiWrapper = (function(_super) {
   };
 
   PixiWrapper.prototype.render = function() {
-    this["interface"].update();
+    this.viewport.update();
     return this.renderer.render(this.stage);
   };
 
@@ -577,7 +597,7 @@ PixiWrapper = (function(_super) {
 module.exports = PixiWrapper;
 
 
-},{"./rts_interface.coffee":8}],7:[function(require,module,exports){
+},{"./viewport.coffee":10}],7:[function(require,module,exports){
 var ParkMillerRNG;
 
 ParkMillerRNG = (function() {
@@ -627,70 +647,6 @@ module.exports = ParkMillerRNG;
 
 
 },{}],8:[function(require,module,exports){
-var RtsInterface;
-
-RtsInterface = (function() {
-  function RtsInterface(_arg) {
-    var buffer, height, speed, width;
-    this.sprites = _arg.sprites, this.renderer = _arg.renderer;
-    this.x_move = 0;
-    this.y_move = 0;
-    width = this.renderer.width;
-    height = this.renderer.height;
-    buffer = 32;
-    speed = 8;
-    this.on = true;
-    this.sprites.mousemove = (function(_this) {
-      return function(data) {
-        var negSpeed, posSpeed, x, y;
-        if (!_this.on) {
-          return;
-        }
-        x = data.global.x;
-        y = data.global.y;
-        negSpeed = function(p, b, speed) {
-          return -1 * ((p - b) / b) * speed;
-        };
-        posSpeed = function(p, b, s, speed) {
-          return -1 * ((p - (s - b)) / b) * speed;
-        };
-        if (x <= buffer) {
-          _this.x_move = negSpeed(x, buffer, speed);
-        } else if (x >= width - buffer) {
-          _this.x_move = posSpeed(x, buffer, width, speed);
-        } else {
-          _this.x_move = 0;
-        }
-        if (y <= buffer) {
-          return _this.y_move = negSpeed(y, buffer, speed);
-        } else if (y >= height - buffer) {
-          return _this.y_move = posSpeed(y, buffer, height, speed);
-        } else {
-          return _this.y_move = 0;
-        }
-      };
-    })(this);
-  }
-
-  RtsInterface.prototype.update = function() {
-    if (this.on) {
-      this.sprites.position.x += this.x_move;
-      return this.sprites.position.y += this.y_move;
-    }
-  };
-
-  RtsInterface.prototype.setMouseScrollingOn = function(onOff) {
-    return this.on = onOff;
-  };
-
-  return RtsInterface;
-
-})();
-
-module.exports = RtsInterface;
-
-
-},{}],9:[function(require,module,exports){
 var BUNNY_VEL, ChecksumCalculator, CommandQueueSystem, ComponentRegister, ControlMappingSystem, ControlSystem, Controls, EntityFactory, EntityInspectorSystem, HalfPI, MapTiles, MapTilesSystem, Movement, MovementSystem, Owned, ParkMillerRNG, Position, RtsWorld, Sprite, SpriteSyncSystem, fixFloat,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -877,7 +833,11 @@ CommandQueueSystem = (function(_super) {
       if (owned && (cmd.playerId === owned.playerId)) {
         if (cmd.command === "march") {
           movement = targetEntity.get(ComponentRegister.get(Movement));
-          _results.push(movement.vx = 10);
+          if (cmd.args.direction === "left") {
+            _results.push(movement.vx = -10);
+          } else {
+            _results.push(movement.vx = 10);
+          }
         } else {
           _results.push(console.log("CommandQueueSystem: UNKNOWN COMMAND:", cmd));
         }
@@ -894,10 +854,10 @@ CommandQueueSystem = (function(_super) {
 
 Sprite = (function() {
   function Sprite(_arg) {
-    this.name = _arg.name, this.framelist = _arg.framelist;
+    this.name = _arg.name, this.framelist = _arg.framelist, this.facing = _arg.facing;
     this.remove = false;
     this.add = true;
-    this.facing = "down";
+    this.facing || (this.facing = "down");
     this.idle = true;
   }
 
@@ -1011,6 +971,7 @@ SpriteSyncSystem = (function(_super) {
     this.registerComponent(ComponentRegister.get(Position));
     this.registerComponent(ComponentRegister.get(Movement));
     this.spriteCache = {};
+    this.spriteFrameCache = {};
   }
 
   SpriteSyncSystem.prototype.onRemoved = function(entity) {
@@ -1025,47 +986,65 @@ SpriteSyncSystem = (function(_super) {
     movement = entity.get(ComponentRegister.get(Movement));
     pixiSprite = this.spriteCache[entity.id];
     if (pixiSprite == null) {
-      this.buildSprite(entity, sprite, position);
+      pixiSprite = this.buildSprite(entity, sprite, position);
     } else if (sprite.remove) {
       this.removeSprite(entity, sprite);
     } else {
       pixiSprite.position.x = position.x;
       pixiSprite.position.y = position.y;
     }
-    switch (null) {
-      case movement.vx > 0:
+    switch (false) {
+      case !(movement.vx > 0):
         sprite.facing = "right";
-        return sprite.idle = false;
-      case movement.vx < 0:
+        sprite.idle = false;
+        break;
+      case !(movement.vx < 0):
         sprite.facing = "left";
-        return sprite.idle = false;
-      case movement.vy > 0:
-        sprite.facing = "up";
-        return sprite.idle = false;
-      case movement.vy < 0:
+        sprite.idle = false;
+        break;
+      case !(movement.vy > 0):
         sprite.facing = "down";
-        return sprite.idle = false;
+        sprite.idle = false;
+        break;
+      case !(movement.vy < 0):
+        sprite.facing = "up";
+        sprite.idle = false;
+        break;
       default:
-        return sprite.idle = true;
+        sprite.idle = true;
+    }
+    if (sprite.framelist) {
+      if (sprite.idle) {
+        return pixiSprite.textures = this.spriteFrameCache[sprite.name]["" + sprite.facing + "Idle"];
+      } else {
+        return pixiSprite.textures = this.spriteFrameCache[sprite.name][sprite.facing];
+      }
     }
   };
 
   SpriteSyncSystem.prototype.buildSprite = function(entity, sprite, position) {
-    var frame, pixiSprite, spriteTextures;
+    var frame, frameCache, frames, pixiSprite, pose, _ref;
     pixiSprite = void 0;
     if (sprite.framelist) {
-      spriteTextures = (function() {
-        var _i, _len, _ref, _results;
-        _ref = sprite.framelist.right;
-        _results = [];
-        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-          frame = _ref[_i];
-          _results.push(new PIXI.Texture.fromFrame(frame));
+      if (!this.spriteFrameCache[sprite.name]) {
+        frameCache = {};
+        _ref = sprite.framelist;
+        for (pose in _ref) {
+          frames = _ref[pose];
+          frameCache[pose] = (function() {
+            var _i, _len, _results;
+            _results = [];
+            for (_i = 0, _len = frames.length; _i < _len; _i++) {
+              frame = frames[_i];
+              _results.push(new PIXI.Texture.fromFrame(frame));
+            }
+            return _results;
+          })();
         }
-        return _results;
-      })();
-      pixiSprite = new PIXI.MovieClip(spriteTextures);
-      pixiSprite.animationSpeed = 0.05;
+        this.spriteFrameCache[sprite.name] = frameCache;
+      }
+      pixiSprite = new PIXI.MovieClip(this.spriteFrameCache[sprite.name][sprite.facing]);
+      pixiSprite.animationSpeed = 0.0825;
       pixiSprite.play();
     } else {
       pixiSprite = new PIXI.Sprite(PIXI.Texture.fromFrame(sprite.name));
@@ -1075,8 +1054,8 @@ SpriteSyncSystem = (function(_super) {
     pixiSprite.position.y = position.y;
     pixiSprite.setInteractive(true);
     this.pixiWrapper.addMiddleGroundSprite(pixiSprite, entity.id);
-    this.spriteCache[entity.id] = pixiSprite;
-    return sprite.add = false;
+    sprite.add = false;
+    return this.spriteCache[entity.id] = pixiSprite;
   };
 
   SpriteSyncSystem.prototype.removeSprite = function(entity, sprite) {
@@ -1098,15 +1077,43 @@ EntityFactory = (function() {
     this.ecs = ecs;
   }
 
-  EntityFactory.prototype.robot = function(x, y, framelist) {
+  EntityFactory.prototype.generateRobotFrameList = function(robotName) {
+    if (robotName.indexOf("floaty") === 0) {
+      return {
+        down: ["" + robotName + "_frame_0", "" + robotName + "_frame_1", "" + robotName + "_frame_2", "" + robotName + "_frame_1"],
+        left: ["" + robotName + "_frame_0", "" + robotName + "_frame_1", "" + robotName + "_frame_2", "" + robotName + "_frame_1"],
+        up: ["" + robotName + "_frame_0", "" + robotName + "_frame_1", "" + robotName + "_frame_2", "" + robotName + "_frame_1"],
+        right: ["" + robotName + "_frame_0", "" + robotName + "_frame_1", "" + robotName + "_frame_2", "" + robotName + "_frame_1"],
+        downIdle: ["" + robotName + "_frame_0", "" + robotName + "_frame_1", "" + robotName + "_frame_2", "" + robotName + "_frame_1"],
+        leftIdle: ["" + robotName + "_frame_0", "" + robotName + "_frame_1", "" + robotName + "_frame_2", "" + robotName + "_frame_1"],
+        upIdle: ["" + robotName + "_frame_0", "" + robotName + "_frame_1", "" + robotName + "_frame_2", "" + robotName + "_frame_1"],
+        rightIdle: ["" + robotName + "_frame_0", "" + robotName + "_frame_1", "" + robotName + "_frame_2", "" + robotName + "_frame_1"]
+      };
+    } else {
+      return {
+        down: ["" + robotName + "_down_0", "" + robotName + "_down_1", "" + robotName + "_down_2", "" + robotName + "_down_1"],
+        left: ["" + robotName + "_left_0", "" + robotName + "_left_1", "" + robotName + "_left_2", "" + robotName + "_left_1"],
+        up: ["" + robotName + "_up_0", "" + robotName + "_up_1", "" + robotName + "_up_2", "" + robotName + "_up_1"],
+        right: ["" + robotName + "_right_0", "" + robotName + "_right_1", "" + robotName + "_right_2", "" + robotName + "_right_1"],
+        downIdle: ["" + robotName + "_down_1"],
+        leftIdle: ["" + robotName + "_left_1"],
+        upIdle: ["" + robotName + "_up_1"],
+        rightIdle: ["" + robotName + "_right_1"]
+      };
+    }
+  };
+
+  EntityFactory.prototype.robot = function(x, y, robotName) {
     var robot;
+    console.log("robot", robotName);
     robot = this.ecs.create();
     robot.add(new Position({
       x: x,
       y: y
     }), ComponentRegister.get(Position));
     robot.add(new Sprite({
-      framelist: framelist
+      name: robotName,
+      framelist: this.generateRobotFrameList(robotName)
     }), ComponentRegister.get(Sprite));
     robot.add(new Controls(), ComponentRegister.get(Controls));
     robot.add(new Movement({
@@ -1202,42 +1209,31 @@ RtsWorld = (function(_super) {
     return eval("new " + serializedComponent.type + "(serializedComponent)");
   };
 
-  RtsWorld.prototype.generateRobotFrameList = function() {
-    return {
-      down: ["robot_0_down_0", "robot_0_down_1", "robot_0_down_2", "robot_0_down_1"],
-      left: ["robot_0_left_0", "robot_0_left_1", "robot_0_left_2", "robot_0_left_1"],
-      up: ["robot_0_up_0", "robot_0_up_1", "robot_0_up_2", "robot_0_up_1"],
-      right: ["robot_0_right_0", "robot_0_right_1", "robot_0_right_2", "robot_0_right_1"],
-      downIdle: ["robot_0_down_1"],
-      leftIdle: ["robot_0_left_1"],
-      upIdle: ["robot_0_up_1"],
-      rightIdle: ["robot_0_right_1"]
-    };
-  };
-
   RtsWorld.prototype.summonMyRobot = function(playerId, x, y) {
-    var robot, robotAvatar;
-    robotAvatar = this.generateRobotFrameList();
-    robot = this.entityFactory.robot(x, y, robotAvatar);
+    var robot;
+    robot = this.entityFactory.robot(x, y, "robot_1");
     return robot.add(new Owned({
       playerId: playerId
     }), ComponentRegister.get(Owned));
   };
 
   RtsWorld.prototype.summonTheirRobot = function(playerId, x, y) {
-    var robot, robotAvatar;
-    robotAvatar = this.generateRobotFrameList();
-    robot = this.entityFactory.robot(x, y, robotAvatar);
+    var robot;
+    robot = this.entityFactory.robot(x, y, "robot_2");
     return robot.add(new Owned({
       playerId: "WAT"
     }), ComponentRegister.get(Owned));
   };
 
-  RtsWorld.prototype.commandUnit = function(playerId, command, entityId) {
+  RtsWorld.prototype.commandUnit = function(playerId, command, entityId, args) {
+    if (args == null) {
+      args = {};
+    }
     return this.commandQueue.push({
       command: command,
       playerId: playerId,
-      entityId: entityId
+      entityId: entityId,
+      args: args
     });
   };
 
@@ -1374,7 +1370,7 @@ RtsWorld = (function(_super) {
 module.exports = RtsWorld;
 
 
-},{"./checksum_calculator.coffee":2,"./pm_prng.coffee":7}],10:[function(require,module,exports){
+},{"./checksum_calculator.coffee":2,"./pm_prng.coffee":7}],9:[function(require,module,exports){
 var StopWatch;
 
 StopWatch = (function() {
@@ -1408,6 +1404,77 @@ StopWatch = (function() {
 })();
 
 module.exports = StopWatch;
+
+
+},{}],10:[function(require,module,exports){
+var Viewport;
+
+Viewport = (function() {
+  function Viewport(_arg) {
+    var buffer, height, speed, width;
+    this.sprites = _arg.sprites, width = _arg.width, height = _arg.height;
+    this.x_move = 0;
+    this.y_move = 0;
+    buffer = 32;
+    speed = 8;
+    this.on = true;
+    this.sprites.mouseout = (function(_this) {
+      return function(data) {
+        _this.x_move = 0;
+        return _this.y_move = 0;
+      };
+    })(this);
+    this.sprites.mousemove = (function(_this) {
+      return function(data) {
+        var negSpeed, posSpeed, x, y;
+        if (!_this.on) {
+          return;
+        }
+        x = data.global.x;
+        y = data.global.y;
+        negSpeed = function(p, b, speed) {
+          return -1 * ((p - b) / b) * speed;
+        };
+        posSpeed = function(p, b, s, speed) {
+          return -1 * ((p - (s - b)) / b) * speed;
+        };
+        if (x <= buffer) {
+          _this.x_move = negSpeed(x, buffer, speed);
+        } else if (x >= width - buffer) {
+          _this.x_move = posSpeed(x, buffer, width, speed);
+        } else {
+          _this.x_move = 0;
+        }
+        if (y <= buffer) {
+          _this.y_move = negSpeed(y, buffer, speed);
+        } else if (y >= height - buffer) {
+          _this.y_move = posSpeed(y, buffer, height, speed);
+        } else {
+          _this.y_move = 0;
+        }
+        return false;
+      };
+    })(this);
+  }
+
+  Viewport.prototype.update = function() {
+    if (this.on) {
+      this.sprites.position.x += this.x_move;
+      return this.sprites.position.y += this.y_move;
+    }
+  };
+
+  Viewport.prototype.setMouseScrollingOn = function(onOff) {
+    document.getElementById("game").setAttribute('tabindex', 1);
+    document.getElementById("game").focus();
+    return this.on = onOff;
+  };
+
+  return Viewport;
+
+})();
+
+module.exports = Viewport;
 
 
 },{}]},{},[1])
