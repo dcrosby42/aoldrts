@@ -31,11 +31,21 @@ window.gameConfig = ->
       "images/logo.png",
       "images/terrain.png",
       "images/crystal-qubodup-ccby3-32-blue.png"
+      "images/crystal-qubodup-ccby3-32-green.png"
+      "images/crystal-qubodup-ccby3-32-grey.png"
+      "images/crystal-qubodup-ccby3-32-orange.png"
+      "images/crystal-qubodup-ccby3-32-pink.png"
+      "images/crystal-qubodup-ccby3-32-yellow.png"
       ]
     spriteSheetAssets: [
       "images/EBRobotedit2crMatsuoKaito.json",
       "images/terrain.json",
-      "images/crystal.json"
+      "images/blue-crystal.json",
+      "images/green-crystal.json",
+      "images/grey-crystal.json",
+      "images/orange-crystal.json",
+      "images/pink-crystal.json",
+      "images/yellow-crystal.json"
     ]
     simSimConnection:
       url: "#{scheme}://#{window.location.hostname}"#:#{window.location.port}"

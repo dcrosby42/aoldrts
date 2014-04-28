@@ -37,8 +37,8 @@ window.gameConfig = function() {
   this._gameConfig = {
     stageWidth: window.screen.width / 2,
     stageHeight: window.screen.height / 2,
-    imageAssets: ["images/bunny.png", "images/EBRobotedit2crMatsuoKaito.png", "images/bunny.png", "images/logo.png", "images/terrain.png", "images/crystal-qubodup-ccby3-32-blue.png"],
-    spriteSheetAssets: ["images/EBRobotedit2crMatsuoKaito.json", "images/terrain.json", "images/crystal.json"],
+    imageAssets: ["images/bunny.png", "images/EBRobotedit2crMatsuoKaito.png", "images/bunny.png", "images/logo.png", "images/terrain.png", "images/crystal-qubodup-ccby3-32-blue.png", "images/crystal-qubodup-ccby3-32-green.png", "images/crystal-qubodup-ccby3-32-grey.png", "images/crystal-qubodup-ccby3-32-orange.png", "images/crystal-qubodup-ccby3-32-pink.png", "images/crystal-qubodup-ccby3-32-yellow.png"],
+    spriteSheetAssets: ["images/EBRobotedit2crMatsuoKaito.json", "images/terrain.json", "images/blue-crystal.json", "images/green-crystal.json", "images/grey-crystal.json", "images/orange-crystal.json", "images/pink-crystal.json", "images/yellow-crystal.json"],
     simSimConnection: {
       url: "" + scheme + "://" + window.location.hostname,
       secure: useHttps
@@ -753,7 +753,7 @@ Powerup = (function() {
 })();
 
 eachMapTile = function(prng, width, height, f) {
-  var base, bases, feature, features, offset_x, offset_y, tileSize, tile_set, tile_sets, x, y, _i, _ref, _results;
+  var base, bases, feature, features, offset_x, offset_y, spare_seed, tileSize, tile_set, tile_sets, x, y, _i, _ref, _results;
   tile_sets = ["gray", "orange", "dark_brown", "dark"];
   features = [[null, 200], ["stone0", 8], ["stone1", 8], ["crater", 2]];
   bases = [["small_crater", 5], ["basic0", 50], ["basic1", 50]];
@@ -769,7 +769,8 @@ eachMapTile = function(prng, width, height, f) {
       for (y = _j = _ref1 = height * tileSize; -tileSize > 0 ? _j <= 0 : _j >= 0; y = _j += -tileSize) {
         base = prng.weighted_choose(bases);
         feature = prng.weighted_choose(features);
-        _results1.push(f(x - offset_x, y - offset_y, tile_set, base, feature));
+        spare_seed = prng.gen();
+        _results1.push(f(x - offset_x, y - offset_y, tile_set, base, feature, spare_seed));
       }
       return _results1;
     })());
@@ -1150,12 +1151,11 @@ EntityFactory = (function() {
   };
 
   EntityFactory.prototype.powerup = function(x, y, powerup_type) {
-    var p, powerup_frames;
+    var crystal_frames, p, powerup_frames;
+    crystal_frames = ["" + powerup_type + "-crystal0", "" + powerup_type + "-crystal1", "" + powerup_type + "-crystal2", "" + powerup_type + "-crystal3", "" + powerup_type + "-crystal4", "" + powerup_type + "-crystal5", "" + powerup_type + "-crystal6", "" + powerup_type + "-crystal7"];
     powerup_frames = {
-      blue: {
-        downIdle: ["blue-crystal0", "blue-crystal1", "blue-crystal2", "blue-crystal3", "blue-crystal4", "blue-crystal5", "blue-crystal6", "blue-crystal7"],
-        down: ["blue-crystal0", "blue-crystal1", "blue-crystal2", "blue-crystal3", "blue-crystal4", "blue-crystal5", "blue-crystal6", "blue-crystal7"]
-      }
+      downIdle: crystal_frames,
+      down: crystal_frames
     };
     p = this.ecs.create();
     p.add(new Position({
@@ -1170,8 +1170,8 @@ EntityFactory = (function() {
       powerup_type: powerup_type
     }), ComponentRegister.get(Powerup));
     p.add(new Sprite({
-      name: "blue-crystal",
-      framelist: powerup_frames[powerup_type]
+      name: "" + powerup_type + "-crystal",
+      framelist: powerup_frames
     }), ComponentRegister.get(Sprite));
     return p;
   };
@@ -1187,9 +1187,14 @@ EntityFactory = (function() {
     mapTiles.add(comp, ComponentRegister.get(MapTiles));
     prng = new ParkMillerRNG(seed);
     eachMapTile(prng, width, height, (function(_this) {
-      return function(x, y, tile_set, base, feature) {
+      return function(x, y, tile_set, base, feature, spare) {
+        var p, sparePRNG;
+        sparePRNG = new ParkMillerRNG(spare);
         if (feature === "crater") {
-          return _this.powerup(x + 32, y + 32, "blue");
+          p = sparePRNG.weighted_choose([["blue", 25], ["green", 25], [null, 50]]);
+          if (p != null) {
+            return _this.powerup(x + 32, y + 32, p);
+          }
         }
       };
     })(this));
