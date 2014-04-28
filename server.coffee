@@ -38,12 +38,12 @@ expressApp.use logfmt.requestLogger()
 expressApp.use "/sim_sim", express.static(simSim.clientAssets)
 expressApp.use express.static("#{appRoot}/public")
 
-expressApp.configure 'production', ->
-  expressApp.use forceSsl(req, res, next) ->
-    if req.header 'x-forwarded-proto' != 'https'
-      res.redirect "https://#{req.header 'host'}#{req.url}"
-    else
-      next()
+# expressApp.configure 'production', ->
+#   expressApp.use forceSsl(req, res, next) ->
+#     if req.header 'x-forwarded-proto' != 'https'
+#       res.redirect "https://#{req.header 'host'}#{req.url}"
+#     else
+#       next()
 
 logfmt.log port: port
 httpServer.listen port
