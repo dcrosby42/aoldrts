@@ -20,6 +20,9 @@ class EntityInspector
   componentsByEntity: ->
     @_data
 
+  getEntity: (entityId) ->
+    @_data["#{entityId}"]
+
 
 
 

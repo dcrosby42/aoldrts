@@ -45,6 +45,7 @@ window.local =
   vars: {}
   gameRunner: null
   entityInspector: null
+  pixiWrapper: null
 
 window.onload = ->
   gameConfig = window.gameConfig()
@@ -83,6 +84,7 @@ window.onload = ->
       keyboardController: keyboardController
       stats: stats
       stopWatch: stopWatch
+      entityInspector: entityInspector
     )
 
     window.local.entityInspector = entityInspector
@@ -138,16 +140,11 @@ buildPixiWrapper = (opts={})->
 
 buildKeyboardController = ->
   new KeyboardController(
-    w: "up"
-    a: "left"
-    d: "right"
-    s: "down"
-    up: "up"
-    left: "left"
-    right: "right"
-    down: "down"
+    r: "myNewRobot"
+    t: "theirNewRobot"
+    f: "marchMyRobot"
+    g: "marchTheirRobot"
   )
-
 
 
 _copyData = (data) ->

@@ -50,7 +50,8 @@ window.gameConfig = function() {
 window.local = {
   vars: {},
   gameRunner: null,
-  entityInspector: null
+  entityInspector: null,
+  pixiWrapper: null
 };
 
 window.onload = function() {
@@ -84,7 +85,8 @@ window.onload = function() {
       pixiWrapper: pixiWrapper,
       keyboardController: keyboardController,
       stats: stats,
-      stopWatch: stopWatch
+      stopWatch: stopWatch,
+      entityInspector: entityInspector
     });
     window.local.entityInspector = entityInspector;
     window.local.gameRunner = gameRunner;
@@ -150,14 +152,10 @@ buildPixiWrapper = function(opts) {
 
 buildKeyboardController = function() {
   return new KeyboardController({
-    w: "up",
-    a: "left",
-    d: "right",
-    s: "down",
-    up: "up",
-    left: "left",
-    right: "right",
-    down: "down"
+    r: "myNewRobot",
+    t: "theirNewRobot",
+    f: "marchMyRobot",
+    g: "marchTheirRobot"
   });
 };
 
@@ -273,6 +271,10 @@ EntityInspector = (function() {
     return this._data;
   };
 
+  EntityInspector.prototype.getEntity = function(entityId) {
+    return this._data["" + entityId];
+  };
+
   return EntityInspector;
 
 })();
@@ -285,8 +287,22 @@ var GameRunner;
 
 GameRunner = (function() {
   function GameRunner(_arg) {
-    this.window = _arg.window, this.simulation = _arg.simulation, this.pixiWrapper = _arg.pixiWrapper, this.stats = _arg.stats, this.stopWatch = _arg.stopWatch, this.keyboardController = _arg.keyboardController;
+    this.window = _arg.window, this.simulation = _arg.simulation, this.pixiWrapper = _arg.pixiWrapper, this.stats = _arg.stats, this.stopWatch = _arg.stopWatch, this.keyboardController = _arg.keyboardController, this.entityInspector = _arg.entityInspector;
     this.shouldRun = false;
+    this.worldProxyQueue = [];
+    this.pixiWrapper.on("spriteClicked", (function(_this) {
+      return function(data, entityId) {
+        return _this.worldProxyQueue.push(function() {
+          var entity, movement, owned;
+          entity = _this.entityInspector.getEntity(entityId);
+          owned = entity['Owned'];
+          if (owned.playerId === _this.simulation.clientId()) {
+            movement = entity['Movement'];
+            return _this.simulation.worldProxy("commandUnit", "march", entityId);
+          }
+        });
+      };
+    })(this));
   }
 
   GameRunner.prototype.start = function() {
@@ -311,7 +327,16 @@ GameRunner = (function() {
       _ref = this.keyboardController.update();
       for (action in _ref) {
         value = _ref[action];
-        this.simulation.worldProxy("updateControl", action, value);
+        if (value) {
+          if (action === "myNewRobot") {
+            this.simulation.worldProxy("summonMyRobot", 200, 100);
+          } else if (action === "theirNewRobot") {
+            this.simulation.worldProxy("summonTheirRobot", 400, 400);
+          }
+        }
+      }
+      while (action = this.worldProxyQueue.shift()) {
+        action();
       }
       this.simulation.update(this.stopWatch.elapsedSeconds());
       this.pixiWrapper.render();
@@ -337,7 +362,10 @@ KeyboardWrapper = (function() {
     _ref = this.keys;
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
       key = _ref[_i];
-      this.downs[key] = false;
+      this.downs[key] = {
+        queued: [],
+        last: false
+      };
       this._bind(key);
     }
   }
@@ -356,17 +384,22 @@ KeyboardWrapper = (function() {
   };
 
   KeyboardWrapper.prototype._keyDown = function(key) {
-    this.downs[key] = true;
+    this.downs[key]['queued'].push(true);
     return false;
   };
 
   KeyboardWrapper.prototype._keyUp = function(key) {
-    this.downs[key] = false;
+    this.downs[key]['queued'].push(false);
     return false;
   };
 
   KeyboardWrapper.prototype.isActive = function(key) {
-    return this.downs[key];
+    var v;
+    if (this.downs[key]['queued'].length > 0) {
+      v = this.downs[key]['queued'].shift();
+      this.downs[key]['last'] = v;
+    }
+    return this.downs[key]['last'];
   };
 
   return KeyboardWrapper;
@@ -448,11 +481,15 @@ module.exports = KeyboardController;
 
 
 },{}],6:[function(require,module,exports){
-var PixiWrapper, RtsInterface;
+var PixiWrapper, RtsInterface,
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 RtsInterface = require('./rts_interface.coffee');
 
-PixiWrapper = (function() {
+PixiWrapper = (function(_super) {
+  __extends(PixiWrapper, _super);
+
   function PixiWrapper(opts) {
     var sheet;
     this.stage = new PIXI.Stage(0xDDDDDD, true);
@@ -476,6 +513,17 @@ PixiWrapper = (function() {
       renderer: this.renderer
     });
   }
+
+  PixiWrapper.prototype.addMiddleGroundSprite = function(sprite, entityId) {
+    var endIndex;
+    endIndex = this.sprites.children.length;
+    this.sprites.addChildAt(sprite, endIndex);
+    return sprite.mousedown = (function(_this) {
+      return function(data) {
+        return _this.emit("spriteClicked", data, entityId);
+      };
+    })(this);
+  };
 
   PixiWrapper.prototype.appendViewTo = function(el) {
     var onEnter, onExit;
@@ -535,7 +583,7 @@ PixiWrapper = (function() {
 
   return PixiWrapper;
 
-})();
+})(SimSim.EventEmitter);
 
 module.exports = PixiWrapper;
 
@@ -555,6 +603,31 @@ ParkMillerRNG = (function() {
 
   ParkMillerRNG.prototype.nextInt = function(min, max) {
     return Math.round(min + ((max - min) * this.gen() / 2147483647.0));
+  };
+
+  ParkMillerRNG.prototype.choose = function(list) {
+    var i;
+    i = this.nextInt(0, list.length - 1);
+    return list[i];
+  };
+
+  ParkMillerRNG.prototype.weighted_choose = function(list) {
+    var current_weight, next_weight, target_weight, total_weight, value, weight, _i, _j, _len, _len1, _ref, _ref1;
+    total_weight = 0;
+    for (_i = 0, _len = list.length; _i < _len; _i++) {
+      _ref = list[_i], value = _ref[0], weight = _ref[1];
+      total_weight += weight;
+    }
+    target_weight = this.nextInt(0, total_weight);
+    current_weight = 0;
+    for (_j = 0, _len1 = list.length; _j < _len1; _j++) {
+      _ref1 = list[_j], value = _ref1[0], weight = _ref1[1];
+      next_weight = current_weight + weight;
+      if (target_weight <= (weight + current_weight)) {
+        return value;
+      }
+      current_weight = next_weight;
+    }
   };
 
   return ParkMillerRNG;
@@ -629,7 +702,7 @@ module.exports = RtsInterface;
 
 
 },{}],9:[function(require,module,exports){
-var BUNNY_VEL, ChecksumCalculator, ComponentRegister, ControlMappingSystem, ControlSystem, Controls, EntityFactory, EntityInspectorSystem, HalfPI, MapTiles, MapTilesSystem, Movement, MovementSystem, Player, Position, RtsWorld, Sprite, SpriteSyncSystem, fixFloat,
+var BUNNY_VEL, ChecksumCalculator, CommandQueueSystem, ComponentRegister, ControlMappingSystem, ControlSystem, Controls, EntityFactory, EntityInspectorSystem, HalfPI, MapTiles, MapTilesSystem, Movement, MovementSystem, Owned, ParkMillerRNG, Position, RtsWorld, Sprite, SpriteSyncSystem, fixFloat,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
@@ -646,6 +719,8 @@ Array.prototype.compact = function() {
 };
 
 ChecksumCalculator = require('./checksum_calculator.coffee');
+
+ParkMillerRNG = require('./pm_prng.coffee');
 
 ComponentRegister = (function() {
   var ctors, nextType, types;
@@ -687,12 +762,12 @@ makr.World.prototype.resurrect = function(entId) {
   return entity;
 };
 
-Player = (function() {
-  function Player(_arg) {
-    this.id = _arg.id;
+Owned = (function() {
+  function Owned(_arg) {
+    this.playerId = _arg.playerId;
   }
 
-  return Player;
+  return Owned;
 
 })();
 
@@ -749,19 +824,35 @@ MapTilesSystem = (function(_super) {
     }
   };
 
+  MapTilesSystem.prototype.createTile = function(tiles, frame, x, y) {
+    var tile;
+    tile = new PIXI.Sprite(PIXI.Texture.fromFrame(frame));
+    tile.position.x = x;
+    tile.position.y = y;
+    return tile;
+  };
+
   MapTilesSystem.prototype.createTiles = function(seed) {
-    var index, tile, tileSize, tiles, x, y, _i, _j;
+    var base, bases, feature, feature_frame, features, frame, prng, tileSize, tile_set, tile_sets, tiles, x, y, _i, _j;
+    tile_sets = ["gray_set_", "orange_set_", "dark_brown_set_", "dark_set_"];
+    features = [["", 90], ["feature0", 4], ["feature1", 4], ["feature2", 2]];
+    bases = [["basic0", 5], ["basic1", 50], ["basic2", 50]];
     tiles = new PIXI.DisplayObjectContainer();
+    prng = new ParkMillerRNG(seed);
+    tile_set = prng.choose(tile_sets);
     tiles.position.x = 0;
     tiles.position.y = 0;
     tileSize = 31;
-    for (x = _i = 0; _i <= 3200; x = _i += tileSize) {
-      for (y = _j = 0; _j <= 3200; y = _j += tileSize) {
-        index = (seed + x * y) % 3;
-        tile = new PIXI.Sprite(PIXI.Texture.fromFrame("dirt" + index + ".png"));
-        tile.position.x = x;
-        tile.position.y = y;
-        tiles.addChild(tile);
+    for (x = _i = 3200; _i >= 0; x = _i += -tileSize) {
+      for (y = _j = 3200; _j >= 0; y = _j += -tileSize) {
+        base = prng.weighted_choose(bases);
+        frame = tile_set + base + ".png";
+        tiles.addChild(this.createTile(tiles, frame, x, y));
+        feature = prng.weighted_choose(features);
+        if (feature !== "") {
+          feature_frame = tile_set + feature + ".png";
+          tiles.addChild(this.createTile(tiles, feature_frame, x, y));
+        }
       }
     }
     tiles.cacheAsBitmap = true;
@@ -771,6 +862,44 @@ MapTilesSystem = (function(_super) {
   };
 
   return MapTilesSystem;
+
+})(makr.IteratingSystem);
+
+CommandQueueSystem = (function(_super) {
+  __extends(CommandQueueSystem, _super);
+
+  function CommandQueueSystem(commandQueue, entityFinder) {
+    this.commandQueue = commandQueue;
+    this.entityFinder = entityFinder;
+    makr.IteratingSystem.call(this);
+  }
+
+  CommandQueueSystem.prototype.processEntities = function() {
+    var cmd, commands, movement, owned, targetEntity, _i, _len, _results;
+    commands = [];
+    while (cmd = this.commandQueue.shift()) {
+      commands.push(cmd);
+    }
+    _results = [];
+    for (_i = 0, _len = commands.length; _i < _len; _i++) {
+      cmd = commands[_i];
+      targetEntity = this.entityFinder.findEntityById(cmd.entityId);
+      owned = targetEntity.get(ComponentRegister.get(Owned));
+      if (owned && (cmd.playerId === owned.playerId)) {
+        if (cmd.command === "march") {
+          movement = targetEntity.get(ComponentRegister.get(Movement));
+          _results.push(movement.vx = 10);
+        } else {
+          _results.push(console.log("CommandQueueSystem: UNKNOWN COMMAND:", cmd));
+        }
+      } else {
+        _results.push(console.log("CommandQueueSystem: ILLEGAL INSTRUCTION, player " + cmd.playerId + " may not command entity " + cmd.entityId + " because it's owned by " + owned.playerId));
+      }
+    }
+    return _results;
+  };
+
+  return CommandQueueSystem;
 
 })(makr.IteratingSystem);
 
@@ -826,6 +955,7 @@ ControlSystem = (function(_super) {
     this.rtsWorld = rtsWorld;
     makr.IteratingSystem.call(this);
     this.registerComponent(ComponentRegister.get(Controls));
+    this.registerComponent(ComponentRegister.get(Owned));
   }
 
   ControlSystem.prototype.process = function(entity, elapsed) {
@@ -852,25 +982,7 @@ ControlMappingSystem = (function(_super) {
     this.registerComponent(ComponentRegister.get(Controls));
   }
 
-  ControlMappingSystem.prototype.process = function(entity, elapsed) {
-    var controls, movement;
-    movement = entity.get(ComponentRegister.get(Movement));
-    controls = entity.get(ComponentRegister.get(Controls));
-    if (controls.up) {
-      movement.vy = -BUNNY_VEL;
-    } else if (controls.down) {
-      movement.vy = BUNNY_VEL;
-    } else {
-      movement.vy = 0;
-    }
-    if (controls.left) {
-      return movement.vx = -BUNNY_VEL;
-    } else if (controls.right) {
-      return movement.vx = BUNNY_VEL;
-    } else {
-      return movement.vx = 0;
-    }
-  };
+  ControlMappingSystem.prototype.process = function(entity, elapsed) {};
 
   return ControlMappingSystem;
 
@@ -890,10 +1002,10 @@ MovementSystem = (function(_super) {
     position = entity.get(ComponentRegister.get(Position));
     movement = entity.get(ComponentRegister.get(Movement));
     if (position == null) {
-      console.log(entity);
+      console.log("Y NO Position?", entity);
     }
-    position.x += movement.vx;
-    return position.y += movement.vy;
+    position.x += movement.vx * elapsed;
+    return position.y += movement.vy * elapsed;
   };
 
   return MovementSystem;
@@ -962,8 +1074,7 @@ SpriteSyncSystem = (function(_super) {
   };
 
   SpriteSyncSystem.prototype.buildSprite = function(entity, sprite, position) {
-    var container, endIndex, frame, frameCache, frames, pixiSprite, pose, _ref;
-    console.log("ADDING SPRITE FOR " + entity.id);
+    var endIndex, frame, frameCache, frames, pixiSprite, pose, _ref;
     pixiSprite = void 0;
     if (sprite.framelist) {
       if (!this.spriteFrameCache[sprite.name]) {
@@ -992,10 +1103,11 @@ SpriteSyncSystem = (function(_super) {
     pixiSprite.anchor.x = pixiSprite.anchor.y = 0.5;
     pixiSprite.position.x = position.x;
     pixiSprite.position.y = position.y;
-    container = this.pixiWrapper.sprites;
+    pixiSprite.setInteractive(true);
     endIndex = container.children.length;
     container.addChildAt(pixiSprite, endIndex);
     console.log("ADDING SPRITE FOR " + entity.id + " at child index " + endIndex);
+    this.pixiWrapper.addMiddleGroundSprite(pixiSprite, entity.id);
     sprite.add = false;
     return this.spriteCache[entity.id] = pixiSprite;
   };
@@ -1090,10 +1202,10 @@ RtsWorld = (function(_super) {
     this.pixiWrapper || (function() {
       throw new Error("Need pixiWrapper");
     })();
+    this.commandQueue = [];
     this.checksumCalculator = new ChecksumCalculator();
     this.ecs = this.setupECS(this.pixieWrapper);
     this.entityFactory = new EntityFactory(this.ecs);
-    this.players = {};
     this.currentControls = {};
     if (this.entityInspector) {
       this.setupEntityInspector(this.ecs, this.entityInspector);
@@ -1105,14 +1217,14 @@ RtsWorld = (function(_super) {
     var ecs;
     ComponentRegister.register(Position);
     ComponentRegister.register(Sprite);
-    ComponentRegister.register(Player);
+    ComponentRegister.register(Owned);
     ComponentRegister.register(Movement);
     ComponentRegister.register(Controls);
     ComponentRegister.register(MapTiles);
     ecs = new makr.World();
     ecs.registerSystem(new SpriteSyncSystem(this.pixiWrapper));
     ecs.registerSystem(new MapTilesSystem(this.pixiWrapper));
-    ecs.registerSystem(new ControlSystem(this));
+    ecs.registerSystem(new CommandQueueSystem(this.commandQueue, this));
     ecs.registerSystem(new MovementSystem());
     ecs.registerSystem(new ControlMappingSystem());
     return ecs;
@@ -1120,7 +1232,7 @@ RtsWorld = (function(_super) {
 
   RtsWorld.prototype.setupEntityInspector = function(ecs, entityInspector) {
     var componentClass, _i, _len, _ref;
-    _ref = [Position, Player, MapTiles];
+    _ref = [Position, Movement, Owned, MapTiles];
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
       componentClass = _ref[_i];
       ecs.registerSystem(new EntityInspectorSystem(entityInspector, componentClass));
@@ -1150,32 +1262,49 @@ RtsWorld = (function(_super) {
     return eval("new " + serializedComponent.type + "(serializedComponent)");
   };
 
-  RtsWorld.prototype.updateControl = function(id, action, value) {
-    var _base, _name;
-    (_base = this.currentControls)[_name = this.players[id]] || (_base[_name] = []);
-    return this.currentControls[this.players[id]].push([action, value]);
+  RtsWorld.prototype.summonMyRobot = function(playerId, x, y) {
+    var robot, robotAvatar;
+    robotAvatar = this.generateRobotFrameList();
+    robot = this.entityFactory.robot(x, y, robotAvatar);
+    return robot.add(new Owned({
+      playerId: playerId
+    }), ComponentRegister.get(Owned));
   };
 
-  RtsWorld.prototype.addPlayer = function(playerId) {};
-
-  RtsWorld.prototype.removePlayer = function(playerId) {};
-
-  RtsWorld.prototype.playerJoined = function(playerId) {
-    var robot;
-    robot = this.entityFactory.robot(320, 224, "robot_0");
-    robot.add(new Player({
-      id: playerId
-    }), ComponentRegister.get(Player));
-    this.players[playerId] = robot.id;
-    return console.log("Player " + playerId + ", JOINED, entity id " + robot.id);
+  RtsWorld.prototype.summonTheirRobot = function(playerId, x, y) {
+    var robot, robotAvatar;
+    robotAvatar = this.generateRobotFrameList();
+    robot = this.entityFactory.robot(x, y, robotAvatar);
+    return robot.add(new Owned({
+      playerId: "WAT"
+    }), ComponentRegister.get(Owned));
   };
+
+  RtsWorld.prototype.commandUnit = function(playerId, command, entityId) {
+    return this.commandQueue.push({
+      command: command,
+      playerId: playerId,
+      entityId: entityId
+    });
+  };
+
+  RtsWorld.prototype.playerJoined = function(playerId) {};
 
   RtsWorld.prototype.playerLeft = function(playerId) {
-    var ent;
-    ent = this.findEntityById(this.players[playerId]);
-    console.log("Player " + playerId + " LEFT, killing entity id " + ent.id);
-    ent.kill();
-    return this.players[playerId] = void 0;
+    var ent, owner, _i, _len, _ref, _results;
+    console.log("Player " + playerId + " LEFT");
+    _ref = this.ecs._alive;
+    _results = [];
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      ent = _ref[_i];
+      owner = ent.get(ComponentRegister.get(Owned));
+      if ((owner != null) && (owner.playerId === playerId)) {
+        _results.push(ent.kill());
+      } else {
+        _results.push(void 0);
+      }
+    }
+    return _results;
   };
 
   RtsWorld.prototype.theEnd = function() {
@@ -1292,7 +1421,7 @@ RtsWorld = (function(_super) {
 module.exports = RtsWorld;
 
 
-},{"./checksum_calculator.coffee":2}],10:[function(require,module,exports){
+},{"./checksum_calculator.coffee":2,"./pm_prng.coffee":7}],10:[function(require,module,exports){
 var StopWatch;
 
 StopWatch = (function() {

@@ -1,7 +1,18 @@
 
 class GameRunner
-  constructor: ({@window,@simulation,@pixiWrapper,@stats,@stopWatch,@keyboardController}) ->
+  constructor: ({@window,@simulation,@pixiWrapper,@stats,@stopWatch,@keyboardController,@entityInspector}) ->
     @shouldRun = false
+    @worldProxyQueue = []
+
+    @pixiWrapper.on "spriteClicked", (data,entityId) =>
+      @worldProxyQueue.push =>
+        entity = @entityInspector.getEntity(entityId)
+        owned = entity['Owned']
+        if owned.playerId == @simulation.clientId()
+          movement = entity['Movement']
+          @simulation.worldProxy "commandUnit", "march", entityId
+        
+
 
   start: ->
     @simulation.start()
@@ -15,8 +26,18 @@ class GameRunner
   update: ->
     if @shouldRun
       @window.requestAnimationFrame => @update()
+
       for action,value of @keyboardController.update()
-        @simulation.worldProxy "updateControl", action, value
+        if value
+          if (action == "myNewRobot")
+            @simulation.worldProxy "summonMyRobot", 200, 100
+          else if (action == "theirNewRobot")
+            @simulation.worldProxy "summonTheirRobot", 400, 400
+
+      # Accumulated ui actions:
+      while action = @worldProxyQueue.shift()
+        action()
+
       @simulation.update(@stopWatch.elapsedSeconds())
       @pixiWrapper.render()
       @stats.update()

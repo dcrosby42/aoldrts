@@ -2,6 +2,7 @@ Array::compact = ->
   (elem for elem in this when elem?)
 
 ChecksumCalculator = require './checksum_calculator.coffee'
+ParkMillerRNG = require './pm_prng.coffee'
 
 ComponentRegister = (->
   nextType = 0
@@ -33,9 +34,8 @@ makr.World.prototype.resurrect = (entId) ->
   @_alive.push(entity)
   entity
 
-
-class Player
-  constructor: ({@id}) ->
+class Owned
+  constructor: ({@playerId}) ->
 
 class Position
   constructor: ({@x, @y}) ->
@@ -63,23 +63,61 @@ class MapTilesSystem extends makr.IteratingSystem
       @tilesSprites = @createTiles(component.seed)
       @pixiWrapper.sprites.addChildAt(@tilesSprites,0) # ADD ALL THE WAY AT THE BOTTOM
 
+  createTile: (tiles, frame, x, y) ->
+    tile = new PIXI.Sprite(PIXI.Texture.fromFrame(frame))
+    tile.position.x = x
+    tile.position.y = y
+    tile
+
   createTiles: (seed) ->
+    tile_sets = ["gray_set_", "orange_set_", "dark_brown_set_", "dark_set_"]
+    features = [["", 90], ["feature0", 4], ["feature1", 4], ["feature2", 2]]
+    bases = [["basic0", 5], ["basic1", 50], ["basic2", 50]]
+
     tiles = new PIXI.DisplayObjectContainer()
+    prng = new ParkMillerRNG(seed)
+    tile_set = prng.choose(tile_sets)
     tiles.position.x = 0
     tiles.position.y = 0
     tileSize = 31
-    for x in [0..3200] by tileSize
-      for y in [0..3200] by tileSize
-        index = (seed + x*y) % 3
-        tile = new PIXI.Sprite(PIXI.Texture.fromFrame("dirt#{index}.png"))
-        tile.position.x = x
-        tile.position.y = y
-        tiles.addChild(tile)
+    # tile backwards so that bigger features are overlaid right
+    for x in [3200..0] by -tileSize
+      for y in [3200..0] by -tileSize
+        base = prng.weighted_choose(bases)
+        frame = tile_set + base + ".png"
+        tiles.addChild(@createTile(tiles, frame, x, y))
+
+        feature = prng.weighted_choose(features)
+        if feature != ""
+          feature_frame = tile_set + feature + ".png"
+          tiles.addChild(@createTile(tiles, feature_frame, x, y))
+
     tiles.cacheAsBitmap = true
     tiles.position.x = -1600
     tiles.position.y = -1600
     tiles
 
+class CommandQueueSystem extends makr.IteratingSystem
+  constructor: (@commandQueue, @entityFinder) ->
+    makr.IteratingSystem.call(@)
+    
+  processEntities: ->
+    commands = []
+    while cmd = @commandQueue.shift()
+      commands.push(cmd)
+    for cmd in commands
+      # command, playerId, entityId
+      targetEntity = @entityFinder.findEntityById(cmd.entityId)
+      owned = targetEntity.get(ComponentRegister.get(Owned))
+      if owned and (cmd.playerId == owned.playerId)
+        if cmd.command == "march"
+          movement = targetEntity.get(ComponentRegister.get(Movement))
+          movement.vx = 10
+        else
+          console.log "CommandQueueSystem: UNKNOWN COMMAND:", cmd
+      else
+        console.log "CommandQueueSystem: ILLEGAL INSTRUCTION, player #{cmd.playerId} may not command entity #{cmd.entityId} because it's owned by #{owned.playerId}"
+          
 
 class Sprite
   constructor: ({@name, @framelist, @facing}) ->
@@ -109,10 +147,19 @@ class ControlSystem extends makr.IteratingSystem
   constructor: (@rtsWorld) ->
     makr.IteratingSystem.call(@)
     @registerComponent(ComponentRegister.get(Controls))
+    @registerComponent(ComponentRegister.get(Owned))
 
   process: (entity, elapsed) ->
     controls = entity.get(ComponentRegister.get(Controls))
+    # owner = entity.get(ComponentRegister.get(Controls))
+
     entityControls = @rtsWorld.currentControls[entity.id] || []
+
+    # If there are two events of the same type, only the last one in the list
+    # will end up having an effect in the system.
+    #
+    # TODO: Consider figuring out a way to explicitly cycle these events
+    # through the system.
     for [action, value] in entityControls
       controls[action] = value
 
@@ -126,21 +173,21 @@ class ControlMappingSystem extends makr.IteratingSystem
     @registerComponent(ComponentRegister.get(Controls))
 
   process: (entity, elapsed) ->
-    movement = entity.get(ComponentRegister.get(Movement))
-    controls = entity.get(ComponentRegister.get(Controls))
+    # movement = entity.get(ComponentRegister.get(Movement))
+    # controls = entity.get(ComponentRegister.get(Controls))
 
-    if controls.up
-      movement.vy = -BUNNY_VEL
-    else if controls.down
-      movement.vy = BUNNY_VEL
-    else
-      movement.vy = 0
-    if controls.left
-      movement.vx = -BUNNY_VEL
-    else if controls.right
-      movement.vx = BUNNY_VEL
-    else
-      movement.vx = 0
+    # if controls.up
+    #   movement.vy = -BUNNY_VEL
+    # else if controls.down
+    #   movement.vy = BUNNY_VEL
+    # else
+    #   movement.vy = 0
+    # if controls.left
+    #   movement.vx = -BUNNY_VEL
+    # else if controls.right
+    #   movement.vx = BUNNY_VEL
+    # else
+    #   movement.vx = 0
 
 class MovementSystem extends makr.IteratingSystem
   constructor: () ->
@@ -151,9 +198,9 @@ class MovementSystem extends makr.IteratingSystem
   process: (entity, elapsed) ->
     position = entity.get(ComponentRegister.get(Position))
     movement = entity.get(ComponentRegister.get(Movement))
-    console.log entity unless position?
-    position.x += movement.vx
-    position.y += movement.vy
+    console.log("Y NO Position?", entity) unless position?
+    position.x += movement.vx * elapsed
+    position.y += movement.vy * elapsed
 
 class SpriteSyncSystem extends makr.IteratingSystem
   constructor: (@pixiWrapper) ->
@@ -205,7 +252,6 @@ class SpriteSyncSystem extends makr.IteratingSystem
         pixiSprite.textures = @spriteFrameCache[sprite.name][sprite.facing]
     
   buildSprite: (entity, sprite, position) ->
-    console.log "ADDING SPRITE FOR #{entity.id}"
     pixiSprite = undefined
     if sprite.framelist
       unless @spriteFrameCache[sprite.name]
@@ -221,11 +267,12 @@ class SpriteSyncSystem extends makr.IteratingSystem
     pixiSprite.anchor.x = pixiSprite.anchor.y = 0.5
     pixiSprite.position.x = position.x
     pixiSprite.position.y = position.y
-    container = @pixiWrapper.sprites
+    pixiSprite.setInteractive(true)
     
     endIndex = container.children.length # ADD ON TOP
     container.addChildAt pixiSprite, endIndex
     console.log "ADDING SPRITE FOR #{entity.id} at child index #{endIndex}"
+    @pixiWrapper.addMiddleGroundSprite( pixiSprite, entity.id )
 
     sprite.add = false
     @spriteCache[entity.id] = pixiSprite
@@ -276,21 +323,19 @@ class EntityFactory
 
   mapTiles: (seed, width, height) ->
     mapTiles = @ecs.create()
-    # mapTiles.add(new Position(x: 0, y: 0), ComponentRegister.get(Position))
     comp = new MapTiles(seed: seed, width: width, height: height)
     mapTiles.add(comp, ComponentRegister.get(MapTiles))
-    # mapTiles.add(new Position(x: 1, y:2), ComponentRegister.get(Position))
     mapTiles
 
 BUNNY_VEL = 3
 class RtsWorld extends SimSim.WorldBase
   constructor: ({@pixiWrapper, @entityInspector}) ->
     @pixiWrapper or throw new Error("Need pixiWrapper")
+    @commandQueue = []
 
     @checksumCalculator = new ChecksumCalculator()
     @ecs = @setupECS(@pixieWrapper)
     @entityFactory = new EntityFactory(@ecs)
-    @players = {}
     @currentControls = {}
     @setupEntityInspector(@ecs,@entityInspector) if @entityInspector
     @entityFactory.mapTiles((Math.random() * 1000)|0, 50, 50)
@@ -298,20 +343,20 @@ class RtsWorld extends SimSim.WorldBase
   setupECS: (pixieWrapper) ->
     ComponentRegister.register(Position)
     ComponentRegister.register(Sprite)
-    ComponentRegister.register(Player)
+    ComponentRegister.register(Owned)
     ComponentRegister.register(Movement)
     ComponentRegister.register(Controls)
     ComponentRegister.register(MapTiles)
     ecs = new makr.World()
     ecs.registerSystem(new SpriteSyncSystem(@pixiWrapper))
     ecs.registerSystem(new MapTilesSystem(@pixiWrapper))
-    ecs.registerSystem(new ControlSystem(this))
+    ecs.registerSystem(new CommandQueueSystem(@commandQueue, @))  # passing "this" as the entityFinder
     ecs.registerSystem(new MovementSystem())
     ecs.registerSystem(new ControlMappingSystem())
     ecs
 
   setupEntityInspector: (ecs, entityInspector) ->
-    for componentClass in [ Position,Player,MapTiles ]
+    for componentClass in [ Position,Movement,Owned,MapTiles ]
       ecs.registerSystem(new EntityInspectorSystem(entityInspector, componentClass))
     entityInspector
 
@@ -326,27 +371,34 @@ class RtsWorld extends SimSim.WorldBase
   #
   # Invocable via proxy:
   #
-  updateControl: (id, action,value) ->
-    @currentControls[@players[id]] ||= []
-    @currentControls[@players[id]].push([action, value])
+  # XXX:
+  summonMyRobot: (playerId, x, y) ->
+    robotAvatar = @generateRobotFrameList()
+    robot = @entityFactory.robot(x, y, robotAvatar)
+    robot.add(new Owned(playerId: playerId), ComponentRegister.get(Owned))
 
-  addPlayer: (playerId) ->
+  # XXX:
+  summonTheirRobot: (playerId, x, y) ->
+    robotAvatar = @generateRobotFrameList()
+    robot = @entityFactory.robot(x, y, robotAvatar)
+    robot.add(new Owned(playerId: "WAT"), ComponentRegister.get(Owned))
 
-  removePlayer: (playerId) ->
+  commandUnit: (playerId, command, entityId) ->
+    @commandQueue.push(
+      command: command,
+      playerId: playerId
+      entityId: entityId
+    )
     
   #### SimSim.WorldBase#playerJoined(id)
   playerJoined: (playerId) ->
-    robot = @entityFactory.robot(320,224,"robot_0")
-    robot.add(new Player(id: playerId), ComponentRegister.get(Player))
-    @players[playerId] = robot.id
-    console.log "Player #{playerId}, JOINED, entity id #{robot.id}"
 
   #### SimSim.WorldBase#playerLeft(id)
   playerLeft: (playerId) ->
-    ent = @findEntityById(@players[playerId])
-    console.log "Player #{playerId} LEFT, killing entity id #{ent.id}"
-    ent.kill()
-    @players[playerId] = undefined
+    console.log "Player #{playerId} LEFT"
+    for ent in @ecs._alive
+      owner = ent.get(ComponentRegister.get(Owned))
+      ent.kill() if owner? && (owner.playerId == playerId)
 
   #### SimSim.WorldBase#theEnd()
   theEnd: ->

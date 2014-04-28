@@ -3,7 +3,7 @@ class KeyboardWrapper
   constructor: (@keys) ->
     @downs = {}
     for key in @keys
-      @downs[key] = false
+      @downs[key] = { queued: [], last: false }
       @_bind key
 
   _bind: (key) ->
@@ -11,15 +11,19 @@ class KeyboardWrapper
     Mousetrap.bind key, (=> @_keyUp(key)), 'keyup'
   
   _keyDown: (key) ->
-    @downs[key] = true
+    @downs[key]['queued'].push(true)
     false
 
   _keyUp: (key) ->
-    @downs[key] = false
+    @downs[key]['queued'].push(false)
     false
 
   isActive: (key) ->
-    @downs[key]
+    if (@downs[key]['queued'].length > 0)
+      v = @downs[key]['queued'].shift()
+      @downs[key]['last'] = v
+
+    @downs[key]['last']
 
 
 class InputState
