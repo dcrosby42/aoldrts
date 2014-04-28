@@ -1,4 +1,4 @@
-ComponentRegister = require('../utils/component_register.coffee')
+ComponentRegister = require('../../utils/component_register.coffee')
 C = require('../components.coffee')
 
 

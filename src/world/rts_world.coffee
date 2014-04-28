@@ -3,14 +3,13 @@ Array::compact = ->
 
 PlayerColors = [ 0xBDFFBD, 0xFFBDBD, 0xBDBDFF ]
 
-ChecksumCalculator = require './checksum_calculator.coffee'
-ParkMillerRNG = require './pm_prng.coffee'
+ChecksumCalculator = require '../utils/checksum_calculator.coffee'
+ParkMillerRNG =      require '../utils/pm_prng.coffee'
+ComponentRegister =  require '../utils/component_register.coffee'
 
-CommandQueueSystem = require './systems/command_queue_system.coffee'
-GotoSystem = require './systems/goto_system.coffee'
+CommandQueueSystem =         require './systems/command_queue_system.coffee'
+GotoSystem =                 require './systems/goto_system.coffee'
 WanderControlMappingSystem = require './systems/wander_control_mapping_system.coffee'
-
-ComponentRegister = require './utils/component_register.coffee'
 
 C = require './components.coffee'
 

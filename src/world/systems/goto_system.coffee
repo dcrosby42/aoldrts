@@ -1,4 +1,4 @@
-CR = require '../utils/component_register.coffee'
+CR = require '../../utils/component_register.coffee'
 C = require('../components.coffee')
 Vec2D.useObjects()
 
@@ -23,7 +23,6 @@ class GotoSystem extends makr.IteratingSystem
       entity.remove(CR.get(C.Goto))
       movement.vx = 0
       movement.vy = 0
-      console.log "DONE GOTO!", goto
     else
       velocity = target.unit().multiplyByScalar(movement.speed)
       movement.vx = velocity.getX()

@@ -1,14 +1,14 @@
 
-RtsWorld = require './rts_world.coffee'
+RtsWorld = require './world/rts_world.coffee'
 
-StopWatch = require './stop_watch.coffee'
-KeyboardController = require './keyboard_controller.coffee'
-PixiWrapper = require './pixi_wrapper.coffee'
+StopWatch = require './utils/stop_watch.coffee'
+KeyboardController = require './ui/keyboard_controller.coffee'
+PixiWrapper = require './ui/pixi_wrapper.coffee'
 GameRunner = require './game_runner.coffee'
 
-ParkMillerRNG = require './pm_prng.coffee'
+ParkMillerRNG = require './utils/pm_prng.coffee'
 
-EntityInspector = require './entity_inspector.coffee'
+EntityInspector = require './world/entity_inspector.coffee'
 
 getMeta = (name) ->
   for meta in document.getElementsByTagName('meta')

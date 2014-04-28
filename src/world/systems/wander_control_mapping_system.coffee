@@ -1,6 +1,6 @@
-CR = require '../utils/component_register.coffee'
+CR = require '../../utils/component_register.coffee'
 C = require('../components.coffee')
-ParkMillerRNG = require '../pm_prng.coffee'
+ParkMillerRNG = require '../../utils/pm_prng.coffee'
 
 class WanderControlMappingSystem extends makr.IteratingSystem
   constructor: (@randomNumberGenerator) ->

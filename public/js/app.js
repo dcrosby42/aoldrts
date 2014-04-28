@@ -1,19 +1,19 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 var EntityInspector, GameRunner, KeyboardController, ParkMillerRNG, PixiWrapper, RtsWorld, StopWatch, buildKeyboardController, buildPixiWrapper, buildSimulation, buildStopWatch, getMeta, setupStats, _copyData;
 
-RtsWorld = require('./rts_world.coffee');
+RtsWorld = require('./world/rts_world.coffee');
 
-StopWatch = require('./stop_watch.coffee');
+StopWatch = require('./utils/stop_watch.coffee');
 
-KeyboardController = require('./keyboard_controller.coffee');
+KeyboardController = require('./ui/keyboard_controller.coffee');
 
-PixiWrapper = require('./pixi_wrapper.coffee');
+PixiWrapper = require('./ui/pixi_wrapper.coffee');
 
 GameRunner = require('./game_runner.coffee');
 
-ParkMillerRNG = require('./pm_prng.coffee');
+ParkMillerRNG = require('./utils/pm_prng.coffee');
 
-EntityInspector = require('./entity_inspector.coffee');
+EntityInspector = require('./world/entity_inspector.coffee');
 
 getMeta = function(name) {
   var meta, _i, _len, _ref;
@@ -219,174 +219,7 @@ window.watchData = function() {
 };
 
 
-},{"./entity_inspector.coffee":4,"./game_runner.coffee":5,"./keyboard_controller.coffee":6,"./pixi_wrapper.coffee":7,"./pm_prng.coffee":8,"./rts_world.coffee":9,"./stop_watch.coffee":10}],2:[function(require,module,exports){
-var CRC32_TABLE, ChecksumCalculator;
-
-CRC32_TABLE = "00000000 77073096 EE0E612C 990951BA 076DC419 706AF48F E963A535 9E6495A3 0EDB8832 79DCB8A4 E0D5E91E 97D2D988 09B64C2B 7EB17CBD E7B82D07 90BF1D91 1DB71064 6AB020F2 F3B97148 84BE41DE 1ADAD47D 6DDDE4EB F4D4B551 83D385C7 136C9856 646BA8C0 FD62F97A 8A65C9EC 14015C4F 63066CD9 FA0F3D63 8D080DF5 3B6E20C8 4C69105E D56041E4 A2677172 3C03E4D1 4B04D447 D20D85FD A50AB56B 35B5A8FA 42B2986C DBBBC9D6 ACBCF940 32D86CE3 45DF5C75 DCD60DCF ABD13D59 26D930AC 51DE003A C8D75180 BFD06116 21B4F4B5 56B3C423 CFBA9599 B8BDA50F 2802B89E 5F058808 C60CD9B2 B10BE924 2F6F7C87 58684C11 C1611DAB B6662D3D 76DC4190 01DB7106 98D220BC EFD5102A 71B18589 06B6B51F 9FBFE4A5 E8B8D433 7807C9A2 0F00F934 9609A88E E10E9818 7F6A0DBB 086D3D2D 91646C97 E6635C01 6B6B51F4 1C6C6162 856530D8 F262004E 6C0695ED 1B01A57B 8208F4C1 F50FC457 65B0D9C6 12B7E950 8BBEB8EA FCB9887C 62DD1DDF 15DA2D49 8CD37CF3 FBD44C65 4DB26158 3AB551CE A3BC0074 D4BB30E2 4ADFA541 3DD895D7 A4D1C46D D3D6F4FB 4369E96A 346ED9FC AD678846 DA60B8D0 44042D73 33031DE5 AA0A4C5F DD0D7CC9 5005713C 270241AA BE0B1010 C90C2086 5768B525 206F85B3 B966D409 CE61E49F 5EDEF90E 29D9C998 B0D09822 C7D7A8B4 59B33D17 2EB40D81 B7BD5C3B C0BA6CAD EDB88320 9ABFB3B6 03B6E20C 74B1D29A EAD54739 9DD277AF 04DB2615 73DC1683 E3630B12 94643B84 0D6D6A3E 7A6A5AA8 E40ECF0B 9309FF9D 0A00AE27 7D079EB1 F00F9344 8708A3D2 1E01F268 6906C2FE F762575D 806567CB 196C3671 6E6B06E7 FED41B76 89D32BE0 10DA7A5A 67DD4ACC F9B9DF6F 8EBEEFF9 17B7BE43 60B08ED5 D6D6A3E8 A1D1937E 38D8C2C4 4FDFF252 D1BB67F1 A6BC5767 3FB506DD 48B2364B D80D2BDA AF0A1B4C 36034AF6 41047A60 DF60EFC3 A867DF55 316E8EEF 4669BE79 CB61B38C BC66831A 256FD2A0 5268E236 CC0C7795 BB0B4703 220216B9 5505262F C5BA3BBE B2BD0B28 2BB45A92 5CB36A04 C2D7FFA7 B5D0CF31 2CD99E8B 5BDEAE1D 9B64C2B0 EC63F226 756AA39C 026D930A 9C0906A9 EB0E363F 72076785 05005713 95BF4A82 E2B87A14 7BB12BAE 0CB61B38 92D28E9B E5D5BE0D 7CDCEFB7 0BDBDF21 86D3D2D4 F1D4E242 68DDB3F8 1FDA836E 81BE16CD F6B9265B 6FB077E1 18B74777 88085AE6 FF0F6A70 66063BCA 11010B5C 8F659EFF F862AE69 616BFFD3 166CCF45 A00AE278 D70DD2EE 4E048354 3903B3C2 A7672661 D06016F7 4969474D 3E6E77DB AED16A4A D9D65ADC 40DF0B66 37D83BF0 A9BCAE53 DEBB9EC5 47B2CF7F 30B5FFE9 BDBDF21C CABAC28A 53B39330 24B4A3A6 BAD03605 CDD70693 54DE5729 23D967BF B3667A2E C4614AB8 5D681B02 2A6F2B94 B40BBE37 C30C8EA1 5A05DF1B 2D02EF8D";
-
-ChecksumCalculator = (function() {
-  function ChecksumCalculator() {}
-
-  ChecksumCalculator.prototype.calculate = function(str, crc) {
-    var i, n, x, _i, _ref;
-    if (crc == null) {
-      crc = 0;
-    }
-    n = 0;
-    x = 0;
-    crc = crc ^ (-1);
-    for (i = _i = 0, _ref = str.length; 0 <= _ref ? _i < _ref : _i > _ref; i = 0 <= _ref ? ++_i : --_i) {
-      n = (crc ^ str.charCodeAt(i)) & 0xFF;
-      x = "0x" + CRC32_TABLE.substr(n * 9, 8);
-      crc = (crc >>> 8) ^ x;
-    }
-    return crc ^ (-1);
-  };
-
-  return ChecksumCalculator;
-
-})();
-
-module.exports = ChecksumCalculator;
-
-
-},{}],3:[function(require,module,exports){
-var C, Controls, Goto, MapTiles, Movement, Owned, Position, Powerup, Sprite, Wander;
-
-C = {};
-
-module.exports = C;
-
-C.Owned = Owned = (function() {
-  function Owned(_arg) {
-    this.playerId = _arg.playerId;
-  }
-
-  return Owned;
-
-})();
-
-C.Position = Position = (function() {
-  function Position(_arg) {
-    this.x = _arg.x, this.y = _arg.y;
-  }
-
-  return Position;
-
-})();
-
-C.Movement = Movement = (function() {
-  function Movement(_arg) {
-    this.vx = _arg.vx, this.vy = _arg.vy, this.speed = _arg.speed;
-    this.speed || (this.speed = 0);
-  }
-
-  return Movement;
-
-})();
-
-C.MapTiles = MapTiles = (function() {
-  function MapTiles(_arg) {
-    this.seed = _arg.seed, this.width = _arg.width, this.height = _arg.height;
-  }
-
-  return MapTiles;
-
-})();
-
-C.Powerup = Powerup = (function() {
-  function Powerup(_arg) {
-    this.powerup_type = _arg.powerup_type;
-  }
-
-  return Powerup;
-
-})();
-
-C.Sprite = Sprite = (function() {
-  function Sprite(_arg) {
-    this.name = _arg.name, this.framelist = _arg.framelist, this.facing = _arg.facing;
-    this.remove = false;
-    this.add = true;
-    this.facing || (this.facing = "down");
-    this.idle = true;
-  }
-
-  return Sprite;
-
-})();
-
-C.Controls = Controls = (function() {
-  function Controls() {
-    this.up = false;
-    this.down = false;
-    this.left = false;
-    this.right = false;
-  }
-
-  return Controls;
-
-})();
-
-C.Goto = Goto = (function() {
-  function Goto(_arg) {
-    this.x = _arg.x, this.y = _arg.y;
-  }
-
-  return Goto;
-
-})();
-
-C.Wander = Wander = (function() {
-  function Wander(_arg) {
-    this.range = _arg.range;
-  }
-
-  return Wander;
-
-})();
-
-
-},{}],4:[function(require,module,exports){
-var EntityInspector;
-
-EntityInspector = (function() {
-  function EntityInspector() {
-    this.reset();
-  }
-
-  EntityInspector.prototype.reset = function() {
-    return this._data = {};
-  };
-
-  EntityInspector.prototype.update = function(entityId, component) {
-    var eid, typeName, _base;
-    eid = "" + entityId;
-    typeName = component ? component.constructor ? component.constructor.name : component.toString() : "(!undefined component!)";
-    (_base = this._data)[eid] || (_base[eid] = {});
-    return this._data[eid][typeName] = component;
-  };
-
-  EntityInspector.prototype.componentsByEntity = function() {
-    return this._data;
-  };
-
-  EntityInspector.prototype.getEntity = function(entityId) {
-    return this._data["" + entityId];
-  };
-
-  EntityInspector.prototype.entityCount = function() {
-    return Object.keys(this._data).length;
-  };
-
-  return EntityInspector;
-
-})();
-
-module.exports = EntityInspector;
-
-
-},{}],5:[function(require,module,exports){
+},{"./game_runner.coffee":2,"./ui/keyboard_controller.coffee":3,"./ui/pixi_wrapper.coffee":4,"./utils/pm_prng.coffee":8,"./utils/stop_watch.coffee":9,"./world/entity_inspector.coffee":11,"./world/rts_world.coffee":12}],2:[function(require,module,exports){
 var GameRunner;
 
 GameRunner = (function() {
@@ -478,7 +311,7 @@ GameRunner = (function() {
 module.exports = GameRunner;
 
 
-},{}],6:[function(require,module,exports){
+},{}],3:[function(require,module,exports){
 var InputState, KeyboardController, KeyboardWrapper;
 
 KeyboardWrapper = (function() {
@@ -607,7 +440,7 @@ KeyboardController = (function() {
 module.exports = KeyboardController;
 
 
-},{}],7:[function(require,module,exports){
+},{}],4:[function(require,module,exports){
 var PixiWrapper, Viewport,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -738,7 +571,141 @@ PixiWrapper = (function(_super) {
 module.exports = PixiWrapper;
 
 
-},{"./viewport.coffee":15}],8:[function(require,module,exports){
+},{"./viewport.coffee":5}],5:[function(require,module,exports){
+var Viewport;
+
+Viewport = (function() {
+  function Viewport(_arg) {
+    var buffer, height, speed, width;
+    this.sprites = _arg.sprites, width = _arg.width, height = _arg.height;
+    this.x_move = 0;
+    this.y_move = 0;
+    buffer = 32;
+    speed = 8;
+    this.on = true;
+    this.sprites.mouseout = (function(_this) {
+      return function(data) {
+        _this.x_move = 0;
+        return _this.y_move = 0;
+      };
+    })(this);
+    this.sprites.mousemove = (function(_this) {
+      return function(data) {
+        var negSpeed, posSpeed, x, y;
+        if (!_this.on) {
+          return;
+        }
+        x = data.global.x;
+        y = data.global.y;
+        negSpeed = function(p, b, speed) {
+          return -1 * ((p - b) / b) * speed;
+        };
+        posSpeed = function(p, b, s, speed) {
+          return -1 * ((p - (s - b)) / b) * speed;
+        };
+        if (x <= buffer) {
+          _this.x_move = negSpeed(x, buffer, speed);
+        } else if (x >= width - buffer) {
+          _this.x_move = posSpeed(x, buffer, width, speed);
+        } else {
+          _this.x_move = 0;
+        }
+        if (y <= buffer) {
+          _this.y_move = negSpeed(y, buffer, speed);
+        } else if (y >= height - buffer) {
+          _this.y_move = posSpeed(y, buffer, height, speed);
+        } else {
+          _this.y_move = 0;
+        }
+        return false;
+      };
+    })(this);
+  }
+
+  Viewport.prototype.update = function() {
+    if (this.on) {
+      this.sprites.position.x += this.x_move;
+      return this.sprites.position.y += this.y_move;
+    }
+  };
+
+  Viewport.prototype.setMouseScrollingOn = function(onOff) {
+    document.getElementById("game").setAttribute('tabindex', 1);
+    document.getElementById("game").focus();
+    return this.on = onOff;
+  };
+
+  return Viewport;
+
+})();
+
+module.exports = Viewport;
+
+
+},{}],6:[function(require,module,exports){
+var CRC32_TABLE, ChecksumCalculator;
+
+CRC32_TABLE = "00000000 77073096 EE0E612C 990951BA 076DC419 706AF48F E963A535 9E6495A3 0EDB8832 79DCB8A4 E0D5E91E 97D2D988 09B64C2B 7EB17CBD E7B82D07 90BF1D91 1DB71064 6AB020F2 F3B97148 84BE41DE 1ADAD47D 6DDDE4EB F4D4B551 83D385C7 136C9856 646BA8C0 FD62F97A 8A65C9EC 14015C4F 63066CD9 FA0F3D63 8D080DF5 3B6E20C8 4C69105E D56041E4 A2677172 3C03E4D1 4B04D447 D20D85FD A50AB56B 35B5A8FA 42B2986C DBBBC9D6 ACBCF940 32D86CE3 45DF5C75 DCD60DCF ABD13D59 26D930AC 51DE003A C8D75180 BFD06116 21B4F4B5 56B3C423 CFBA9599 B8BDA50F 2802B89E 5F058808 C60CD9B2 B10BE924 2F6F7C87 58684C11 C1611DAB B6662D3D 76DC4190 01DB7106 98D220BC EFD5102A 71B18589 06B6B51F 9FBFE4A5 E8B8D433 7807C9A2 0F00F934 9609A88E E10E9818 7F6A0DBB 086D3D2D 91646C97 E6635C01 6B6B51F4 1C6C6162 856530D8 F262004E 6C0695ED 1B01A57B 8208F4C1 F50FC457 65B0D9C6 12B7E950 8BBEB8EA FCB9887C 62DD1DDF 15DA2D49 8CD37CF3 FBD44C65 4DB26158 3AB551CE A3BC0074 D4BB30E2 4ADFA541 3DD895D7 A4D1C46D D3D6F4FB 4369E96A 346ED9FC AD678846 DA60B8D0 44042D73 33031DE5 AA0A4C5F DD0D7CC9 5005713C 270241AA BE0B1010 C90C2086 5768B525 206F85B3 B966D409 CE61E49F 5EDEF90E 29D9C998 B0D09822 C7D7A8B4 59B33D17 2EB40D81 B7BD5C3B C0BA6CAD EDB88320 9ABFB3B6 03B6E20C 74B1D29A EAD54739 9DD277AF 04DB2615 73DC1683 E3630B12 94643B84 0D6D6A3E 7A6A5AA8 E40ECF0B 9309FF9D 0A00AE27 7D079EB1 F00F9344 8708A3D2 1E01F268 6906C2FE F762575D 806567CB 196C3671 6E6B06E7 FED41B76 89D32BE0 10DA7A5A 67DD4ACC F9B9DF6F 8EBEEFF9 17B7BE43 60B08ED5 D6D6A3E8 A1D1937E 38D8C2C4 4FDFF252 D1BB67F1 A6BC5767 3FB506DD 48B2364B D80D2BDA AF0A1B4C 36034AF6 41047A60 DF60EFC3 A867DF55 316E8EEF 4669BE79 CB61B38C BC66831A 256FD2A0 5268E236 CC0C7795 BB0B4703 220216B9 5505262F C5BA3BBE B2BD0B28 2BB45A92 5CB36A04 C2D7FFA7 B5D0CF31 2CD99E8B 5BDEAE1D 9B64C2B0 EC63F226 756AA39C 026D930A 9C0906A9 EB0E363F 72076785 05005713 95BF4A82 E2B87A14 7BB12BAE 0CB61B38 92D28E9B E5D5BE0D 7CDCEFB7 0BDBDF21 86D3D2D4 F1D4E242 68DDB3F8 1FDA836E 81BE16CD F6B9265B 6FB077E1 18B74777 88085AE6 FF0F6A70 66063BCA 11010B5C 8F659EFF F862AE69 616BFFD3 166CCF45 A00AE278 D70DD2EE 4E048354 3903B3C2 A7672661 D06016F7 4969474D 3E6E77DB AED16A4A D9D65ADC 40DF0B66 37D83BF0 A9BCAE53 DEBB9EC5 47B2CF7F 30B5FFE9 BDBDF21C CABAC28A 53B39330 24B4A3A6 BAD03605 CDD70693 54DE5729 23D967BF B3667A2E C4614AB8 5D681B02 2A6F2B94 B40BBE37 C30C8EA1 5A05DF1B 2D02EF8D";
+
+ChecksumCalculator = (function() {
+  function ChecksumCalculator() {}
+
+  ChecksumCalculator.prototype.calculate = function(str, crc) {
+    var i, n, x, _i, _ref;
+    if (crc == null) {
+      crc = 0;
+    }
+    n = 0;
+    x = 0;
+    crc = crc ^ (-1);
+    for (i = _i = 0, _ref = str.length; 0 <= _ref ? _i < _ref : _i > _ref; i = 0 <= _ref ? ++_i : --_i) {
+      n = (crc ^ str.charCodeAt(i)) & 0xFF;
+      x = "0x" + CRC32_TABLE.substr(n * 9, 8);
+      crc = (crc >>> 8) ^ x;
+    }
+    return crc ^ (-1);
+  };
+
+  return ChecksumCalculator;
+
+})();
+
+module.exports = ChecksumCalculator;
+
+
+},{}],7:[function(require,module,exports){
+var ComponentRegister;
+
+ComponentRegister = (function() {
+  var ctors, nextType, types;
+  nextType = 0;
+  ctors = [];
+  types = [];
+  console.log("!!! MAKE NEW ComponentRegister 1!!");
+  return {
+    register: function(ctor) {
+      var i;
+      i = ctors.indexOf(ctor);
+      if (i < 0) {
+        ctors.push(ctor);
+        types.push(nextType++);
+      }
+    },
+    get: function(ctor) {
+      var i;
+      i = ctors.indexOf(ctor);
+      if (i < 0) {
+        throw "Unknown type " + ctor;
+      }
+      return types[i];
+    }
+  };
+})();
+
+module.exports = ComponentRegister;
+
+
+},{}],8:[function(require,module,exports){
 var ParkMillerRNG;
 
 ParkMillerRNG = (function() {
@@ -788,6 +755,178 @@ module.exports = ParkMillerRNG;
 
 
 },{}],9:[function(require,module,exports){
+var StopWatch;
+
+StopWatch = (function() {
+  function StopWatch() {
+    this.start = this.currentTimeMillis();
+    this.millis = this.start;
+  }
+
+  StopWatch.prototype.lap = function() {
+    var newMillis;
+    newMillis = this.currentTimeMillis();
+    this.lapMillis = newMillis - this.millis;
+    this.millis = newMillis;
+    return this.lapSeconds();
+  };
+
+  StopWatch.prototype.currentTimeMillis = function() {
+    return new Date().getTime();
+  };
+
+  StopWatch.prototype.lapSeconds = function() {
+    return this.lapMillis / 1000.0;
+  };
+
+  StopWatch.prototype.elapsedSeconds = function() {
+    return (this.currentTimeMillis() - this.start) / 1000.0;
+  };
+
+  return StopWatch;
+
+})();
+
+module.exports = StopWatch;
+
+
+},{}],10:[function(require,module,exports){
+var C, Controls, Goto, MapTiles, Movement, Owned, Position, Powerup, Sprite, Wander;
+
+C = {};
+
+module.exports = C;
+
+C.Owned = Owned = (function() {
+  function Owned(_arg) {
+    this.playerId = _arg.playerId;
+  }
+
+  return Owned;
+
+})();
+
+C.Position = Position = (function() {
+  function Position(_arg) {
+    this.x = _arg.x, this.y = _arg.y;
+  }
+
+  return Position;
+
+})();
+
+C.Movement = Movement = (function() {
+  function Movement(_arg) {
+    this.vx = _arg.vx, this.vy = _arg.vy, this.speed = _arg.speed;
+    this.speed || (this.speed = 0);
+  }
+
+  return Movement;
+
+})();
+
+C.MapTiles = MapTiles = (function() {
+  function MapTiles(_arg) {
+    this.seed = _arg.seed, this.width = _arg.width, this.height = _arg.height;
+  }
+
+  return MapTiles;
+
+})();
+
+C.Powerup = Powerup = (function() {
+  function Powerup(_arg) {
+    this.powerup_type = _arg.powerup_type;
+  }
+
+  return Powerup;
+
+})();
+
+C.Sprite = Sprite = (function() {
+  function Sprite(_arg) {
+    this.name = _arg.name, this.framelist = _arg.framelist, this.facing = _arg.facing;
+    this.remove = false;
+    this.add = true;
+    this.facing || (this.facing = "down");
+    this.idle = true;
+  }
+
+  return Sprite;
+
+})();
+
+C.Controls = Controls = (function() {
+  function Controls() {
+    this.up = false;
+    this.down = false;
+    this.left = false;
+    this.right = false;
+  }
+
+  return Controls;
+
+})();
+
+C.Goto = Goto = (function() {
+  function Goto(_arg) {
+    this.x = _arg.x, this.y = _arg.y;
+  }
+
+  return Goto;
+
+})();
+
+C.Wander = Wander = (function() {
+  function Wander(_arg) {
+    this.range = _arg.range;
+  }
+
+  return Wander;
+
+})();
+
+
+},{}],11:[function(require,module,exports){
+var EntityInspector;
+
+EntityInspector = (function() {
+  function EntityInspector() {
+    this.reset();
+  }
+
+  EntityInspector.prototype.reset = function() {
+    return this._data = {};
+  };
+
+  EntityInspector.prototype.update = function(entityId, component) {
+    var eid, typeName, _base;
+    eid = "" + entityId;
+    typeName = component ? component.constructor ? component.constructor.name : component.toString() : "(!undefined component!)";
+    (_base = this._data)[eid] || (_base[eid] = {});
+    return this._data[eid][typeName] = component;
+  };
+
+  EntityInspector.prototype.componentsByEntity = function() {
+    return this._data;
+  };
+
+  EntityInspector.prototype.getEntity = function(entityId) {
+    return this._data["" + entityId];
+  };
+
+  EntityInspector.prototype.entityCount = function() {
+    return Object.keys(this._data).length;
+  };
+
+  return EntityInspector;
+
+})();
+
+module.exports = EntityInspector;
+
+
+},{}],12:[function(require,module,exports){
 var C, ChecksumCalculator, CommandQueueSystem, ComponentRegister, ControlSystem, EntityFactory, EntityInspectorSystem, GotoSystem, HalfPI, MapTilesSystem, MovementSystem, ParkMillerRNG, PlayerColors, RtsWorld, SpriteSyncSystem, WanderControlMappingSystem, eachMapTile, fixFloat,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -806,17 +945,17 @@ Array.prototype.compact = function() {
 
 PlayerColors = [0xBDFFBD, 0xFFBDBD, 0xBDBDFF];
 
-ChecksumCalculator = require('./checksum_calculator.coffee');
+ChecksumCalculator = require('../utils/checksum_calculator.coffee');
 
-ParkMillerRNG = require('./pm_prng.coffee');
+ParkMillerRNG = require('../utils/pm_prng.coffee');
+
+ComponentRegister = require('../utils/component_register.coffee');
 
 CommandQueueSystem = require('./systems/command_queue_system.coffee');
 
 GotoSystem = require('./systems/goto_system.coffee');
 
 WanderControlMappingSystem = require('./systems/wander_control_mapping_system.coffee');
-
-ComponentRegister = require('./utils/component_register.coffee');
 
 C = require('./components.coffee');
 
@@ -837,7 +976,7 @@ makr.World.prototype.resurrect = function(entId) {
 
 eachMapTile = function(prng, width, height, f) {
   var base, bases, feature, features, offset_x, offset_y, spare_seed, tileSize, tile_set, tile_sets, x, y, _i, _ref, _results;
-  tile_sets = ["gray", "orange", "dark_brown", "dark"];
+  tile_sets = ["gray", "dark_brown", "dark"];
   features = [[null, 200], ["stone0", 8], ["stone1", 8], ["crater", 2]];
   bases = [["small_crater", 5], ["basic0", 50], ["basic1", 50]];
   tile_set = prng.choose(tile_sets);
@@ -1444,48 +1583,12 @@ RtsWorld = (function(_super) {
 module.exports = RtsWorld;
 
 
-},{"./checksum_calculator.coffee":2,"./components.coffee":3,"./pm_prng.coffee":8,"./systems/command_queue_system.coffee":11,"./systems/goto_system.coffee":12,"./systems/wander_control_mapping_system.coffee":13,"./utils/component_register.coffee":14}],10:[function(require,module,exports){
-var StopWatch;
-
-StopWatch = (function() {
-  function StopWatch() {
-    this.start = this.currentTimeMillis();
-    this.millis = this.start;
-  }
-
-  StopWatch.prototype.lap = function() {
-    var newMillis;
-    newMillis = this.currentTimeMillis();
-    this.lapMillis = newMillis - this.millis;
-    this.millis = newMillis;
-    return this.lapSeconds();
-  };
-
-  StopWatch.prototype.currentTimeMillis = function() {
-    return new Date().getTime();
-  };
-
-  StopWatch.prototype.lapSeconds = function() {
-    return this.lapMillis / 1000.0;
-  };
-
-  StopWatch.prototype.elapsedSeconds = function() {
-    return (this.currentTimeMillis() - this.start) / 1000.0;
-  };
-
-  return StopWatch;
-
-})();
-
-module.exports = StopWatch;
-
-
-},{}],11:[function(require,module,exports){
+},{"../utils/checksum_calculator.coffee":6,"../utils/component_register.coffee":7,"../utils/pm_prng.coffee":8,"./components.coffee":10,"./systems/command_queue_system.coffee":13,"./systems/goto_system.coffee":14,"./systems/wander_control_mapping_system.coffee":15}],13:[function(require,module,exports){
 var C, CommandQueueSystem, Commands, ComponentRegister,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-ComponentRegister = require('../utils/component_register.coffee');
+ComponentRegister = require('../../utils/component_register.coffee');
 
 C = require('../components.coffee');
 
@@ -1574,12 +1677,12 @@ Commands.Entity.goto = function(entity, cmd) {
 module.exports = CommandQueueSystem;
 
 
-},{"../components.coffee":3,"../utils/component_register.coffee":14}],12:[function(require,module,exports){
+},{"../../utils/component_register.coffee":7,"../components.coffee":10}],14:[function(require,module,exports){
 var C, CR, GotoSystem,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-CR = require('../utils/component_register.coffee');
+CR = require('../../utils/component_register.coffee');
 
 C = require('../components.coffee');
 
@@ -1607,8 +1710,7 @@ GotoSystem = (function(_super) {
     if (magnitude < 5) {
       entity.remove(CR.get(C.Goto));
       movement.vx = 0;
-      movement.vy = 0;
-      return console.log("DONE GOTO!", goto);
+      return movement.vy = 0;
     } else {
       velocity = target.unit().multiplyByScalar(movement.speed);
       movement.vx = velocity.getX();
@@ -1623,16 +1725,16 @@ GotoSystem = (function(_super) {
 module.exports = GotoSystem;
 
 
-},{"../components.coffee":3,"../utils/component_register.coffee":14}],13:[function(require,module,exports){
+},{"../../utils/component_register.coffee":7,"../components.coffee":10}],15:[function(require,module,exports){
 var C, CR, ParkMillerRNG, WanderControlMappingSystem,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-CR = require('../utils/component_register.coffee');
+CR = require('../../utils/component_register.coffee');
 
 C = require('../components.coffee');
 
-ParkMillerRNG = require('../pm_prng.coffee');
+ParkMillerRNG = require('../../utils/pm_prng.coffee');
 
 WanderControlMappingSystem = (function(_super) {
   __extends(WanderControlMappingSystem, _super);
@@ -1668,107 +1770,4 @@ WanderControlMappingSystem = (function(_super) {
 module.exports = WanderControlMappingSystem;
 
 
-},{"../components.coffee":3,"../pm_prng.coffee":8,"../utils/component_register.coffee":14}],14:[function(require,module,exports){
-var ComponentRegister;
-
-ComponentRegister = (function() {
-  var ctors, nextType, types;
-  nextType = 0;
-  ctors = [];
-  types = [];
-  console.log("!!! MAKE NEW ComponentRegister 1!!");
-  return {
-    register: function(ctor) {
-      var i;
-      i = ctors.indexOf(ctor);
-      if (i < 0) {
-        ctors.push(ctor);
-        types.push(nextType++);
-      }
-    },
-    get: function(ctor) {
-      var i;
-      i = ctors.indexOf(ctor);
-      if (i < 0) {
-        throw "Unknown type " + ctor;
-      }
-      return types[i];
-    }
-  };
-})();
-
-module.exports = ComponentRegister;
-
-
-},{}],15:[function(require,module,exports){
-var Viewport;
-
-Viewport = (function() {
-  function Viewport(_arg) {
-    var buffer, height, speed, width;
-    this.sprites = _arg.sprites, width = _arg.width, height = _arg.height;
-    this.x_move = 0;
-    this.y_move = 0;
-    buffer = 32;
-    speed = 8;
-    this.on = true;
-    this.sprites.mouseout = (function(_this) {
-      return function(data) {
-        _this.x_move = 0;
-        return _this.y_move = 0;
-      };
-    })(this);
-    this.sprites.mousemove = (function(_this) {
-      return function(data) {
-        var negSpeed, posSpeed, x, y;
-        if (!_this.on) {
-          return;
-        }
-        x = data.global.x;
-        y = data.global.y;
-        negSpeed = function(p, b, speed) {
-          return -1 * ((p - b) / b) * speed;
-        };
-        posSpeed = function(p, b, s, speed) {
-          return -1 * ((p - (s - b)) / b) * speed;
-        };
-        if (x <= buffer) {
-          _this.x_move = negSpeed(x, buffer, speed);
-        } else if (x >= width - buffer) {
-          _this.x_move = posSpeed(x, buffer, width, speed);
-        } else {
-          _this.x_move = 0;
-        }
-        if (y <= buffer) {
-          _this.y_move = negSpeed(y, buffer, speed);
-        } else if (y >= height - buffer) {
-          _this.y_move = posSpeed(y, buffer, height, speed);
-        } else {
-          _this.y_move = 0;
-        }
-        return false;
-      };
-    })(this);
-  }
-
-  Viewport.prototype.update = function() {
-    if (this.on) {
-      this.sprites.position.x += this.x_move;
-      return this.sprites.position.y += this.y_move;
-    }
-  };
-
-  Viewport.prototype.setMouseScrollingOn = function(onOff) {
-    document.getElementById("game").setAttribute('tabindex', 1);
-    document.getElementById("game").focus();
-    return this.on = onOff;
-  };
-
-  return Viewport;
-
-})();
-
-module.exports = Viewport;
-
-
-},{}]},{},[1])
+},{"../../utils/component_register.coffee":7,"../../utils/pm_prng.coffee":8,"../components.coffee":10}]},{},[1])
