@@ -15,9 +15,15 @@ class GameRunner
           else
             @simulation.worldProxy "commandUnit", "march", entityId, direction: "right"
 
-    @pixiWrapper.on "stageClicked", (data) =>
+    @pixiWrapper.on "worldClicked", (data) =>
+      if @keyboardController.isActive("roboType0")
+        pt = data.getLocalPosition(data.target)
+        @simulation.worldProxy "summonRobot", "robot_0", x: pt.x, y: pt.y
+
       if @keyboardController.isActive("roboType1")
-        console.log "ROBO1"
+        pt = data.getLocalPosition(data.target)
+        @simulation.worldProxy "summonRobot", "robot_1", x: pt.x, y: pt.y
+
 
 
   start: ->

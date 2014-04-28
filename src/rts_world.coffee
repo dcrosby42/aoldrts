@@ -401,16 +401,10 @@ class RtsWorld extends SimSim.WorldBase
   #
   # Invocable via proxy:
   #
-  # XXX:
-  summonMyRobot: (playerId, x, y) ->
-    robot = @entityFactory.robot(x, y, "robot_1")
+  summonRobot: (playerId, robotType, args={}) ->
+    robot = @entityFactory.robot(args.x, args.y, robotType)
     robot.add(new Owned(playerId: playerId), ComponentRegister.get(Owned))
-
-  # XXX:
-  summonTheirRobot: (playerId, x, y) ->
-    robot = @entityFactory.robot(x, y, "robot_2")
-    robot.add(new Owned(playerId: "WAT"), ComponentRegister.get(Owned))
-
+    
   commandUnit: (playerId, command, entityId, args={}) ->
     @commandQueue.push(
       command: command,

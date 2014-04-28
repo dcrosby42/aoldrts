@@ -146,6 +146,9 @@ buildKeyboardController = ->
     t: "theirNewRobot"
     f: "marchMyRobot"
     g: "marchTheirRobot"
+
+    0: "roboType0"
+    1: "roboType1"
   )
 
 

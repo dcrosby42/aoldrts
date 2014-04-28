@@ -155,7 +155,9 @@ buildKeyboardController = function() {
     r: "myNewRobot",
     t: "theirNewRobot",
     f: "marchMyRobot",
-    g: "marchTheirRobot"
+    g: "marchTheirRobot",
+    0: "roboType0",
+    1: "roboType1"
   });
 };
 
@@ -311,10 +313,22 @@ GameRunner = (function() {
         });
       };
     })(this));
-    this.pixiWrapper.on("stageClicked", (function(_this) {
+    this.pixiWrapper.on("worldClicked", (function(_this) {
       return function(data) {
+        var pt;
+        if (_this.keyboardController.isActive("roboType0")) {
+          pt = data.getLocalPosition(data.target);
+          _this.simulation.worldProxy("summonRobot", "robot_0", {
+            x: pt.x,
+            y: pt.y
+          });
+        }
         if (_this.keyboardController.isActive("roboType1")) {
-          return console.log("ROBO1");
+          pt = data.getLocalPosition(data.target);
+          return _this.simulation.worldProxy("summonRobot", "robot_1", {
+            x: pt.x,
+            y: pt.y
+          });
         }
       };
     })(this));
@@ -531,6 +545,11 @@ PixiWrapper = (function(_super) {
     this.stage.mousedown = (function(_this) {
       return function(data) {
         return _this.emit("stageClicked", data);
+      };
+    })(this);
+    this.sprites.mousedown = (function(_this) {
+      return function(data) {
+        return _this.emit("worldClicked", data);
       };
     })(this);
   }
@@ -1293,19 +1312,14 @@ RtsWorld = (function(_super) {
     return eval("new " + serializedComponent.type + "(serializedComponent)");
   };
 
-  RtsWorld.prototype.summonMyRobot = function(playerId, x, y) {
+  RtsWorld.prototype.summonRobot = function(playerId, robotType, args) {
     var robot;
-    robot = this.entityFactory.robot(x, y, "robot_1");
+    if (args == null) {
+      args = {};
+    }
+    robot = this.entityFactory.robot(args.x, args.y, robotType);
     return robot.add(new Owned({
       playerId: playerId
-    }), ComponentRegister.get(Owned));
-  };
-
-  RtsWorld.prototype.summonTheirRobot = function(playerId, x, y) {
-    var robot;
-    robot = this.entityFactory.robot(x, y, "robot_2");
-    return robot.add(new Owned({
-      playerId: "WAT"
     }), ComponentRegister.get(Owned));
   };
 

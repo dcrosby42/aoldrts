@@ -14,6 +14,7 @@ class PixiWrapper extends SimSim.EventEmitter
       height: @renderer.height
 
     @stage.mousedown = (data) => @emit "stageClicked", data
+    @sprites.mousedown = (data) => @emit "worldClicked", data
 
   addBackgroundSprite: (sprite, entityId=null) ->
     @sprites.addChildAt sprite, 0 # ADD ALL THE WAY AT THE BOTTOM
