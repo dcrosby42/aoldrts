@@ -9,7 +9,7 @@ KeyboardController = require('./ui/keyboard_controller.coffee');
 
 PixiWrapper = require('./ui/pixi_wrapper.coffee');
 
-GameRunner = require('./game_runner.coffee');
+GameRunner = require('./ui/game_runner.coffee');
 
 ParkMillerRNG = require('./utils/pm_prng.coffee');
 
@@ -219,7 +219,7 @@ window.watchData = function() {
 };
 
 
-},{"./game_runner.coffee":2,"./ui/keyboard_controller.coffee":3,"./ui/pixi_wrapper.coffee":4,"./utils/pm_prng.coffee":8,"./utils/stop_watch.coffee":9,"./world/entity_inspector.coffee":11,"./world/rts_world.coffee":12}],2:[function(require,module,exports){
+},{"./ui/game_runner.coffee":2,"./ui/keyboard_controller.coffee":3,"./ui/pixi_wrapper.coffee":4,"./utils/pm_prng.coffee":8,"./utils/stop_watch.coffee":9,"./world/entity_inspector.coffee":11,"./world/rts_world.coffee":12}],2:[function(require,module,exports){
 var GameRunner;
 
 GameRunner = (function() {

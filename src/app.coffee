@@ -4,7 +4,7 @@ RtsWorld = require './world/rts_world.coffee'
 StopWatch = require './utils/stop_watch.coffee'
 KeyboardController = require './ui/keyboard_controller.coffee'
 PixiWrapper = require './ui/pixi_wrapper.coffee'
-GameRunner = require './game_runner.coffee'
+GameRunner = require './ui/game_runner.coffee'
 
 ParkMillerRNG = require './utils/pm_prng.coffee'
 
