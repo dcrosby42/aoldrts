@@ -1,7 +1,7 @@
 
 class GameRunner
   constructor: ({@window,@simulation,@pixiWrapper,@stats,@stopWatch,@keyboardController,@entityInspector}) ->
-    @shouldRun = false 
+    @shouldRun = false
     @worldProxyQueue = []
 
     @pixiWrapper.on "spriteClicked", (data,entityId) =>
