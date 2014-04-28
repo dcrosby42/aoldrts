@@ -112,7 +112,7 @@ class CommandQueueSystem extends makr.IteratingSystem
       if owned and (cmd.playerId == owned.playerId)
         if cmd.command == "march"
           movement = targetEntity.get(ComponentRegister.get(Movement))
-          movement.vx = 5
+          movement.vx = 10
         else
           console.log "CommandQueueSystem: UNKNOWN COMMAND:", cmd
       else
@@ -258,9 +258,7 @@ class SpriteSyncSystem extends makr.IteratingSystem
     pixiSprite.position.y = position.y
     pixiSprite.setInteractive(true)
     
-
     @pixiWrapper.addMiddleGroundSprite( pixiSprite, entity.id )
-
 
     @spriteCache[entity.id] = pixiSprite
     sprite.add = false

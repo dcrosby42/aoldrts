@@ -877,7 +877,7 @@ CommandQueueSystem = (function(_super) {
       if (owned && (cmd.playerId === owned.playerId)) {
         if (cmd.command === "march") {
           movement = targetEntity.get(ComponentRegister.get(Movement));
-          _results.push(movement.vx = 5);
+          _results.push(movement.vx = 10);
         } else {
           _results.push(console.log("CommandQueueSystem: UNKNOWN COMMAND:", cmd));
         }
