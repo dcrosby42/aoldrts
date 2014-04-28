@@ -659,6 +659,12 @@ RtsInterface = (function() {
     buffer = 32;
     speed = 8;
     this.on = true;
+    this.sprites.mouseout = (function(_this) {
+      return function(data) {
+        _this.x_move = 0;
+        return _this.y_move = 0;
+      };
+    })(this);
     this.sprites.mousemove = (function(_this) {
       return function(data) {
         var negSpeed, posSpeed, x, y;
@@ -681,12 +687,13 @@ RtsInterface = (function() {
           _this.x_move = 0;
         }
         if (y <= buffer) {
-          return _this.y_move = negSpeed(y, buffer, speed);
+          _this.y_move = negSpeed(y, buffer, speed);
         } else if (y >= height - buffer) {
-          return _this.y_move = posSpeed(y, buffer, height, speed);
+          _this.y_move = posSpeed(y, buffer, height, speed);
         } else {
-          return _this.y_move = 0;
+          _this.y_move = 0;
         }
+        return false;
       };
     })(this);
   }
@@ -699,6 +706,8 @@ RtsInterface = (function() {
   };
 
   RtsInterface.prototype.setMouseScrollingOn = function(onOff) {
+    document.getElementById("game").setAttribute('tabindex', 1);
+    document.getElementById("game").focus();
     return this.on = onOff;
   };
 

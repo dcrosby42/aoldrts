@@ -11,6 +11,10 @@ class RtsInterface
     speed = 8
     @on = true
 
+    @sprites.mouseout = (data) =>
+      @x_move = 0
+      @y_move = 0
+
     @sprites.mousemove = (data) =>
       return unless @on
       x = data.global.x
