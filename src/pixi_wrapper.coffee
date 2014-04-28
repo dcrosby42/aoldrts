@@ -13,6 +13,18 @@ class PixiWrapper extends SimSim.EventEmitter
       width: @renderer.width
       height: @renderer.height
 
+    # MINIMAP
+    # minimapWidth = opts.width
+    # minimapHeight = opts.height
+    # @minimapRenderer = new PIXI.RenderTexture(opts.width, opts.height)
+    # @minimapRenderer.render @sprites # your main world / display object
+    # map = new PIXI.Sprite(@minimapRenderer)
+    # map.position.x = 0
+    # map.position.y = 0
+    # map.scale.x = 0.2
+    # map.scale.y = 0.2
+    # @stage.addChild map
+
     # @stage.mousedown = (data) ->
     #   console.log "Stage mouse down!", data, data.getLocalPosition(data.target)
 
@@ -61,5 +73,6 @@ class PixiWrapper extends SimSim.EventEmitter
   render: ->
     @viewport.update()
     @renderer.render(@stage)
+    @minimapRenderer.render @sprites
 
 module.exports = PixiWrapper

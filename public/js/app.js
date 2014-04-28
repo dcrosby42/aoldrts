@@ -592,7 +592,8 @@ PixiWrapper = (function(_super) {
 
   PixiWrapper.prototype.render = function() {
     this.viewport.update();
-    return this.renderer.render(this.stage);
+    this.renderer.render(this.stage);
+    return this.minimapRenderer.render(this.sprites);
   };
 
   return PixiWrapper;
