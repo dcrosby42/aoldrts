@@ -34,6 +34,7 @@ class RtsInterface
         @y_move = posSpeed(y, buffer, height, speed)
       else
         @y_move = 0
+      false
 
   update: ->
     if @on
@@ -41,6 +42,8 @@ class RtsInterface
       @sprites.position.y += @y_move
 
   setMouseScrollingOn: (onOff) ->
+    document.getElementById("game").setAttribute('tabindex', 1)
+    document.getElementById("game").focus()
     @on = onOff
 
 module.exports = RtsInterface
