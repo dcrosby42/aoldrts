@@ -333,7 +333,8 @@ class EntityFactory
   powerup: (x, y, powerup_type) ->
     powerup_frames = {
       blue: {
-        right: ["blue-crystal0", "blue-crystal1", "blue-crystal2", "blue-crystal3", "blue-crystal4", "blue-crystal5", "blue-crystal6", "blue-crystal7"]
+        downIdle: ["blue-crystal0", "blue-crystal1", "blue-crystal2", "blue-crystal3", "blue-crystal4", "blue-crystal5", "blue-crystal6", "blue-crystal7"]
+        down: ["blue-crystal0", "blue-crystal1", "blue-crystal2", "blue-crystal3", "blue-crystal4", "blue-crystal5", "blue-crystal6", "blue-crystal7"]
       }
     }
     p = @ecs.create()
@@ -341,7 +342,7 @@ class EntityFactory
     # movement just added 
     p.add(new Movement(vx: 0, vy: 0), ComponentRegister.get(Movement))
     p.add(new Powerup(powerup_type: powerup_type), ComponentRegister.get(Powerup))
-    p.add(new Sprite(framelist: powerup_frames[powerup_type]), ComponentRegister.get(Sprite))
+    p.add(new Sprite(name: "blue-crystal", framelist: powerup_frames[powerup_type]), ComponentRegister.get(Sprite))
     p
 
   mapTiles: (seed, width, height) ->

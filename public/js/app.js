@@ -37,8 +37,8 @@ window.gameConfig = function() {
   this._gameConfig = {
     stageWidth: window.screen.width / 2,
     stageHeight: window.screen.height / 2,
-    imageAssets: ["images/bunny.png", "images/EBRobotedit2crMatsuoKaito.png", "images/bunny.png", "images/logo.png", "images/terrain.png"],
-    spriteSheetAssets: ["images/EBRobotedit2crMatsuoKaito.json", "images/terrain.json"],
+    imageAssets: ["images/bunny.png", "images/EBRobotedit2crMatsuoKaito.png", "images/bunny.png", "images/logo.png", "images/terrain.png", "images/crystal-qubodup-ccby3-32-blue.png"],
+    spriteSheetAssets: ["images/EBRobotedit2crMatsuoKaito.json", "images/terrain.json", "images/crystal.json"],
     simSimConnection: {
       url: "" + scheme + "://" + window.location.hostname,
       secure: useHttps
@@ -647,7 +647,7 @@ module.exports = ParkMillerRNG;
 
 
 },{}],8:[function(require,module,exports){
-var BUNNY_VEL, ChecksumCalculator, CommandQueueSystem, ComponentRegister, ControlMappingSystem, ControlSystem, Controls, EntityFactory, EntityInspectorSystem, HalfPI, MapTiles, MapTilesSystem, Movement, MovementSystem, Owned, ParkMillerRNG, Position, RtsWorld, Sprite, SpriteSyncSystem, fixFloat,
+var BUNNY_VEL, ChecksumCalculator, CommandQueueSystem, ComponentRegister, ControlMappingSystem, ControlSystem, Controls, EntityFactory, EntityInspectorSystem, HalfPI, MapTiles, MapTilesSystem, Movement, MovementSystem, Owned, ParkMillerRNG, Position, Powerup, RtsWorld, Sprite, SpriteSyncSystem, eachMapTile, fixFloat,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
@@ -743,6 +743,40 @@ MapTiles = (function() {
 
 })();
 
+Powerup = (function() {
+  function Powerup(_arg) {
+    this.powerup_type = _arg.powerup_type;
+  }
+
+  return Powerup;
+
+})();
+
+eachMapTile = function(prng, width, height, f) {
+  var base, bases, feature, features, offset_x, offset_y, tileSize, tile_set, tile_sets, x, y, _i, _ref, _results;
+  tile_sets = ["gray", "orange", "dark_brown", "dark"];
+  features = [[null, 200], ["stone0", 8], ["stone1", 8], ["crater", 2]];
+  bases = [["small_crater", 5], ["basic0", 50], ["basic1", 50]];
+  tile_set = prng.choose(tile_sets);
+  tileSize = 31;
+  offset_x = (width / 2) * tileSize;
+  offset_y = (height / 2) * tileSize;
+  _results = [];
+  for (x = _i = _ref = width * tileSize; -tileSize > 0 ? _i <= 0 : _i >= 0; x = _i += -tileSize) {
+    _results.push((function() {
+      var _j, _ref1, _results1;
+      _results1 = [];
+      for (y = _j = _ref1 = height * tileSize; -tileSize > 0 ? _j <= 0 : _j >= 0; y = _j += -tileSize) {
+        base = prng.weighted_choose(bases);
+        feature = prng.weighted_choose(features);
+        _results1.push(f(x - offset_x, y - offset_y, tile_set, base, feature));
+      }
+      return _results1;
+    })());
+  }
+  return _results;
+};
+
 MapTilesSystem = (function(_super) {
   __extends(MapTilesSystem, _super);
 
@@ -764,7 +798,7 @@ MapTilesSystem = (function(_super) {
     var component;
     if (this.tilesSprites == null) {
       component = entity.get(ComponentRegister.get(MapTiles));
-      this.tilesSprites = this.createTiles(component.seed);
+      this.tilesSprites = this.createTiles(component.seed, component.width, component.height);
       return this.pixiWrapper.sprites.addChildAt(this.tilesSprites, 0);
     }
   };
@@ -777,32 +811,24 @@ MapTilesSystem = (function(_super) {
     return tile;
   };
 
-  MapTilesSystem.prototype.createTiles = function(seed) {
-    var base, bases, feature, feature_frame, features, frame, prng, tileSize, tile_set, tile_sets, tiles, x, y, _i, _j;
-    tile_sets = ["gray_set_", "orange_set_", "dark_brown_set_", "dark_set_"];
-    features = [["", 90], ["feature0", 4], ["feature1", 4], ["feature2", 2]];
-    bases = [["basic0", 5], ["basic1", 50], ["basic2", 50]];
+  MapTilesSystem.prototype.createTiles = function(seed, width, height) {
+    var prng, tiles;
     tiles = new PIXI.DisplayObjectContainer();
-    prng = new ParkMillerRNG(seed);
-    tile_set = prng.choose(tile_sets);
     tiles.position.x = 0;
     tiles.position.y = 0;
-    tileSize = 31;
-    for (x = _i = 3200; _i >= 0; x = _i += -tileSize) {
-      for (y = _j = 3200; _j >= 0; y = _j += -tileSize) {
-        base = prng.weighted_choose(bases);
-        frame = tile_set + base + ".png";
-        tiles.addChild(this.createTile(tiles, frame, x, y));
-        feature = prng.weighted_choose(features);
-        if (feature !== "") {
-          feature_frame = tile_set + feature + ".png";
-          tiles.addChild(this.createTile(tiles, feature_frame, x, y));
+    prng = new ParkMillerRNG(seed);
+    eachMapTile(prng, width, height, (function(_this) {
+      return function(x, y, tile_set, base, feature) {
+        var feature_frame, frame;
+        frame = tile_set + "_set_" + base;
+        tiles.addChild(_this.createTile(tiles, frame, x, y));
+        if (feature != null) {
+          feature_frame = tile_set + "_set_" + feature;
+          return tiles.addChild(_this.createTile(tiles, feature_frame, x, y));
         }
-      }
-    }
+      };
+    })(this));
     tiles.cacheAsBitmap = true;
-    tiles.position.x = -1600;
-    tiles.position.y = -1600;
     return tiles;
   };
 
@@ -1123,8 +1149,35 @@ EntityFactory = (function() {
     return robot;
   };
 
+  EntityFactory.prototype.powerup = function(x, y, powerup_type) {
+    var p, powerup_frames;
+    powerup_frames = {
+      blue: {
+        downIdle: ["blue-crystal0", "blue-crystal1", "blue-crystal2", "blue-crystal3", "blue-crystal4", "blue-crystal5", "blue-crystal6", "blue-crystal7"],
+        down: ["blue-crystal0", "blue-crystal1", "blue-crystal2", "blue-crystal3", "blue-crystal4", "blue-crystal5", "blue-crystal6", "blue-crystal7"]
+      }
+    };
+    p = this.ecs.create();
+    p.add(new Position({
+      x: x,
+      y: y
+    }), ComponentRegister.get(Position));
+    p.add(new Movement({
+      vx: 0,
+      vy: 0
+    }), ComponentRegister.get(Movement));
+    p.add(new Powerup({
+      powerup_type: powerup_type
+    }), ComponentRegister.get(Powerup));
+    p.add(new Sprite({
+      name: "blue-crystal",
+      framelist: powerup_frames[powerup_type]
+    }), ComponentRegister.get(Sprite));
+    return p;
+  };
+
   EntityFactory.prototype.mapTiles = function(seed, width, height) {
-    var comp, mapTiles;
+    var comp, mapTiles, prng;
     mapTiles = this.ecs.create();
     comp = new MapTiles({
       seed: seed,
@@ -1132,6 +1185,14 @@ EntityFactory = (function() {
       height: height
     });
     mapTiles.add(comp, ComponentRegister.get(MapTiles));
+    prng = new ParkMillerRNG(seed);
+    eachMapTile(prng, width, height, (function(_this) {
+      return function(x, y, tile_set, base, feature) {
+        if (feature === "crater") {
+          return _this.powerup(x + 32, y + 32, "blue");
+        }
+      };
+    })(this));
     return mapTiles;
   };
 
@@ -1157,7 +1218,7 @@ RtsWorld = (function(_super) {
     if (this.entityInspector) {
       this.setupEntityInspector(this.ecs, this.entityInspector);
     }
-    this.entityFactory.mapTiles((Math.random() * 1000) | 0, 50, 50);
+    this.entityFactory.mapTiles((Math.random() * 1000) | 0, 100, 100);
   }
 
   RtsWorld.prototype.setupECS = function(pixieWrapper) {
@@ -1168,6 +1229,7 @@ RtsWorld = (function(_super) {
     ComponentRegister.register(Movement);
     ComponentRegister.register(Controls);
     ComponentRegister.register(MapTiles);
+    ComponentRegister.register(Powerup);
     ecs = new makr.World();
     ecs.registerSystem(new SpriteSyncSystem(this.pixiWrapper));
     ecs.registerSystem(new MapTilesSystem(this.pixiWrapper));
