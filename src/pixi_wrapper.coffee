@@ -13,11 +13,12 @@ class PixiWrapper extends SimSim.EventEmitter
       width: @renderer.width
       height: @renderer.height
 
-    # @stage.mousedown = (data) ->
-    #   console.log "Stage mouse down!", data, data.getLocalPosition(data.target)
+    @stage.mousedown = (data) => @emit "stageClicked", data
 
+  addBackgroundSprite: (sprite, entityId=null) ->
+    @sprites.addChildAt sprite, 0 # ADD ALL THE WAY AT THE BOTTOM
 
-  addMiddleGroundSprite: (sprite, entityId) ->
+  addMiddleGroundSprite: (sprite, entityId=null) ->
     endIndex = @sprites.children.length # ADD ON TOP
     @sprites.addChildAt sprite, endIndex
     sprite.mousedown = (data) =>

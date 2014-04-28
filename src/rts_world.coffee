@@ -81,7 +81,7 @@ class MapTilesSystem extends makr.IteratingSystem
     unless @tilesSprites?
       component = entity.get(ComponentRegister.get(MapTiles))
       @tilesSprites = @createTiles(component.seed, component.width, component.height)
-      @pixiWrapper.sprites.addChildAt(@tilesSprites,0) # ADD ALL THE WAY AT THE BOTTOM
+      @pixiWrapper.addBackgroundSprite(@tilesSprites)
 
   createTile: (tiles, frame, x, y) ->
     tile = new PIXI.Sprite(PIXI.Texture.fromFrame(frame))

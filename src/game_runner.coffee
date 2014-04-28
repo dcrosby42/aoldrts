@@ -15,6 +15,11 @@ class GameRunner
           else
             @simulation.worldProxy "commandUnit", "march", entityId, direction: "right"
 
+    @pixiWrapper.on "stageClicked", (data) =>
+      if @keyboardController.isActive("roboType1")
+        console.log "ROBO1"
+
+
   start: ->
     @simulation.start()
     @shouldRun = true

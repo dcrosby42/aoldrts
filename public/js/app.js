@@ -311,6 +311,13 @@ GameRunner = (function() {
         });
       };
     })(this));
+    this.pixiWrapper.on("stageClicked", (function(_this) {
+      return function(data) {
+        if (_this.keyboardController.isActive("roboType1")) {
+          return console.log("ROBO1");
+        }
+      };
+    })(this));
   }
 
   GameRunner.prototype.start = function() {
@@ -521,10 +528,25 @@ PixiWrapper = (function(_super) {
       width: this.renderer.width,
       height: this.renderer.height
     });
+    this.stage.mousedown = (function(_this) {
+      return function(data) {
+        return _this.emit("stageClicked", data);
+      };
+    })(this);
   }
+
+  PixiWrapper.prototype.addBackgroundSprite = function(sprite, entityId) {
+    if (entityId == null) {
+      entityId = null;
+    }
+    return this.sprites.addChildAt(sprite, 0);
+  };
 
   PixiWrapper.prototype.addMiddleGroundSprite = function(sprite, entityId) {
     var endIndex;
+    if (entityId == null) {
+      entityId = null;
+    }
     endIndex = this.sprites.children.length;
     this.sprites.addChildAt(sprite, endIndex);
     return sprite.mousedown = (function(_this) {
@@ -799,7 +821,7 @@ MapTilesSystem = (function(_super) {
     if (this.tilesSprites == null) {
       component = entity.get(ComponentRegister.get(MapTiles));
       this.tilesSprites = this.createTiles(component.seed, component.width, component.height);
-      return this.pixiWrapper.sprites.addChildAt(this.tilesSprites, 0);
+      return this.pixiWrapper.addBackgroundSprite(this.tilesSprites);
     }
   };
 
