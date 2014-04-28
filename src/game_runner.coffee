@@ -6,6 +6,13 @@ class GameRunner
 
     @selectedEntityId = null
 
+    # @entityInspector.get("entity.#{entityId}")
+    # @entityInspector.get("entity.#{entityId}.position")
+    # @entityInspector.get("entity.#{entityId}.position.x")
+    # @ui:
+    # 
+        
+
     @pixiWrapper.on "spriteClicked", (data,entityId) =>
       @worldProxyQueue.push =>
         entity = @entityInspector.getEntity(entityId)
@@ -13,14 +20,6 @@ class GameRunner
         if owned.playerId == @simulation.clientId()
           @selectedEntityId = entityId
           console.log "SELECTED #{entityId}"
-
-          # movement = entity['Movement']
-          # if movement.vx > 0
-          #   @simulation.worldProxy "commandUnit", "march", entityId: entityId, direction: "left"
-          # else if movement.vx < 0
-          #   @simulation.worldProxy "commandUnit", "march", entityId: entityId, direction: "stop"
-          # else
-          #   @simulation.worldProxy "commandUnit", "march", entityId: entityId, direction: "right"
 
     @pixiWrapper.on "worldClicked", (data) =>
       pt = data.getLocalPosition(data.target)
@@ -31,8 +30,6 @@ class GameRunner
       if @selectedEntityId and @keyboardController.isActive("goto")
         @simulation.worldProxy "commandUnit", "goto", entityId: @selectedEntityId, x: pt.x, y: pt.y
         @selectedEntityId = null
-
-
 
 
   start: ->

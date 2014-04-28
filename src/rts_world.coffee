@@ -1,6 +1,8 @@
 Array::compact = ->
   (elem for elem in this when elem?)
 
+PlayerColors = [ 0xBDFFBD, 0xFFBDBD, 0xBDBDFF ]
+
 ChecksumCalculator = require './checksum_calculator.coffee'
 ParkMillerRNG = require './pm_prng.coffee'
 
@@ -117,29 +119,6 @@ class ControlSystem extends makr.IteratingSystem
     @rtsWorld.currentControls[entity.id] = []
 
 
-class ControlMappingSystem extends makr.IteratingSystem
-  constructor: () ->
-    makr.IteratingSystem.call(@)
-    @registerComponent(ComponentRegister.get(C.Movement))
-    @registerComponent(ComponentRegister.get(C.Controls))
-
-  process: (entity, elapsed) ->
-    # movement = entity.get(ComponentRegister.get(C.Movement))
-    # controls = entity.get(ComponentRegister.get(C.Controls))
-
-    # if controls.up
-    #   movement.vy = -BUNNY_VEL
-    # else if controls.down
-    #   movement.vy = BUNNY_VEL
-    # else
-    #   movement.vy = 0
-    # if controls.left
-    #   movement.vx = -BUNNY_VEL
-    # else if controls.right
-    #   movement.vx = BUNNY_VEL
-    # else
-    #   movement.vx = 0
-
 class MovementSystem extends makr.IteratingSystem
   constructor: () ->
     makr.IteratingSystem.call(@)
@@ -154,7 +133,7 @@ class MovementSystem extends makr.IteratingSystem
     position.y += movement.vy * elapsed
 
 class SpriteSyncSystem extends makr.IteratingSystem
-  constructor: (@pixiWrapper) ->
+  constructor: (@pixiWrapper, @playerFinder) ->
     makr.IteratingSystem.call(@)
     @registerComponent(ComponentRegister.get(C.Sprite))
     @registerComponent(ComponentRegister.get(C.Position))
@@ -170,10 +149,11 @@ class SpriteSyncSystem extends makr.IteratingSystem
     position = entity.get(ComponentRegister.get(C.Position))
     sprite = entity.get(ComponentRegister.get(C.Sprite))
     movement = entity.get(ComponentRegister.get(C.Movement))
+    owner = entity.get(ComponentRegister.get(C.Owned))
 
     pixiSprite = @spriteCache[entity.id]
     unless pixiSprite?
-      pixiSprite = @buildSprite(entity, sprite, position)
+      pixiSprite = @buildSprite(entity, sprite, position, owner)
     else if sprite.remove
       @removeSprite(entity, sprite)
     else
@@ -196,7 +176,7 @@ class SpriteSyncSystem extends makr.IteratingSystem
       else
         pixiSprite.textures = @spriteFrameCache[sprite.name][sprite.facing]
     
-  buildSprite: (entity, sprite, position) ->
+  buildSprite: (entity, sprite, position, owner) ->
     pixiSprite = undefined
     if sprite.framelist
       unless @spriteFrameCache[sprite.name]
@@ -212,6 +192,12 @@ class SpriteSyncSystem extends makr.IteratingSystem
     pixiSprite.anchor.x = pixiSprite.anchor.y = 0.5
     pixiSprite.position.x = position.x
     pixiSprite.position.y = position.y
+    if owner?
+      pixiSprite.tint = @playerFinder.playerMetadata[owner.playerId].color
+      # foo = Math.random() * 0xFFFFFF #
+      # console.log foo
+      # pixiSprite.tint = foo
+      console.log pixiSprite.tint
     pixiSprite.setInteractive(true)
     
     @pixiWrapper.addMiddleGroundSprite( pixiSprite, entity.id )
@@ -293,9 +279,9 @@ class EntityFactory
 
     mapTiles
 
-BUNNY_VEL = 3
 class RtsWorld extends SimSim.WorldBase
   constructor: ({@pixiWrapper, @entityInspector}) ->
+    @playerMetadata = {}
     @pixiWrapper or throw new Error("Need pixiWrapper")
     @commandQueue = []
     @randomNumberGenerator = new ParkMillerRNG((Math.random() * 1000)|0)
@@ -319,11 +305,10 @@ class RtsWorld extends SimSim.WorldBase
     ecs = new makr.World()
     ecs.registerSystem(new WanderControlMappingSystem(@randomNumberGenerator))
     ecs.registerSystem(new GotoSystem())
-    ecs.registerSystem(new SpriteSyncSystem(@pixiWrapper))
+    ecs.registerSystem(new SpriteSyncSystem(@pixiWrapper, @))
     ecs.registerSystem(new MapTilesSystem(@pixiWrapper))
     ecs.registerSystem(new CommandQueueSystem(@commandQueue, @))  # passing "this" as the entityFinder
     ecs.registerSystem(new MovementSystem())
-    ecs.registerSystem(new ControlMappingSystem())
     ecs
 
   setupEntityInspector: (ecs, entityInspector) ->
@@ -356,6 +341,8 @@ class RtsWorld extends SimSim.WorldBase
     
   #### SimSim.WorldBase#playerJoined(id)
   playerJoined: (playerId) ->
+    @playerMetadata[playerId] ||= {}
+    @playerMetadata[playerId].color = @randomNumberGenerator.choose(PlayerColors)
 
   #### SimSim.WorldBase#playerLeft(id)
   playerLeft: (playerId) ->
@@ -375,7 +362,7 @@ class RtsWorld extends SimSim.WorldBase
   
   #### SimSim.WorldBase#setData()
   setData: (data) ->
-    @players = data.players
+    @playerMetadata = data.playerMetadata
     @ecs._nextEntityID = data.nextEntityId
     @randomNumberGenerator.seed = data.sacredSeed
     console.log "setData: @ecs._nextEntityID set to #{@ecs._nextEntityID}"
@@ -405,7 +392,7 @@ class RtsWorld extends SimSim.WorldBase
         #   componentBags[entId] = @serializeComponent(c) if c?
 
     data =
-      players: @players
+      playerMetadata: @playerMetadata
       componentBags: componentBags
       nextEntityId: @ecs._nextEntityID
       sacredSeed: @randomNumberGenerator.seed

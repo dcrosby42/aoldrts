@@ -788,7 +788,7 @@ module.exports = ParkMillerRNG;
 
 
 },{}],9:[function(require,module,exports){
-var BUNNY_VEL, C, ChecksumCalculator, CommandQueueSystem, ComponentRegister, ControlMappingSystem, ControlSystem, EntityFactory, EntityInspectorSystem, GotoSystem, HalfPI, MapTilesSystem, MovementSystem, ParkMillerRNG, RtsWorld, SpriteSyncSystem, WanderControlMappingSystem, eachMapTile, fixFloat,
+var C, ChecksumCalculator, CommandQueueSystem, ComponentRegister, ControlSystem, EntityFactory, EntityInspectorSystem, GotoSystem, HalfPI, MapTilesSystem, MovementSystem, ParkMillerRNG, PlayerColors, RtsWorld, SpriteSyncSystem, WanderControlMappingSystem, eachMapTile, fixFloat,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
@@ -803,6 +803,8 @@ Array.prototype.compact = function() {
   }
   return _results;
 };
+
+PlayerColors = [0xBDFFBD, 0xFFBDBD, 0xBDBDFF];
 
 ChecksumCalculator = require('./checksum_calculator.coffee');
 
@@ -963,21 +965,6 @@ ControlSystem = (function(_super) {
 
 })(makr.IteratingSystem);
 
-ControlMappingSystem = (function(_super) {
-  __extends(ControlMappingSystem, _super);
-
-  function ControlMappingSystem() {
-    makr.IteratingSystem.call(this);
-    this.registerComponent(ComponentRegister.get(C.Movement));
-    this.registerComponent(ComponentRegister.get(C.Controls));
-  }
-
-  ControlMappingSystem.prototype.process = function(entity, elapsed) {};
-
-  return ControlMappingSystem;
-
-})(makr.IteratingSystem);
-
 MovementSystem = (function(_super) {
   __extends(MovementSystem, _super);
 
@@ -1005,8 +992,9 @@ MovementSystem = (function(_super) {
 SpriteSyncSystem = (function(_super) {
   __extends(SpriteSyncSystem, _super);
 
-  function SpriteSyncSystem(pixiWrapper) {
+  function SpriteSyncSystem(pixiWrapper, playerFinder) {
     this.pixiWrapper = pixiWrapper;
+    this.playerFinder = playerFinder;
     makr.IteratingSystem.call(this);
     this.registerComponent(ComponentRegister.get(C.Sprite));
     this.registerComponent(ComponentRegister.get(C.Position));
@@ -1021,13 +1009,14 @@ SpriteSyncSystem = (function(_super) {
   };
 
   SpriteSyncSystem.prototype.process = function(entity, elapsed) {
-    var movement, pixiSprite, position, sprite, vx, vy;
+    var movement, owner, pixiSprite, position, sprite, vx, vy;
     position = entity.get(ComponentRegister.get(C.Position));
     sprite = entity.get(ComponentRegister.get(C.Sprite));
     movement = entity.get(ComponentRegister.get(C.Movement));
+    owner = entity.get(ComponentRegister.get(C.Owned));
     pixiSprite = this.spriteCache[entity.id];
     if (pixiSprite == null) {
-      pixiSprite = this.buildSprite(entity, sprite, position);
+      pixiSprite = this.buildSprite(entity, sprite, position, owner);
     } else if (sprite.remove) {
       this.removeSprite(entity, sprite);
     } else {
@@ -1060,7 +1049,7 @@ SpriteSyncSystem = (function(_super) {
     }
   };
 
-  SpriteSyncSystem.prototype.buildSprite = function(entity, sprite, position) {
+  SpriteSyncSystem.prototype.buildSprite = function(entity, sprite, position, owner) {
     var frame, frameCache, frames, pixiSprite, pose, _ref;
     pixiSprite = void 0;
     if (sprite.framelist) {
@@ -1090,6 +1079,10 @@ SpriteSyncSystem = (function(_super) {
     pixiSprite.anchor.x = pixiSprite.anchor.y = 0.5;
     pixiSprite.position.x = position.x;
     pixiSprite.position.y = position.y;
+    if (owner != null) {
+      pixiSprite.tint = this.playerFinder.playerMetadata[owner.playerId].color;
+      console.log(pixiSprite.tint);
+    }
     pixiSprite.setInteractive(true);
     this.pixiWrapper.addMiddleGroundSprite(pixiSprite, entity.id);
     sprite.add = false;
@@ -1220,13 +1213,12 @@ EntityFactory = (function() {
 
 })();
 
-BUNNY_VEL = 3;
-
 RtsWorld = (function(_super) {
   __extends(RtsWorld, _super);
 
   function RtsWorld(_arg) {
     this.pixiWrapper = _arg.pixiWrapper, this.entityInspector = _arg.entityInspector;
+    this.playerMetadata = {};
     this.pixiWrapper || (function() {
       throw new Error("Need pixiWrapper");
     })();
@@ -1256,11 +1248,10 @@ RtsWorld = (function(_super) {
     ecs = new makr.World();
     ecs.registerSystem(new WanderControlMappingSystem(this.randomNumberGenerator));
     ecs.registerSystem(new GotoSystem());
-    ecs.registerSystem(new SpriteSyncSystem(this.pixiWrapper));
+    ecs.registerSystem(new SpriteSyncSystem(this.pixiWrapper, this));
     ecs.registerSystem(new MapTilesSystem(this.pixiWrapper));
     ecs.registerSystem(new CommandQueueSystem(this.commandQueue, this));
     ecs.registerSystem(new MovementSystem());
-    ecs.registerSystem(new ControlMappingSystem());
     return ecs;
   };
 
@@ -1318,7 +1309,11 @@ RtsWorld = (function(_super) {
     });
   };
 
-  RtsWorld.prototype.playerJoined = function(playerId) {};
+  RtsWorld.prototype.playerJoined = function(playerId) {
+    var _base;
+    (_base = this.playerMetadata)[playerId] || (_base[playerId] = {});
+    return this.playerMetadata[playerId].color = this.randomNumberGenerator.choose(PlayerColors);
+  };
 
   RtsWorld.prototype.playerLeft = function(playerId) {
     var ent, owner, _i, _len, _ref, _results;
@@ -1348,7 +1343,7 @@ RtsWorld = (function(_super) {
 
   RtsWorld.prototype.setData = function(data) {
     var c, comp, components, comps, ent, entId, entity, staleEnts, _i, _len, _ref, _results;
-    this.players = data.players;
+    this.playerMetadata = data.playerMetadata;
     this.ecs._nextEntityID = data.nextEntityId;
     this.randomNumberGenerator.seed = data.sacredSeed;
     console.log("setData: @ecs._nextEntityID set to " + this.ecs._nextEntityID);
@@ -1409,7 +1404,7 @@ RtsWorld = (function(_super) {
       }
     }
     data = {
-      players: this.players,
+      playerMetadata: this.playerMetadata,
       componentBags: componentBags,
       nextEntityId: this.ecs._nextEntityID,
       sacredSeed: this.randomNumberGenerator.seed
