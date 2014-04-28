@@ -4,22 +4,11 @@ Array::compact = ->
 ChecksumCalculator = require './checksum_calculator.coffee'
 ParkMillerRNG = require './pm_prng.coffee'
 
-ComponentRegister = (->
-  nextType = 0
-  ctors = []
-  types = []
-  register: (ctor) ->
-    i = ctors.indexOf(ctor)
-    if i < 0
-      ctors.push ctor
-      types.push nextType++
-    return
+CommandQueueSystem = require './systems/command_queue_system.coffee'
 
-  get: (ctor) ->
-    i = ctors.indexOf(ctor)
-    throw "Unknown type " + ctor  if i < 0
-    types[i]
-)()
+ComponentRegister = require './utils/component_register.coffee'
+
+C = require './components.coffee'
 
 makr.World.prototype.resurrect = (entId) ->
   entity = null
@@ -34,20 +23,6 @@ makr.World.prototype.resurrect = (entId) ->
   @_alive.push(entity)
   entity
 
-class Owned
-  constructor: ({@playerId}) ->
-
-class Position
-  constructor: ({@x, @y}) ->
-
-class Movement
-  constructor: ({@vx, @vy}) ->
-
-class MapTiles
-  constructor: ({@seed, @width, @height}) ->
-
-class Powerup
-  constructor: ({@powerup_type}) ->
 
 eachMapTile = (prng, width, height, f) ->
   tile_sets = ["gray", "orange", "dark_brown", "dark"]
@@ -70,7 +45,7 @@ eachMapTile = (prng, width, height, f) ->
 class MapTilesSystem extends makr.IteratingSystem
   constructor: (@pixiWrapper) ->
     makr.IteratingSystem.call(@)
-    @registerComponent(ComponentRegister.get(MapTiles))
+    @registerComponent(ComponentRegister.get(C.MapTiles))
     @tilesSprites = undefined
 
   onRemoved: (entity) ->
@@ -80,7 +55,7 @@ class MapTilesSystem extends makr.IteratingSystem
     
   process: (entity, elapsed) ->
     unless @tilesSprites?
-      component = entity.get(ComponentRegister.get(MapTiles))
+      component = entity.get(ComponentRegister.get(C.MapTiles))
       @tilesSprites = @createTiles(component.seed, component.width, component.height)
       @pixiWrapper.addBackgroundSprite(@tilesSprites)
 
@@ -106,46 +81,6 @@ class MapTilesSystem extends makr.IteratingSystem
     tiles.cacheAsBitmap = true
     tiles
 
-class CommandQueueSystem extends makr.IteratingSystem
-  constructor: (@commandQueue, @entityFinder) ->
-    makr.IteratingSystem.call(@)
-    
-  processEntities: ->
-    commands = []
-    while cmd = @commandQueue.shift()
-      commands.push(cmd)
-    for cmd in commands
-      if cmd.args.entityId?
-        targetEntity = @entityFinder.findEntityById(cmd.args.entityId)
-        owned = targetEntity.get(ComponentRegister.get(Owned))
-        if owned and (cmd.playerId == owned.playerId)
-          if cmd.command == "march"
-            movement = targetEntity.get(ComponentRegister.get(Movement))
-            if cmd.args.direction == "left"
-              movement.vx = -10
-            else if cmd.args.direction == "right"
-              movement.vx = 10
-            else if cmd.args.direction == "stop"
-              movement.vx = 0
-          else
-            console.log "CommandQueueSystem: UNKNOWN COMMAND:", cmd
-        else
-          console.log "CommandQueueSystem: ILLEGAL INSTRUCTION, player #{cmd.playerId} may not command entity #{cmd.args.entityId} because it's owned by #{owned.playerId}"
-          
-
-class Sprite
-  constructor: ({@name, @framelist, @facing}) ->
-    @remove = false
-    @add = true
-    @facing ||= "down"
-    @idle = true
-
-class Controls
-  constructor: () ->
-    @up = false
-    @down = false
-    @left = false
-    @right = false
 
 class EntityInspectorSystem extends makr.IteratingSystem
   constructor: (@inspector, @componentClass) ->
@@ -160,12 +95,12 @@ class EntityInspectorSystem extends makr.IteratingSystem
 class ControlSystem extends makr.IteratingSystem
   constructor: (@rtsWorld) ->
     makr.IteratingSystem.call(@)
-    @registerComponent(ComponentRegister.get(Controls))
-    @registerComponent(ComponentRegister.get(Owned))
+    @registerComponent(ComponentRegister.get(C.Controls))
+    @registerComponent(ComponentRegister.get(C.Owned))
 
   process: (entity, elapsed) ->
-    controls = entity.get(ComponentRegister.get(Controls))
-    # owner = entity.get(ComponentRegister.get(Controls))
+    controls = entity.get(ComponentRegister.get(C.Controls))
+    # owner = entity.get(ComponentRegister.get(C.Controls))
 
     entityControls = @rtsWorld.currentControls[entity.id] || []
 
@@ -183,12 +118,12 @@ class ControlSystem extends makr.IteratingSystem
 class ControlMappingSystem extends makr.IteratingSystem
   constructor: () ->
     makr.IteratingSystem.call(@)
-    @registerComponent(ComponentRegister.get(Movement))
-    @registerComponent(ComponentRegister.get(Controls))
+    @registerComponent(ComponentRegister.get(C.Movement))
+    @registerComponent(ComponentRegister.get(C.Controls))
 
   process: (entity, elapsed) ->
-    # movement = entity.get(ComponentRegister.get(Movement))
-    # controls = entity.get(ComponentRegister.get(Controls))
+    # movement = entity.get(ComponentRegister.get(C.Movement))
+    # controls = entity.get(ComponentRegister.get(C.Controls))
 
     # if controls.up
     #   movement.vy = -BUNNY_VEL
@@ -206,12 +141,12 @@ class ControlMappingSystem extends makr.IteratingSystem
 class MovementSystem extends makr.IteratingSystem
   constructor: () ->
     makr.IteratingSystem.call(@)
-    @registerComponent(ComponentRegister.get(Movement))
-    @registerComponent(ComponentRegister.get(Position))
+    @registerComponent(ComponentRegister.get(C.Movement))
+    @registerComponent(ComponentRegister.get(C.Position))
 
   process: (entity, elapsed) ->
-    position = entity.get(ComponentRegister.get(Position))
-    movement = entity.get(ComponentRegister.get(Movement))
+    position = entity.get(ComponentRegister.get(C.Position))
+    movement = entity.get(ComponentRegister.get(C.Movement))
     console.log("Y NO Position?", entity) unless position?
     position.x += movement.vx * elapsed
     position.y += movement.vy * elapsed
@@ -219,9 +154,9 @@ class MovementSystem extends makr.IteratingSystem
 class SpriteSyncSystem extends makr.IteratingSystem
   constructor: (@pixiWrapper) ->
     makr.IteratingSystem.call(@)
-    @registerComponent(ComponentRegister.get(Sprite))
-    @registerComponent(ComponentRegister.get(Position))
-    @registerComponent(ComponentRegister.get(Movement))
+    @registerComponent(ComponentRegister.get(C.Sprite))
+    @registerComponent(ComponentRegister.get(C.Position))
+    @registerComponent(ComponentRegister.get(C.Movement))
     @spriteCache = {}
     @spriteFrameCache = {}
 
@@ -230,9 +165,9 @@ class SpriteSyncSystem extends makr.IteratingSystem
     @spriteCache[entity.id] = undefined
 
   process: (entity, elapsed) ->
-    position = entity.get(ComponentRegister.get(Position))
-    sprite = entity.get(ComponentRegister.get(Sprite))
-    movement = entity.get(ComponentRegister.get(Movement))
+    position = entity.get(ComponentRegister.get(C.Position))
+    sprite = entity.get(ComponentRegister.get(C.Sprite))
+    movement = entity.get(ComponentRegister.get(C.Movement))
 
     pixiSprite = @spriteCache[entity.id]
     unless pixiSprite?
@@ -327,10 +262,10 @@ class EntityFactory
   robot: (x,y,robotName) ->
     console.log "robot", robotName
     robot = @ecs.create()
-    robot.add(new Position(x: x, y: y), ComponentRegister.get(Position))
-    robot.add(new Sprite(name: robotName, framelist: @generateRobotFrameList(robotName)), ComponentRegister.get(Sprite))
-    robot.add(new Controls(), ComponentRegister.get(Controls))
-    robot.add(new Movement(vx: 0, vy: 0), ComponentRegister.get(Movement))
+    robot.add(new C.Position(x: x, y: y), ComponentRegister.get(C.Position))
+    robot.add(new C.Sprite(name: robotName, framelist: @generateRobotFrameList(robotName)), ComponentRegister.get(C.Sprite))
+    robot.add(new C.Controls(), ComponentRegister.get(C.Controls))
+    robot.add(new C.Movement(vx: 0, vy: 0), ComponentRegister.get(C.Movement))
     robot
 
   powerup: (x, y, powerup_type) ->
@@ -340,17 +275,17 @@ class EntityFactory
       down: crystal_frames
     }
     p = @ecs.create()
-    p.add(new Position(x: x, y: y), ComponentRegister.get(Position))
+    p.add(new C.Position(x: x, y: y), ComponentRegister.get(C.Position))
     # movement just added 
-    p.add(new Movement(vx: 0, vy: 0), ComponentRegister.get(Movement))
-    p.add(new Powerup(powerup_type: powerup_type), ComponentRegister.get(Powerup))
-    p.add(new Sprite(name: "#{powerup_type}-crystal", framelist: powerup_frames), ComponentRegister.get(Sprite))
+    p.add(new C.Movement(vx: 0, vy: 0), ComponentRegister.get(C.Movement))
+    p.add(new C.Powerup(powerup_type: powerup_type), ComponentRegister.get(C.Powerup))
+    p.add(new C.Sprite(name: "#{powerup_type}-crystal", framelist: powerup_frames), ComponentRegister.get(C.Sprite))
     p
 
   mapTiles: (seed, width, height) ->
     mapTiles = @ecs.create()
-    comp = new MapTiles(seed: seed, width: width, height: height)
-    mapTiles.add(comp, ComponentRegister.get(MapTiles))
+    comp = new C.MapTiles(seed: seed, width: width, height: height)
+    mapTiles.add(comp, ComponentRegister.get(C.MapTiles))
     prng = new ParkMillerRNG(seed)
     eachMapTile prng, width, height, (x, y, tile_set, base, feature, spare) =>
       sparePRNG = new ParkMillerRNG(spare)
@@ -375,13 +310,13 @@ class RtsWorld extends SimSim.WorldBase
     @entityFactory.mapTiles((Math.random() * 1000)|0, 100, 100)
 
   setupECS: (pixieWrapper) ->
-    ComponentRegister.register(Position)
-    ComponentRegister.register(Sprite)
-    ComponentRegister.register(Owned)
-    ComponentRegister.register(Movement)
-    ComponentRegister.register(Controls)
-    ComponentRegister.register(MapTiles)
-    ComponentRegister.register(Powerup)
+    ComponentRegister.register(C.Position)
+    ComponentRegister.register(C.Sprite)
+    ComponentRegister.register(C.Owned)
+    ComponentRegister.register(C.Movement)
+    ComponentRegister.register(C.Controls)
+    ComponentRegister.register(C.MapTiles)
+    ComponentRegister.register(C.Powerup)
     ecs = new makr.World()
     ecs.registerSystem(new SpriteSyncSystem(@pixiWrapper))
     ecs.registerSystem(new MapTilesSystem(@pixiWrapper))
@@ -391,7 +326,7 @@ class RtsWorld extends SimSim.WorldBase
     ecs
 
   setupEntityInspector: (ecs, entityInspector) ->
-    for componentClass in [ Position,Movement,Owned,MapTiles ]
+    for componentClass in [ C.Position,C.Movement,C.Owned,C.MapTiles ]
       ecs.registerSystem(new EntityInspectorSystem(entityInspector, componentClass))
     entityInspector
 
@@ -401,14 +336,15 @@ class RtsWorld extends SimSim.WorldBase
   resetData: ->
 
   deserializeComponent: (serializedComponent) ->
-    eval("new #{serializedComponent.type}(serializedComponent)")
+    new C[serializedComponent.type](serializedComponent)
+    # eval("new C.#{serializedComponent.type}(serializedComponent)")
 
   #
   # Invocable via proxy:
   #
   summonRobot: (playerId, robotType, args={}) ->
     robot = @entityFactory.robot(args.x, args.y, robotType)
-    robot.add(new Owned(playerId: playerId), ComponentRegister.get(Owned))
+    robot.add(new C.Owned(playerId: playerId), ComponentRegister.get(C.Owned))
     
   commandUnit: (playerId, command, args={}) ->
     @commandQueue.push(
@@ -424,7 +360,7 @@ class RtsWorld extends SimSim.WorldBase
   playerLeft: (playerId) ->
     console.log "Player #{playerId} LEFT"
     for ent in @ecs._alive
-      owner = ent.get(ComponentRegister.get(Owned))
+      owner = ent.get(ComponentRegister.get(C.Owned))
       ent.kill() if owner? && (owner.playerId == playerId)
 
   #### SimSim.WorldBase#theEnd()
@@ -463,6 +399,8 @@ class RtsWorld extends SimSim.WorldBase
       ent = @findEntityById(entId)
       if ent? and ent.alive
         componentBags[entId] = (@serializeComponent(c) for c in components.compact())
+        # for c in components
+        #   componentBags[entId] = @serializeComponent(c) if c?
 
     data =
       players: @players
@@ -482,9 +420,6 @@ class RtsWorld extends SimSim.WorldBase
       console.log "WTF serializeComponent got undefined component?!", component
       {type:'BROKEN'}
 
-
-  deserializeComponent: (serializedComponent) ->
-    eval("new #{serializedComponent.type}(serializedComponent)")
 
   #### SimSim.WorldBase#getChecksum()
   getChecksum: ->

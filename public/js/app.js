@@ -222,7 +222,7 @@ window.watchData = function() {
 };
 
 
-},{"./entity_inspector.coffee":3,"./game_runner.coffee":4,"./keyboard_controller.coffee":5,"./pixi_wrapper.coffee":6,"./pm_prng.coffee":7,"./rts_world.coffee":8,"./stop_watch.coffee":9}],2:[function(require,module,exports){
+},{"./entity_inspector.coffee":4,"./game_runner.coffee":5,"./keyboard_controller.coffee":6,"./pixi_wrapper.coffee":7,"./pm_prng.coffee":8,"./rts_world.coffee":9,"./stop_watch.coffee":10}],2:[function(require,module,exports){
 var CRC32_TABLE, ChecksumCalculator;
 
 CRC32_TABLE = "00000000 77073096 EE0E612C 990951BA 076DC419 706AF48F E963A535 9E6495A3 0EDB8832 79DCB8A4 E0D5E91E 97D2D988 09B64C2B 7EB17CBD E7B82D07 90BF1D91 1DB71064 6AB020F2 F3B97148 84BE41DE 1ADAD47D 6DDDE4EB F4D4B551 83D385C7 136C9856 646BA8C0 FD62F97A 8A65C9EC 14015C4F 63066CD9 FA0F3D63 8D080DF5 3B6E20C8 4C69105E D56041E4 A2677172 3C03E4D1 4B04D447 D20D85FD A50AB56B 35B5A8FA 42B2986C DBBBC9D6 ACBCF940 32D86CE3 45DF5C75 DCD60DCF ABD13D59 26D930AC 51DE003A C8D75180 BFD06116 21B4F4B5 56B3C423 CFBA9599 B8BDA50F 2802B89E 5F058808 C60CD9B2 B10BE924 2F6F7C87 58684C11 C1611DAB B6662D3D 76DC4190 01DB7106 98D220BC EFD5102A 71B18589 06B6B51F 9FBFE4A5 E8B8D433 7807C9A2 0F00F934 9609A88E E10E9818 7F6A0DBB 086D3D2D 91646C97 E6635C01 6B6B51F4 1C6C6162 856530D8 F262004E 6C0695ED 1B01A57B 8208F4C1 F50FC457 65B0D9C6 12B7E950 8BBEB8EA FCB9887C 62DD1DDF 15DA2D49 8CD37CF3 FBD44C65 4DB26158 3AB551CE A3BC0074 D4BB30E2 4ADFA541 3DD895D7 A4D1C46D D3D6F4FB 4369E96A 346ED9FC AD678846 DA60B8D0 44042D73 33031DE5 AA0A4C5F DD0D7CC9 5005713C 270241AA BE0B1010 C90C2086 5768B525 206F85B3 B966D409 CE61E49F 5EDEF90E 29D9C998 B0D09822 C7D7A8B4 59B33D17 2EB40D81 B7BD5C3B C0BA6CAD EDB88320 9ABFB3B6 03B6E20C 74B1D29A EAD54739 9DD277AF 04DB2615 73DC1683 E3630B12 94643B84 0D6D6A3E 7A6A5AA8 E40ECF0B 9309FF9D 0A00AE27 7D079EB1 F00F9344 8708A3D2 1E01F268 6906C2FE F762575D 806567CB 196C3671 6E6B06E7 FED41B76 89D32BE0 10DA7A5A 67DD4ACC F9B9DF6F 8EBEEFF9 17B7BE43 60B08ED5 D6D6A3E8 A1D1937E 38D8C2C4 4FDFF252 D1BB67F1 A6BC5767 3FB506DD 48B2364B D80D2BDA AF0A1B4C 36034AF6 41047A60 DF60EFC3 A867DF55 316E8EEF 4669BE79 CB61B38C BC66831A 256FD2A0 5268E236 CC0C7795 BB0B4703 220216B9 5505262F C5BA3BBE B2BD0B28 2BB45A92 5CB36A04 C2D7FFA7 B5D0CF31 2CD99E8B 5BDEAE1D 9B64C2B0 EC63F226 756AA39C 026D930A 9C0906A9 EB0E363F 72076785 05005713 95BF4A82 E2B87A14 7BB12BAE 0CB61B38 92D28E9B E5D5BE0D 7CDCEFB7 0BDBDF21 86D3D2D4 F1D4E242 68DDB3F8 1FDA836E 81BE16CD F6B9265B 6FB077E1 18B74777 88085AE6 FF0F6A70 66063BCA 11010B5C 8F659EFF F862AE69 616BFFD3 166CCF45 A00AE278 D70DD2EE 4E048354 3903B3C2 A7672661 D06016F7 4969474D 3E6E77DB AED16A4A D9D65ADC 40DF0B66 37D83BF0 A9BCAE53 DEBB9EC5 47B2CF7F 30B5FFE9 BDBDF21C CABAC28A 53B39330 24B4A3A6 BAD03605 CDD70693 54DE5729 23D967BF B3667A2E C4614AB8 5D681B02 2A6F2B94 B40BBE37 C30C8EA1 5A05DF1B 2D02EF8D";
@@ -254,6 +254,84 @@ module.exports = ChecksumCalculator;
 
 
 },{}],3:[function(require,module,exports){
+var C, Controls, MapTiles, Movement, Owned, Position, Powerup, Sprite;
+
+C = {};
+
+module.exports = C;
+
+C.Owned = Owned = (function() {
+  function Owned(_arg) {
+    this.playerId = _arg.playerId;
+  }
+
+  return Owned;
+
+})();
+
+C.Position = Position = (function() {
+  function Position(_arg) {
+    this.x = _arg.x, this.y = _arg.y;
+  }
+
+  return Position;
+
+})();
+
+C.Movement = Movement = (function() {
+  function Movement(_arg) {
+    this.vx = _arg.vx, this.vy = _arg.vy;
+  }
+
+  return Movement;
+
+})();
+
+C.MapTiles = MapTiles = (function() {
+  function MapTiles(_arg) {
+    this.seed = _arg.seed, this.width = _arg.width, this.height = _arg.height;
+  }
+
+  return MapTiles;
+
+})();
+
+C.Powerup = Powerup = (function() {
+  function Powerup(_arg) {
+    this.powerup_type = _arg.powerup_type;
+  }
+
+  return Powerup;
+
+})();
+
+C.Sprite = Sprite = (function() {
+  function Sprite(_arg) {
+    this.name = _arg.name, this.framelist = _arg.framelist, this.facing = _arg.facing;
+    this.remove = false;
+    this.add = true;
+    this.facing || (this.facing = "down");
+    this.idle = true;
+  }
+
+  return Sprite;
+
+})();
+
+C.Controls = Controls = (function() {
+  function Controls() {
+    this.up = false;
+    this.down = false;
+    this.left = false;
+    this.right = false;
+  }
+
+  return Controls;
+
+})();
+
+
+},{}],4:[function(require,module,exports){
 var EntityInspector;
 
 EntityInspector = (function() {
@@ -292,7 +370,7 @@ EntityInspector = (function() {
 module.exports = EntityInspector;
 
 
-},{}],4:[function(require,module,exports){
+},{}],5:[function(require,module,exports){
 var GameRunner;
 
 GameRunner = (function() {
@@ -394,7 +472,7 @@ GameRunner = (function() {
 module.exports = GameRunner;
 
 
-},{}],5:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
 var InputState, KeyboardController, KeyboardWrapper;
 
 KeyboardWrapper = (function() {
@@ -523,7 +601,7 @@ KeyboardController = (function() {
 module.exports = KeyboardController;
 
 
-},{}],6:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 var PixiWrapper, Viewport,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -654,7 +732,7 @@ PixiWrapper = (function(_super) {
 module.exports = PixiWrapper;
 
 
-},{"./viewport.coffee":10}],7:[function(require,module,exports){
+},{"./viewport.coffee":13}],8:[function(require,module,exports){
 var ParkMillerRNG;
 
 ParkMillerRNG = (function() {
@@ -703,8 +781,8 @@ ParkMillerRNG = (function() {
 module.exports = ParkMillerRNG;
 
 
-},{}],8:[function(require,module,exports){
-var BUNNY_VEL, ChecksumCalculator, CommandQueueSystem, ComponentRegister, ControlMappingSystem, ControlSystem, Controls, EntityFactory, EntityInspectorSystem, HalfPI, MapTiles, MapTilesSystem, Movement, MovementSystem, Owned, ParkMillerRNG, Position, Powerup, RtsWorld, Sprite, SpriteSyncSystem, eachMapTile, fixFloat,
+},{}],9:[function(require,module,exports){
+var BUNNY_VEL, C, ChecksumCalculator, CommandQueueSystem, ComponentRegister, ControlMappingSystem, ControlSystem, EntityFactory, EntityInspectorSystem, HalfPI, MapTilesSystem, MovementSystem, ParkMillerRNG, RtsWorld, SpriteSyncSystem, eachMapTile, fixFloat,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
@@ -724,30 +802,11 @@ ChecksumCalculator = require('./checksum_calculator.coffee');
 
 ParkMillerRNG = require('./pm_prng.coffee');
 
-ComponentRegister = (function() {
-  var ctors, nextType, types;
-  nextType = 0;
-  ctors = [];
-  types = [];
-  return {
-    register: function(ctor) {
-      var i;
-      i = ctors.indexOf(ctor);
-      if (i < 0) {
-        ctors.push(ctor);
-        types.push(nextType++);
-      }
-    },
-    get: function(ctor) {
-      var i;
-      i = ctors.indexOf(ctor);
-      if (i < 0) {
-        throw "Unknown type " + ctor;
-      }
-      return types[i];
-    }
-  };
-})();
+CommandQueueSystem = require('./systems/command_queue_system.coffee');
+
+ComponentRegister = require('./utils/component_register.coffee');
+
+C = require('./components.coffee');
 
 makr.World.prototype.resurrect = function(entId) {
   var entity;
@@ -763,51 +822,6 @@ makr.World.prototype.resurrect = function(entId) {
   this._alive.push(entity);
   return entity;
 };
-
-Owned = (function() {
-  function Owned(_arg) {
-    this.playerId = _arg.playerId;
-  }
-
-  return Owned;
-
-})();
-
-Position = (function() {
-  function Position(_arg) {
-    this.x = _arg.x, this.y = _arg.y;
-  }
-
-  return Position;
-
-})();
-
-Movement = (function() {
-  function Movement(_arg) {
-    this.vx = _arg.vx, this.vy = _arg.vy;
-  }
-
-  return Movement;
-
-})();
-
-MapTiles = (function() {
-  function MapTiles(_arg) {
-    this.seed = _arg.seed, this.width = _arg.width, this.height = _arg.height;
-  }
-
-  return MapTiles;
-
-})();
-
-Powerup = (function() {
-  function Powerup(_arg) {
-    this.powerup_type = _arg.powerup_type;
-  }
-
-  return Powerup;
-
-})();
 
 eachMapTile = function(prng, width, height, f) {
   var base, bases, feature, features, offset_x, offset_y, spare_seed, tileSize, tile_set, tile_sets, x, y, _i, _ref, _results;
@@ -841,7 +855,7 @@ MapTilesSystem = (function(_super) {
   function MapTilesSystem(pixiWrapper) {
     this.pixiWrapper = pixiWrapper;
     makr.IteratingSystem.call(this);
-    this.registerComponent(ComponentRegister.get(MapTiles));
+    this.registerComponent(ComponentRegister.get(C.MapTiles));
     this.tilesSprites = void 0;
   }
 
@@ -855,7 +869,7 @@ MapTilesSystem = (function(_super) {
   MapTilesSystem.prototype.process = function(entity, elapsed) {
     var component;
     if (this.tilesSprites == null) {
-      component = entity.get(ComponentRegister.get(MapTiles));
+      component = entity.get(ComponentRegister.get(C.MapTiles));
       this.tilesSprites = this.createTiles(component.seed, component.width, component.height);
       return this.pixiWrapper.addBackgroundSprite(this.tilesSprites);
     }
@@ -894,81 +908,6 @@ MapTilesSystem = (function(_super) {
 
 })(makr.IteratingSystem);
 
-CommandQueueSystem = (function(_super) {
-  __extends(CommandQueueSystem, _super);
-
-  function CommandQueueSystem(commandQueue, entityFinder) {
-    this.commandQueue = commandQueue;
-    this.entityFinder = entityFinder;
-    makr.IteratingSystem.call(this);
-  }
-
-  CommandQueueSystem.prototype.processEntities = function() {
-    var cmd, commands, movement, owned, targetEntity, _i, _len, _results;
-    commands = [];
-    while (cmd = this.commandQueue.shift()) {
-      commands.push(cmd);
-    }
-    _results = [];
-    for (_i = 0, _len = commands.length; _i < _len; _i++) {
-      cmd = commands[_i];
-      if (cmd.args.entityId != null) {
-        targetEntity = this.entityFinder.findEntityById(cmd.args.entityId);
-        owned = targetEntity.get(ComponentRegister.get(Owned));
-        if (owned && (cmd.playerId === owned.playerId)) {
-          if (cmd.command === "march") {
-            movement = targetEntity.get(ComponentRegister.get(Movement));
-            if (cmd.args.direction === "left") {
-              _results.push(movement.vx = -10);
-            } else if (cmd.args.direction === "right") {
-              _results.push(movement.vx = 10);
-            } else if (cmd.args.direction === "stop") {
-              _results.push(movement.vx = 0);
-            } else {
-              _results.push(void 0);
-            }
-          } else {
-            _results.push(console.log("CommandQueueSystem: UNKNOWN COMMAND:", cmd));
-          }
-        } else {
-          _results.push(console.log("CommandQueueSystem: ILLEGAL INSTRUCTION, player " + cmd.playerId + " may not command entity " + cmd.args.entityId + " because it's owned by " + owned.playerId));
-        }
-      } else {
-        _results.push(void 0);
-      }
-    }
-    return _results;
-  };
-
-  return CommandQueueSystem;
-
-})(makr.IteratingSystem);
-
-Sprite = (function() {
-  function Sprite(_arg) {
-    this.name = _arg.name, this.framelist = _arg.framelist, this.facing = _arg.facing;
-    this.remove = false;
-    this.add = true;
-    this.facing || (this.facing = "down");
-    this.idle = true;
-  }
-
-  return Sprite;
-
-})();
-
-Controls = (function() {
-  function Controls() {
-    this.up = false;
-    this.down = false;
-    this.left = false;
-    this.right = false;
-  }
-
-  return Controls;
-
-})();
-
 EntityInspectorSystem = (function(_super) {
   __extends(EntityInspectorSystem, _super);
 
@@ -995,13 +934,13 @@ ControlSystem = (function(_super) {
   function ControlSystem(rtsWorld) {
     this.rtsWorld = rtsWorld;
     makr.IteratingSystem.call(this);
-    this.registerComponent(ComponentRegister.get(Controls));
-    this.registerComponent(ComponentRegister.get(Owned));
+    this.registerComponent(ComponentRegister.get(C.Controls));
+    this.registerComponent(ComponentRegister.get(C.Owned));
   }
 
   ControlSystem.prototype.process = function(entity, elapsed) {
     var action, controls, entityControls, value, _i, _len, _ref;
-    controls = entity.get(ComponentRegister.get(Controls));
+    controls = entity.get(ComponentRegister.get(C.Controls));
     entityControls = this.rtsWorld.currentControls[entity.id] || [];
     for (_i = 0, _len = entityControls.length; _i < _len; _i++) {
       _ref = entityControls[_i], action = _ref[0], value = _ref[1];
@@ -1019,8 +958,8 @@ ControlMappingSystem = (function(_super) {
 
   function ControlMappingSystem() {
     makr.IteratingSystem.call(this);
-    this.registerComponent(ComponentRegister.get(Movement));
-    this.registerComponent(ComponentRegister.get(Controls));
+    this.registerComponent(ComponentRegister.get(C.Movement));
+    this.registerComponent(ComponentRegister.get(C.Controls));
   }
 
   ControlMappingSystem.prototype.process = function(entity, elapsed) {};
@@ -1034,14 +973,14 @@ MovementSystem = (function(_super) {
 
   function MovementSystem() {
     makr.IteratingSystem.call(this);
-    this.registerComponent(ComponentRegister.get(Movement));
-    this.registerComponent(ComponentRegister.get(Position));
+    this.registerComponent(ComponentRegister.get(C.Movement));
+    this.registerComponent(ComponentRegister.get(C.Position));
   }
 
   MovementSystem.prototype.process = function(entity, elapsed) {
     var movement, position;
-    position = entity.get(ComponentRegister.get(Position));
-    movement = entity.get(ComponentRegister.get(Movement));
+    position = entity.get(ComponentRegister.get(C.Position));
+    movement = entity.get(ComponentRegister.get(C.Movement));
     if (position == null) {
       console.log("Y NO Position?", entity);
     }
@@ -1059,9 +998,9 @@ SpriteSyncSystem = (function(_super) {
   function SpriteSyncSystem(pixiWrapper) {
     this.pixiWrapper = pixiWrapper;
     makr.IteratingSystem.call(this);
-    this.registerComponent(ComponentRegister.get(Sprite));
-    this.registerComponent(ComponentRegister.get(Position));
-    this.registerComponent(ComponentRegister.get(Movement));
+    this.registerComponent(ComponentRegister.get(C.Sprite));
+    this.registerComponent(ComponentRegister.get(C.Position));
+    this.registerComponent(ComponentRegister.get(C.Movement));
     this.spriteCache = {};
     this.spriteFrameCache = {};
   }
@@ -1073,9 +1012,9 @@ SpriteSyncSystem = (function(_super) {
 
   SpriteSyncSystem.prototype.process = function(entity, elapsed) {
     var movement, pixiSprite, position, sprite;
-    position = entity.get(ComponentRegister.get(Position));
-    sprite = entity.get(ComponentRegister.get(Sprite));
-    movement = entity.get(ComponentRegister.get(Movement));
+    position = entity.get(ComponentRegister.get(C.Position));
+    sprite = entity.get(ComponentRegister.get(C.Sprite));
+    movement = entity.get(ComponentRegister.get(C.Movement));
     pixiSprite = this.spriteCache[entity.id];
     if (pixiSprite == null) {
       pixiSprite = this.buildSprite(entity, sprite, position);
@@ -1199,19 +1138,19 @@ EntityFactory = (function() {
     var robot;
     console.log("robot", robotName);
     robot = this.ecs.create();
-    robot.add(new Position({
+    robot.add(new C.Position({
       x: x,
       y: y
-    }), ComponentRegister.get(Position));
-    robot.add(new Sprite({
+    }), ComponentRegister.get(C.Position));
+    robot.add(new C.Sprite({
       name: robotName,
       framelist: this.generateRobotFrameList(robotName)
-    }), ComponentRegister.get(Sprite));
-    robot.add(new Controls(), ComponentRegister.get(Controls));
-    robot.add(new Movement({
+    }), ComponentRegister.get(C.Sprite));
+    robot.add(new C.Controls(), ComponentRegister.get(C.Controls));
+    robot.add(new C.Movement({
       vx: 0,
       vy: 0
-    }), ComponentRegister.get(Movement));
+    }), ComponentRegister.get(C.Movement));
     return robot;
   };
 
@@ -1223,33 +1162,33 @@ EntityFactory = (function() {
       down: crystal_frames
     };
     p = this.ecs.create();
-    p.add(new Position({
+    p.add(new C.Position({
       x: x,
       y: y
-    }), ComponentRegister.get(Position));
-    p.add(new Movement({
+    }), ComponentRegister.get(C.Position));
+    p.add(new C.Movement({
       vx: 0,
       vy: 0
-    }), ComponentRegister.get(Movement));
-    p.add(new Powerup({
+    }), ComponentRegister.get(C.Movement));
+    p.add(new C.Powerup({
       powerup_type: powerup_type
-    }), ComponentRegister.get(Powerup));
-    p.add(new Sprite({
+    }), ComponentRegister.get(C.Powerup));
+    p.add(new C.Sprite({
       name: "" + powerup_type + "-crystal",
       framelist: powerup_frames
-    }), ComponentRegister.get(Sprite));
+    }), ComponentRegister.get(C.Sprite));
     return p;
   };
 
   EntityFactory.prototype.mapTiles = function(seed, width, height) {
     var comp, mapTiles, prng;
     mapTiles = this.ecs.create();
-    comp = new MapTiles({
+    comp = new C.MapTiles({
       seed: seed,
       width: width,
       height: height
     });
-    mapTiles.add(comp, ComponentRegister.get(MapTiles));
+    mapTiles.add(comp, ComponentRegister.get(C.MapTiles));
     prng = new ParkMillerRNG(seed);
     eachMapTile(prng, width, height, (function(_this) {
       return function(x, y, tile_set, base, feature, spare) {
@@ -1293,13 +1232,13 @@ RtsWorld = (function(_super) {
 
   RtsWorld.prototype.setupECS = function(pixieWrapper) {
     var ecs;
-    ComponentRegister.register(Position);
-    ComponentRegister.register(Sprite);
-    ComponentRegister.register(Owned);
-    ComponentRegister.register(Movement);
-    ComponentRegister.register(Controls);
-    ComponentRegister.register(MapTiles);
-    ComponentRegister.register(Powerup);
+    ComponentRegister.register(C.Position);
+    ComponentRegister.register(C.Sprite);
+    ComponentRegister.register(C.Owned);
+    ComponentRegister.register(C.Movement);
+    ComponentRegister.register(C.Controls);
+    ComponentRegister.register(C.MapTiles);
+    ComponentRegister.register(C.Powerup);
     ecs = new makr.World();
     ecs.registerSystem(new SpriteSyncSystem(this.pixiWrapper));
     ecs.registerSystem(new MapTilesSystem(this.pixiWrapper));
@@ -1311,7 +1250,7 @@ RtsWorld = (function(_super) {
 
   RtsWorld.prototype.setupEntityInspector = function(ecs, entityInspector) {
     var componentClass, _i, _len, _ref;
-    _ref = [Position, Movement, Owned, MapTiles];
+    _ref = [C.Position, C.Movement, C.Owned, C.MapTiles];
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
       componentClass = _ref[_i];
       ecs.registerSystem(new EntityInspectorSystem(entityInspector, componentClass));
@@ -1338,7 +1277,7 @@ RtsWorld = (function(_super) {
   RtsWorld.prototype.resetData = function() {};
 
   RtsWorld.prototype.deserializeComponent = function(serializedComponent) {
-    return eval("new " + serializedComponent.type + "(serializedComponent)");
+    return new C[serializedComponent.type](serializedComponent);
   };
 
   RtsWorld.prototype.summonRobot = function(playerId, robotType, args) {
@@ -1347,9 +1286,9 @@ RtsWorld = (function(_super) {
       args = {};
     }
     robot = this.entityFactory.robot(args.x, args.y, robotType);
-    return robot.add(new Owned({
+    return robot.add(new C.Owned({
       playerId: playerId
-    }), ComponentRegister.get(Owned));
+    }), ComponentRegister.get(C.Owned));
   };
 
   RtsWorld.prototype.commandUnit = function(playerId, command, args) {
@@ -1372,7 +1311,7 @@ RtsWorld = (function(_super) {
     _results = [];
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
       ent = _ref[_i];
-      owner = ent.get(ComponentRegister.get(Owned));
+      owner = ent.get(ComponentRegister.get(C.Owned));
       if ((owner != null) && (owner.playerId === playerId)) {
         _results.push(ent.kill());
       } else {
@@ -1481,10 +1420,6 @@ RtsWorld = (function(_super) {
     }
   };
 
-  RtsWorld.prototype.deserializeComponent = function(serializedComponent) {
-    return eval("new " + serializedComponent.type + "(serializedComponent)");
-  };
-
   RtsWorld.prototype.getChecksum = function() {
     return 0;
   };
@@ -1496,7 +1431,7 @@ RtsWorld = (function(_super) {
 module.exports = RtsWorld;
 
 
-},{"./checksum_calculator.coffee":2,"./pm_prng.coffee":7}],9:[function(require,module,exports){
+},{"./checksum_calculator.coffee":2,"./components.coffee":3,"./pm_prng.coffee":8,"./systems/command_queue_system.coffee":11,"./utils/component_register.coffee":12}],10:[function(require,module,exports){
 var StopWatch;
 
 StopWatch = (function() {
@@ -1532,7 +1467,101 @@ StopWatch = (function() {
 module.exports = StopWatch;
 
 
-},{}],10:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
+var C, CommandQueueSystem, ComponentRegister,
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+ComponentRegister = require('../utils/component_register.coffee');
+
+C = require('../components.coffee');
+
+CommandQueueSystem = (function(_super) {
+  __extends(CommandQueueSystem, _super);
+
+  function CommandQueueSystem(commandQueue, entityFinder) {
+    this.commandQueue = commandQueue;
+    this.entityFinder = entityFinder;
+    makr.IteratingSystem.call(this);
+  }
+
+  CommandQueueSystem.prototype.processEntities = function() {
+    var cmd, commands, movement, owned, targetEntity, _i, _len, _results;
+    commands = [];
+    while (cmd = this.commandQueue.shift()) {
+      commands.push(cmd);
+    }
+    _results = [];
+    for (_i = 0, _len = commands.length; _i < _len; _i++) {
+      cmd = commands[_i];
+      if (cmd.args.entityId != null) {
+        targetEntity = this.entityFinder.findEntityById(cmd.args.entityId);
+        owned = targetEntity.get(ComponentRegister.get(C.Owned));
+        if (owned && (cmd.playerId === owned.playerId)) {
+          if (cmd.command === "march") {
+            movement = targetEntity.get(ComponentRegister.get(C.Movement));
+            if (cmd.args.direction === "left") {
+              _results.push(movement.vx = -10);
+            } else if (cmd.args.direction === "right") {
+              _results.push(movement.vx = 10);
+            } else if (cmd.args.direction === "stop") {
+              _results.push(movement.vx = 0);
+            } else {
+              _results.push(void 0);
+            }
+          } else {
+            _results.push(console.log("CommandQueueSystem: UNKNOWN COMMAND:", cmd));
+          }
+        } else {
+          _results.push(console.log("CommandQueueSystem: ILLEGAL INSTRUCTION, player " + cmd.playerId + " may not command entity " + cmd.args.entityId + " because it's owned by " + owned.playerId));
+        }
+      } else {
+        _results.push(void 0);
+      }
+    }
+    return _results;
+  };
+
+  return CommandQueueSystem;
+
+})(makr.IteratingSystem);
+
+module.exports = CommandQueueSystem;
+
+
+},{"../components.coffee":3,"../utils/component_register.coffee":12}],12:[function(require,module,exports){
+var ComponentRegister;
+
+ComponentRegister = (function() {
+  var ctors, nextType, types;
+  nextType = 0;
+  ctors = [];
+  types = [];
+  console.log("!!! MAKE NEW ComponentRegister 1!!");
+  return {
+    register: function(ctor) {
+      var i;
+      i = ctors.indexOf(ctor);
+      if (i < 0) {
+        ctors.push(ctor);
+        types.push(nextType++);
+      }
+    },
+    get: function(ctor) {
+      var i;
+      i = ctors.indexOf(ctor);
+      if (i < 0) {
+        throw "Unknown type " + ctor;
+      }
+      return types[i];
+    }
+  };
+})();
+
+module.exports = ComponentRegister;
+
+
+},{}],13:[function(require,module,exports){
 var Viewport;
 
 Viewport = (function() {
