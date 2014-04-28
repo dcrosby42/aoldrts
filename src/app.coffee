@@ -176,8 +176,9 @@ window.mouseScrollingChanged = ->
 window.watchData = ->
   insp = window.local.entityInspector
   pre = document.getElementById("entityInspectorOutput")
+  entityCount = insp.entityCount()
 
-  txt = ""
+  txt = "Entity count #{entityCount}:\n"
   for entityId, components of insp.componentsByEntity()
     txt += "Entity #{entityId}:\n"
     for compType, comp of components

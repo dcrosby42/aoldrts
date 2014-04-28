@@ -193,10 +193,11 @@ window.mouseScrollingChanged = function() {
 };
 
 window.watchData = function() {
-  var comp, compType, components, entityId, insp, k, pre, txt, v, _ref;
+  var comp, compType, components, entityCount, entityId, insp, k, pre, txt, v, _ref;
   insp = window.local.entityInspector;
   pre = document.getElementById("entityInspectorOutput");
-  txt = "";
+  entityCount = insp.entityCount();
+  txt = "Entity count " + entityCount + ":\n";
   _ref = insp.componentsByEntity();
   for (entityId in _ref) {
     components = _ref[entityId];
@@ -273,6 +274,10 @@ EntityInspector = (function() {
 
   EntityInspector.prototype.getEntity = function(entityId) {
     return this._data["" + entityId];
+  };
+
+  EntityInspector.prototype.entityCount = function() {
+    return Object.keys(this._data).length;
   };
 
   return EntityInspector;
