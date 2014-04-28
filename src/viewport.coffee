@@ -1,10 +1,7 @@
-class RtsInterface
-  constructor: ({@sprites, @renderer}) ->
+class Viewport
+  constructor: ({@sprites, width, height}) ->
     @x_move = 0
     @y_move = 0
-
-    width = @renderer.width
-    height = @renderer.height
 
     buffer = 32
 
@@ -50,4 +47,4 @@ class RtsInterface
     document.getElementById("game").focus()
     @on = onOff
 
-module.exports = RtsInterface
+module.exports = Viewport

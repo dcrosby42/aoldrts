@@ -37,8 +37,8 @@ window.gameConfig = function() {
   this._gameConfig = {
     stageWidth: window.screen.width / 2,
     stageHeight: window.screen.height / 2,
-    imageAssets: ["images/bunny.png", "images/EBRobotedit2crMatsuoKaito.png", "images/bunny.png", "images/logo.png", "images/terrain.png"],
-    spriteSheetAssets: ["images/EBRobotedit2crMatsuoKaito.json", "images/terrain.json"],
+    imageAssets: ["images/bunny.png", "images/EBRobotedit2crMatsuoKaito.png", "images/bunny.png", "images/logo.png", "images/terrain.png", "images/crystal-qubodup-ccby3-32-blue.png", "images/crystal-qubodup-ccby3-32-green.png", "images/crystal-qubodup-ccby3-32-grey.png", "images/crystal-qubodup-ccby3-32-orange.png", "images/crystal-qubodup-ccby3-32-pink.png", "images/crystal-qubodup-ccby3-32-yellow.png"],
+    spriteSheetAssets: ["images/EBRobotedit2crMatsuoKaito.json", "images/terrain.json", "images/blue-crystal.json", "images/green-crystal.json", "images/grey-crystal.json", "images/orange-crystal.json", "images/pink-crystal.json", "images/yellow-crystal.json"],
     simSimConnection: {
       url: "" + scheme + "://" + window.location.hostname,
       secure: useHttps
@@ -193,10 +193,11 @@ window.mouseScrollingChanged = function() {
 };
 
 window.watchData = function() {
-  var comp, compType, components, entityId, insp, k, pre, txt, v, _ref;
+  var comp, compType, components, entityCount, entityId, insp, k, pre, txt, v, _ref;
   insp = window.local.entityInspector;
   pre = document.getElementById("entityInspectorOutput");
-  txt = "";
+  entityCount = insp.entityCount();
+  txt = "Entity count " + entityCount + ":\n";
   _ref = insp.componentsByEntity();
   for (entityId in _ref) {
     components = _ref[entityId];
@@ -216,7 +217,7 @@ window.watchData = function() {
 };
 
 
-},{"./entity_inspector.coffee":3,"./game_runner.coffee":4,"./keyboard_controller.coffee":5,"./pixi_wrapper.coffee":6,"./pm_prng.coffee":7,"./rts_world.coffee":9,"./stop_watch.coffee":10}],2:[function(require,module,exports){
+},{"./entity_inspector.coffee":3,"./game_runner.coffee":4,"./keyboard_controller.coffee":5,"./pixi_wrapper.coffee":6,"./pm_prng.coffee":7,"./rts_world.coffee":8,"./stop_watch.coffee":9}],2:[function(require,module,exports){
 var CRC32_TABLE, ChecksumCalculator;
 
 CRC32_TABLE = "00000000 77073096 EE0E612C 990951BA 076DC419 706AF48F E963A535 9E6495A3 0EDB8832 79DCB8A4 E0D5E91E 97D2D988 09B64C2B 7EB17CBD E7B82D07 90BF1D91 1DB71064 6AB020F2 F3B97148 84BE41DE 1ADAD47D 6DDDE4EB F4D4B551 83D385C7 136C9856 646BA8C0 FD62F97A 8A65C9EC 14015C4F 63066CD9 FA0F3D63 8D080DF5 3B6E20C8 4C69105E D56041E4 A2677172 3C03E4D1 4B04D447 D20D85FD A50AB56B 35B5A8FA 42B2986C DBBBC9D6 ACBCF940 32D86CE3 45DF5C75 DCD60DCF ABD13D59 26D930AC 51DE003A C8D75180 BFD06116 21B4F4B5 56B3C423 CFBA9599 B8BDA50F 2802B89E 5F058808 C60CD9B2 B10BE924 2F6F7C87 58684C11 C1611DAB B6662D3D 76DC4190 01DB7106 98D220BC EFD5102A 71B18589 06B6B51F 9FBFE4A5 E8B8D433 7807C9A2 0F00F934 9609A88E E10E9818 7F6A0DBB 086D3D2D 91646C97 E6635C01 6B6B51F4 1C6C6162 856530D8 F262004E 6C0695ED 1B01A57B 8208F4C1 F50FC457 65B0D9C6 12B7E950 8BBEB8EA FCB9887C 62DD1DDF 15DA2D49 8CD37CF3 FBD44C65 4DB26158 3AB551CE A3BC0074 D4BB30E2 4ADFA541 3DD895D7 A4D1C46D D3D6F4FB 4369E96A 346ED9FC AD678846 DA60B8D0 44042D73 33031DE5 AA0A4C5F DD0D7CC9 5005713C 270241AA BE0B1010 C90C2086 5768B525 206F85B3 B966D409 CE61E49F 5EDEF90E 29D9C998 B0D09822 C7D7A8B4 59B33D17 2EB40D81 B7BD5C3B C0BA6CAD EDB88320 9ABFB3B6 03B6E20C 74B1D29A EAD54739 9DD277AF 04DB2615 73DC1683 E3630B12 94643B84 0D6D6A3E 7A6A5AA8 E40ECF0B 9309FF9D 0A00AE27 7D079EB1 F00F9344 8708A3D2 1E01F268 6906C2FE F762575D 806567CB 196C3671 6E6B06E7 FED41B76 89D32BE0 10DA7A5A 67DD4ACC F9B9DF6F 8EBEEFF9 17B7BE43 60B08ED5 D6D6A3E8 A1D1937E 38D8C2C4 4FDFF252 D1BB67F1 A6BC5767 3FB506DD 48B2364B D80D2BDA AF0A1B4C 36034AF6 41047A60 DF60EFC3 A867DF55 316E8EEF 4669BE79 CB61B38C BC66831A 256FD2A0 5268E236 CC0C7795 BB0B4703 220216B9 5505262F C5BA3BBE B2BD0B28 2BB45A92 5CB36A04 C2D7FFA7 B5D0CF31 2CD99E8B 5BDEAE1D 9B64C2B0 EC63F226 756AA39C 026D930A 9C0906A9 EB0E363F 72076785 05005713 95BF4A82 E2B87A14 7BB12BAE 0CB61B38 92D28E9B E5D5BE0D 7CDCEFB7 0BDBDF21 86D3D2D4 F1D4E242 68DDB3F8 1FDA836E 81BE16CD F6B9265B 6FB077E1 18B74777 88085AE6 FF0F6A70 66063BCA 11010B5C 8F659EFF F862AE69 616BFFD3 166CCF45 A00AE278 D70DD2EE 4E048354 3903B3C2 A7672661 D06016F7 4969474D 3E6E77DB AED16A4A D9D65ADC 40DF0B66 37D83BF0 A9BCAE53 DEBB9EC5 47B2CF7F 30B5FFE9 BDBDF21C CABAC28A 53B39330 24B4A3A6 BAD03605 CDD70693 54DE5729 23D967BF B3667A2E C4614AB8 5D681B02 2A6F2B94 B40BBE37 C30C8EA1 5A05DF1B 2D02EF8D";
@@ -273,6 +274,10 @@ EntityInspector = (function() {
 
   EntityInspector.prototype.getEntity = function(entityId) {
     return this._data["" + entityId];
+  };
+
+  EntityInspector.prototype.entityCount = function() {
+    return Object.keys(this._data).length;
   };
 
   return EntityInspector;
@@ -489,11 +494,11 @@ module.exports = KeyboardController;
 
 
 },{}],6:[function(require,module,exports){
-var PixiWrapper, RtsInterface,
+var PixiWrapper, Viewport,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-RtsInterface = require('./rts_interface.coffee');
+Viewport = require('./viewport.coffee');
 
 PixiWrapper = (function(_super) {
   __extends(PixiWrapper, _super);
@@ -516,9 +521,10 @@ PixiWrapper = (function(_super) {
     this.sprites = new PIXI.DisplayObjectContainer();
     this.sprites.setInteractive(true);
     this.stage.addChild(this.sprites);
-    this["interface"] = new RtsInterface({
+    this.viewport = new Viewport({
       sprites: this.sprites,
-      renderer: this.renderer
+      width: this.renderer.width,
+      height: this.renderer.height
     });
   }
 
@@ -559,7 +565,7 @@ PixiWrapper = (function(_super) {
   };
 
   PixiWrapper.prototype.setMouseScrollingOn = function(onOff) {
-    return this["interface"].setMouseScrollingOn(onOff);
+    return this.viewport.setMouseScrollingOn(onOff);
   };
 
   PixiWrapper.prototype.fullscreen = function() {
@@ -585,7 +591,7 @@ PixiWrapper = (function(_super) {
   };
 
   PixiWrapper.prototype.render = function() {
-    this["interface"].update();
+    this.viewport.update();
     return this.renderer.render(this.stage);
   };
 
@@ -596,7 +602,7 @@ PixiWrapper = (function(_super) {
 module.exports = PixiWrapper;
 
 
-},{"./rts_interface.coffee":8}],7:[function(require,module,exports){
+},{"./viewport.coffee":10}],7:[function(require,module,exports){
 var ParkMillerRNG;
 
 ParkMillerRNG = (function() {
@@ -646,80 +652,7 @@ module.exports = ParkMillerRNG;
 
 
 },{}],8:[function(require,module,exports){
-var RtsInterface;
-
-RtsInterface = (function() {
-  function RtsInterface(_arg) {
-    var buffer, height, speed, width;
-    this.sprites = _arg.sprites, this.renderer = _arg.renderer;
-    this.x_move = 0;
-    this.y_move = 0;
-    width = this.renderer.width;
-    height = this.renderer.height;
-    buffer = 32;
-    speed = 8;
-    this.on = true;
-    this.sprites.mouseout = (function(_this) {
-      return function(data) {
-        _this.x_move = 0;
-        return _this.y_move = 0;
-      };
-    })(this);
-    this.sprites.mousemove = (function(_this) {
-      return function(data) {
-        var negSpeed, posSpeed, x, y;
-        if (!_this.on) {
-          return;
-        }
-        x = data.global.x;
-        y = data.global.y;
-        negSpeed = function(p, b, speed) {
-          return -1 * ((p - b) / b) * speed;
-        };
-        posSpeed = function(p, b, s, speed) {
-          return -1 * ((p - (s - b)) / b) * speed;
-        };
-        if (x <= buffer) {
-          _this.x_move = negSpeed(x, buffer, speed);
-        } else if (x >= width - buffer) {
-          _this.x_move = posSpeed(x, buffer, width, speed);
-        } else {
-          _this.x_move = 0;
-        }
-        if (y <= buffer) {
-          _this.y_move = negSpeed(y, buffer, speed);
-        } else if (y >= height - buffer) {
-          _this.y_move = posSpeed(y, buffer, height, speed);
-        } else {
-          _this.y_move = 0;
-        }
-        return false;
-      };
-    })(this);
-  }
-
-  RtsInterface.prototype.update = function() {
-    if (this.on) {
-      this.sprites.position.x += this.x_move;
-      return this.sprites.position.y += this.y_move;
-    }
-  };
-
-  RtsInterface.prototype.setMouseScrollingOn = function(onOff) {
-    document.getElementById("game").setAttribute('tabindex', 1);
-    document.getElementById("game").focus();
-    return this.on = onOff;
-  };
-
-  return RtsInterface;
-
-})();
-
-module.exports = RtsInterface;
-
-
-},{}],9:[function(require,module,exports){
-var BUNNY_VEL, ChecksumCalculator, CommandQueueSystem, ComponentRegister, ControlMappingSystem, ControlSystem, Controls, EntityFactory, EntityInspectorSystem, HalfPI, MapTiles, MapTilesSystem, Movement, MovementSystem, Owned, ParkMillerRNG, Position, RtsWorld, Sprite, SpriteSyncSystem, fixFloat,
+var BUNNY_VEL, ChecksumCalculator, CommandQueueSystem, ComponentRegister, ControlMappingSystem, ControlSystem, Controls, EntityFactory, EntityInspectorSystem, HalfPI, MapTiles, MapTilesSystem, Movement, MovementSystem, Owned, ParkMillerRNG, Position, Powerup, RtsWorld, Sprite, SpriteSyncSystem, eachMapTile, fixFloat,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
@@ -815,6 +748,41 @@ MapTiles = (function() {
 
 })();
 
+Powerup = (function() {
+  function Powerup(_arg) {
+    this.powerup_type = _arg.powerup_type;
+  }
+
+  return Powerup;
+
+})();
+
+eachMapTile = function(prng, width, height, f) {
+  var base, bases, feature, features, offset_x, offset_y, spare_seed, tileSize, tile_set, tile_sets, x, y, _i, _ref, _results;
+  tile_sets = ["gray", "orange", "dark_brown", "dark"];
+  features = [[null, 200], ["stone0", 8], ["stone1", 8], ["crater", 2]];
+  bases = [["small_crater", 5], ["basic0", 50], ["basic1", 50]];
+  tile_set = prng.choose(tile_sets);
+  tileSize = 31;
+  offset_x = (width / 2) * tileSize;
+  offset_y = (height / 2) * tileSize;
+  _results = [];
+  for (x = _i = _ref = width * tileSize; -tileSize > 0 ? _i <= 0 : _i >= 0; x = _i += -tileSize) {
+    _results.push((function() {
+      var _j, _ref1, _results1;
+      _results1 = [];
+      for (y = _j = _ref1 = height * tileSize; -tileSize > 0 ? _j <= 0 : _j >= 0; y = _j += -tileSize) {
+        base = prng.weighted_choose(bases);
+        feature = prng.weighted_choose(features);
+        spare_seed = prng.gen();
+        _results1.push(f(x - offset_x, y - offset_y, tile_set, base, feature, spare_seed));
+      }
+      return _results1;
+    })());
+  }
+  return _results;
+};
+
 MapTilesSystem = (function(_super) {
   __extends(MapTilesSystem, _super);
 
@@ -836,7 +804,7 @@ MapTilesSystem = (function(_super) {
     var component;
     if (this.tilesSprites == null) {
       component = entity.get(ComponentRegister.get(MapTiles));
-      this.tilesSprites = this.createTiles(component.seed);
+      this.tilesSprites = this.createTiles(component.seed, component.width, component.height);
       return this.pixiWrapper.sprites.addChildAt(this.tilesSprites, 0);
     }
   };
@@ -849,32 +817,24 @@ MapTilesSystem = (function(_super) {
     return tile;
   };
 
-  MapTilesSystem.prototype.createTiles = function(seed) {
-    var base, bases, feature, feature_frame, features, frame, prng, tileSize, tile_set, tile_sets, tiles, x, y, _i, _j;
-    tile_sets = ["gray_set_", "orange_set_", "dark_brown_set_", "dark_set_"];
-    features = [["", 90], ["feature0", 4], ["feature1", 4], ["feature2", 2]];
-    bases = [["basic0", 5], ["basic1", 50], ["basic2", 50]];
+  MapTilesSystem.prototype.createTiles = function(seed, width, height) {
+    var prng, tiles;
     tiles = new PIXI.DisplayObjectContainer();
-    prng = new ParkMillerRNG(seed);
-    tile_set = prng.choose(tile_sets);
     tiles.position.x = 0;
     tiles.position.y = 0;
-    tileSize = 32;
-    for (x = _i = 3200; _i >= 0; x = _i += -tileSize) {
-      for (y = _j = 3200; _j >= 0; y = _j += -tileSize) {
-        base = prng.weighted_choose(bases);
-        frame = tile_set + base + ".png";
-        tiles.addChild(this.createTile(tiles, frame, x, y));
-        feature = prng.weighted_choose(features);
-        if (feature !== "") {
-          feature_frame = tile_set + feature + ".png";
-          tiles.addChild(this.createTile(tiles, feature_frame, x, y));
+    prng = new ParkMillerRNG(seed);
+    eachMapTile(prng, width, height, (function(_this) {
+      return function(x, y, tile_set, base, feature) {
+        var feature_frame, frame;
+        frame = tile_set + "_set_" + base;
+        tiles.addChild(_this.createTile(tiles, frame, x, y));
+        if (feature != null) {
+          feature_frame = tile_set + "_set_" + feature;
+          return tiles.addChild(_this.createTile(tiles, feature_frame, x, y));
         }
-      }
-    }
+      };
+    })(this));
     tiles.cacheAsBitmap = true;
-    tiles.position.x = -1600;
-    tiles.position.y = -1600;
     return tiles;
   };
 
@@ -1195,8 +1155,34 @@ EntityFactory = (function() {
     return robot;
   };
 
+  EntityFactory.prototype.powerup = function(x, y, powerup_type) {
+    var crystal_frames, p, powerup_frames;
+    crystal_frames = ["" + powerup_type + "-crystal0", "" + powerup_type + "-crystal1", "" + powerup_type + "-crystal2", "" + powerup_type + "-crystal3", "" + powerup_type + "-crystal4", "" + powerup_type + "-crystal5", "" + powerup_type + "-crystal6", "" + powerup_type + "-crystal7"];
+    powerup_frames = {
+      downIdle: crystal_frames,
+      down: crystal_frames
+    };
+    p = this.ecs.create();
+    p.add(new Position({
+      x: x,
+      y: y
+    }), ComponentRegister.get(Position));
+    p.add(new Movement({
+      vx: 0,
+      vy: 0
+    }), ComponentRegister.get(Movement));
+    p.add(new Powerup({
+      powerup_type: powerup_type
+    }), ComponentRegister.get(Powerup));
+    p.add(new Sprite({
+      name: "" + powerup_type + "-crystal",
+      framelist: powerup_frames
+    }), ComponentRegister.get(Sprite));
+    return p;
+  };
+
   EntityFactory.prototype.mapTiles = function(seed, width, height) {
-    var comp, mapTiles;
+    var comp, mapTiles, prng;
     mapTiles = this.ecs.create();
     comp = new MapTiles({
       seed: seed,
@@ -1204,6 +1190,19 @@ EntityFactory = (function() {
       height: height
     });
     mapTiles.add(comp, ComponentRegister.get(MapTiles));
+    prng = new ParkMillerRNG(seed);
+    eachMapTile(prng, width, height, (function(_this) {
+      return function(x, y, tile_set, base, feature, spare) {
+        var p, sparePRNG;
+        sparePRNG = new ParkMillerRNG(spare);
+        if (feature === "crater") {
+          p = sparePRNG.weighted_choose([["blue", 25], ["green", 25], [null, 50]]);
+          if (p != null) {
+            return _this.powerup(x + 32, y + 32, p);
+          }
+        }
+      };
+    })(this));
     return mapTiles;
   };
 
@@ -1229,7 +1228,7 @@ RtsWorld = (function(_super) {
     if (this.entityInspector) {
       this.setupEntityInspector(this.ecs, this.entityInspector);
     }
-    this.entityFactory.mapTiles((Math.random() * 1000) | 0, 50, 50);
+    this.entityFactory.mapTiles((Math.random() * 1000) | 0, 100, 100);
   }
 
   RtsWorld.prototype.setupECS = function(pixieWrapper) {
@@ -1240,6 +1239,7 @@ RtsWorld = (function(_super) {
     ComponentRegister.register(Movement);
     ComponentRegister.register(Controls);
     ComponentRegister.register(MapTiles);
+    ComponentRegister.register(Powerup);
     ecs = new makr.World();
     ecs.registerSystem(new SpriteSyncSystem(this.pixiWrapper));
     ecs.registerSystem(new MapTilesSystem(this.pixiWrapper));
@@ -1442,7 +1442,7 @@ RtsWorld = (function(_super) {
 module.exports = RtsWorld;
 
 
-},{"./checksum_calculator.coffee":2,"./pm_prng.coffee":7}],10:[function(require,module,exports){
+},{"./checksum_calculator.coffee":2,"./pm_prng.coffee":7}],9:[function(require,module,exports){
 var StopWatch;
 
 StopWatch = (function() {
@@ -1476,6 +1476,77 @@ StopWatch = (function() {
 })();
 
 module.exports = StopWatch;
+
+
+},{}],10:[function(require,module,exports){
+var Viewport;
+
+Viewport = (function() {
+  function Viewport(_arg) {
+    var buffer, height, speed, width;
+    this.sprites = _arg.sprites, width = _arg.width, height = _arg.height;
+    this.x_move = 0;
+    this.y_move = 0;
+    buffer = 32;
+    speed = 8;
+    this.on = true;
+    this.sprites.mouseout = (function(_this) {
+      return function(data) {
+        _this.x_move = 0;
+        return _this.y_move = 0;
+      };
+    })(this);
+    this.sprites.mousemove = (function(_this) {
+      return function(data) {
+        var negSpeed, posSpeed, x, y;
+        if (!_this.on) {
+          return;
+        }
+        x = data.global.x;
+        y = data.global.y;
+        negSpeed = function(p, b, speed) {
+          return -1 * ((p - b) / b) * speed;
+        };
+        posSpeed = function(p, b, s, speed) {
+          return -1 * ((p - (s - b)) / b) * speed;
+        };
+        if (x <= buffer) {
+          _this.x_move = negSpeed(x, buffer, speed);
+        } else if (x >= width - buffer) {
+          _this.x_move = posSpeed(x, buffer, width, speed);
+        } else {
+          _this.x_move = 0;
+        }
+        if (y <= buffer) {
+          _this.y_move = negSpeed(y, buffer, speed);
+        } else if (y >= height - buffer) {
+          _this.y_move = posSpeed(y, buffer, height, speed);
+        } else {
+          _this.y_move = 0;
+        }
+        return false;
+      };
+    })(this);
+  }
+
+  Viewport.prototype.update = function() {
+    if (this.on) {
+      this.sprites.position.x += this.x_move;
+      return this.sprites.position.y += this.y_move;
+    }
+  };
+
+  Viewport.prototype.setMouseScrollingOn = function(onOff) {
+    document.getElementById("game").setAttribute('tabindex', 1);
+    document.getElementById("game").focus();
+    return this.on = onOff;
+  };
+
+  return Viewport;
+
+})();
+
+module.exports = Viewport;
 
 
 },{}]},{},[1])

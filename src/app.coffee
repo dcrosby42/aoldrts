@@ -30,10 +30,22 @@ window.gameConfig = ->
       "images/bunny.png",
       "images/logo.png",
       "images/terrain.png",
+      "images/crystal-qubodup-ccby3-32-blue.png"
+      "images/crystal-qubodup-ccby3-32-green.png"
+      "images/crystal-qubodup-ccby3-32-grey.png"
+      "images/crystal-qubodup-ccby3-32-orange.png"
+      "images/crystal-qubodup-ccby3-32-pink.png"
+      "images/crystal-qubodup-ccby3-32-yellow.png"
       ]
     spriteSheetAssets: [
       "images/EBRobotedit2crMatsuoKaito.json",
-      "images/terrain.json"
+      "images/terrain.json",
+      "images/blue-crystal.json",
+      "images/green-crystal.json",
+      "images/grey-crystal.json",
+      "images/orange-crystal.json",
+      "images/pink-crystal.json",
+      "images/yellow-crystal.json"
     ]
     simSimConnection:
       url: "#{scheme}://#{window.location.hostname}"#:#{window.location.port}"
@@ -174,8 +186,9 @@ window.mouseScrollingChanged = ->
 window.watchData = ->
   insp = window.local.entityInspector
   pre = document.getElementById("entityInspectorOutput")
+  entityCount = insp.entityCount()
 
-  txt = ""
+  txt = "Entity count #{entityCount}:\n"
   for entityId, components of insp.componentsByEntity()
     txt += "Entity #{entityId}:\n"
     for compType, comp of components
