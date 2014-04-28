@@ -86,13 +86,13 @@ class MapTilesSystem extends makr.IteratingSystem
 
 
 class EntityInspectorSystem extends makr.IteratingSystem
-  constructor: (@inspector, @componentClass) ->
+  constructor: (@entityInspector, @componentClass) ->
     makr.IteratingSystem.call(@)
     @registerComponent(ComponentRegister.get(@componentClass))
 
   process: (entity, elapsed) ->
     component = entity.get(ComponentRegister.get(@componentClass))
-    @inspector.update entity.id, component # should be a COPY of the component?
+    @entityInspector.update entity.id, component # should be a COPY of the component?
 
 
 class ControlSystem extends makr.IteratingSystem
@@ -279,19 +279,23 @@ class EntityFactory
     mapTiles
 
 class RtsWorld extends SimSim.WorldBase
-  constructor: ({@pixiWrapper, @entityInspector}) ->
-    @playerMetadata = {}
+  constructor: ({@pixiWrapper, @introspector}) ->
     @pixiWrapper or throw new Error("Need pixiWrapper")
+    @introspector or throw new Error("Need an introspector, eg, EntityInspector")
+
+    @playerMetadata = {}
+    @currentControls = {}
     @commandQueue = []
+
     @randomNumberGenerator = new ParkMillerRNG((Math.random() * 1000)|0)
     @checksumCalculator = new ChecksumCalculator()
-    @ecs = @setupECS(@pixieWrapper)
+    @ecs = @_setupECS(@pixieWrapper)
     @entityFactory = new EntityFactory(@ecs)
-    @currentControls = {}
-    @setupEntityInspector(@ecs,@entityInspector) if @entityInspector
+    @_setupIntrospector(@ecs,@introspector)
+
     @entityFactory.mapTiles((Math.random() * 1000)|0, 100, 100)
 
-  setupECS: (pixieWrapper) ->
+  _setupECS: (pixieWrapper) ->
     ComponentRegister.register(C.Position)
     ComponentRegister.register(C.Sprite)
     ComponentRegister.register(C.Owned)
@@ -310,10 +314,9 @@ class RtsWorld extends SimSim.WorldBase
     ecs.registerSystem(new MovementSystem())
     ecs
 
-  setupEntityInspector: (ecs, entityInspector) ->
+  _setupIntrospector: (ecs, introspector) ->
     for componentClass in [ C.Position,C.Movement,C.Owned,C.MapTiles ]
-      ecs.registerSystem(new EntityInspectorSystem(entityInspector, componentClass))
-    entityInspector
+      ecs.registerSystem(new EntityInspectorSystem(introspector, componentClass))
 
   findEntityById: (id) ->
     (entity for entity in @ecs._alive when "#{entity.id}" == "#{id}")[0]
@@ -338,6 +341,9 @@ class RtsWorld extends SimSim.WorldBase
       args: args
     )
     
+  #### SimSim.WorldBase#getInspector()
+  getIntrospector: -> @introspector
+
   #### SimSim.WorldBase#playerJoined(id)
   playerJoined: (playerId) ->
     @playerMetadata[playerId] ||= {}

@@ -22,6 +22,6 @@
     "logfmt": "~0.23.0",
     "express": "~3.4.8",
     "socket.io": "~0.9.16",
-    "sim-sim-js": "0.0.11"
+    "sim-sim-js": "0.0.12"
   }
 }
