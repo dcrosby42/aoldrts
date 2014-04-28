@@ -151,14 +151,17 @@ buildPixiWrapper = function(opts) {
 };
 
 buildKeyboardController = function() {
-  return new KeyboardController({
+  var actions, n, _i;
+  actions = {
     r: "myNewRobot",
     t: "theirNewRobot",
     f: "marchMyRobot",
-    g: "marchTheirRobot",
-    0: "roboType0",
-    1: "roboType1"
-  });
+    g: "marchTheirRobot"
+  };
+  for (n = _i = 0; _i <= 6; n = ++_i) {
+    actions[n] = "roboType" + n;
+  }
+  return new KeyboardController(actions);
 };
 
 _copyData = function(data) {
@@ -306,11 +309,18 @@ GameRunner = (function() {
           if (owned.playerId === _this.simulation.clientId()) {
             movement = entity['Movement'];
             if (movement.vx > 0) {
-              return _this.simulation.worldProxy("commandUnit", "march", entityId, {
+              return _this.simulation.worldProxy("commandUnit", "march", {
+                entityId: entityId,
                 direction: "left"
               });
+            } else if (movement.vx < 0) {
+              return _this.simulation.worldProxy("commandUnit", "march", {
+                entityId: entityId,
+                direction: "stop"
+              });
             } else {
-              return _this.simulation.worldProxy("commandUnit", "march", entityId, {
+              return _this.simulation.worldProxy("commandUnit", "march", {
+                entityId: entityId,
                 direction: "right"
               });
             }
@@ -320,21 +330,20 @@ GameRunner = (function() {
     })(this));
     this.pixiWrapper.on("worldClicked", (function(_this) {
       return function(data) {
-        var pt;
-        if (_this.keyboardController.isActive("roboType0")) {
-          pt = data.getLocalPosition(data.target);
-          _this.simulation.worldProxy("summonRobot", "robot_0", {
-            x: pt.x,
-            y: pt.y
-          });
+        var n, pt, _i, _results;
+        pt = data.getLocalPosition(data.target);
+        _results = [];
+        for (n = _i = 0; _i <= 6; n = ++_i) {
+          if (_this.keyboardController.isActive("roboType" + n)) {
+            _results.push(_this.simulation.worldProxy("summonRobot", "robot_" + n, {
+              x: pt.x,
+              y: pt.y
+            }));
+          } else {
+            _results.push(void 0);
+          }
         }
-        if (_this.keyboardController.isActive("roboType1")) {
-          pt = data.getLocalPosition(data.target);
-          return _this.simulation.worldProxy("summonRobot", "robot_1", {
-            x: pt.x,
-            y: pt.y
-          });
-        }
+        return _results;
       };
     })(this));
   }
@@ -573,11 +582,13 @@ PixiWrapper = (function(_super) {
     }
     endIndex = this.sprites.children.length;
     this.sprites.addChildAt(sprite, endIndex);
-    return sprite.mousedown = (function(_this) {
-      return function(data) {
-        return _this.emit("spriteClicked", data, entityId);
-      };
-    })(this);
+    if (entityId != null) {
+      return sprite.mousedown = (function(_this) {
+        return function(data) {
+          return _this.emit("spriteClicked", data, entityId);
+        };
+      })(this);
+    }
   };
 
   PixiWrapper.prototype.appendViewTo = function(el) {
@@ -901,21 +912,29 @@ CommandQueueSystem = (function(_super) {
     _results = [];
     for (_i = 0, _len = commands.length; _i < _len; _i++) {
       cmd = commands[_i];
-      targetEntity = this.entityFinder.findEntityById(cmd.entityId);
-      owned = targetEntity.get(ComponentRegister.get(Owned));
-      if (owned && (cmd.playerId === owned.playerId)) {
-        if (cmd.command === "march") {
-          movement = targetEntity.get(ComponentRegister.get(Movement));
-          if (cmd.args.direction === "left") {
-            _results.push(movement.vx = -10);
+      if (cmd.args.entityId != null) {
+        targetEntity = this.entityFinder.findEntityById(cmd.args.entityId);
+        owned = targetEntity.get(ComponentRegister.get(Owned));
+        if (owned && (cmd.playerId === owned.playerId)) {
+          if (cmd.command === "march") {
+            movement = targetEntity.get(ComponentRegister.get(Movement));
+            if (cmd.args.direction === "left") {
+              _results.push(movement.vx = -10);
+            } else if (cmd.args.direction === "right") {
+              _results.push(movement.vx = 10);
+            } else if (cmd.args.direction === "stop") {
+              _results.push(movement.vx = 0);
+            } else {
+              _results.push(void 0);
+            }
           } else {
-            _results.push(movement.vx = 10);
+            _results.push(console.log("CommandQueueSystem: UNKNOWN COMMAND:", cmd));
           }
         } else {
-          _results.push(console.log("CommandQueueSystem: UNKNOWN COMMAND:", cmd));
+          _results.push(console.log("CommandQueueSystem: ILLEGAL INSTRUCTION, player " + cmd.playerId + " may not command entity " + cmd.args.entityId + " because it's owned by " + owned.playerId));
         }
       } else {
-        _results.push(console.log("CommandQueueSystem: ILLEGAL INSTRUCTION, player " + cmd.playerId + " may not command entity " + cmd.entityId + " because it's owned by " + owned.playerId));
+        _results.push(void 0);
       }
     }
     return _results;
@@ -1333,14 +1352,13 @@ RtsWorld = (function(_super) {
     }), ComponentRegister.get(Owned));
   };
 
-  RtsWorld.prototype.commandUnit = function(playerId, command, entityId, args) {
+  RtsWorld.prototype.commandUnit = function(playerId, command, args) {
     if (args == null) {
       args = {};
     }
     return this.commandQueue.push({
       command: command,
       playerId: playerId,
-      entityId: entityId,
       args: args
     });
   };

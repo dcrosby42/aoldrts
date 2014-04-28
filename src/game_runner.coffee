@@ -11,18 +11,17 @@ class GameRunner
         if owned.playerId == @simulation.clientId()
           movement = entity['Movement']
           if movement.vx > 0
-            @simulation.worldProxy "commandUnit", "march", entityId, direction: "left"
+            @simulation.worldProxy "commandUnit", "march", entityId: entityId, direction: "left"
+          else if movement.vx < 0
+            @simulation.worldProxy "commandUnit", "march", entityId: entityId, direction: "stop"
           else
-            @simulation.worldProxy "commandUnit", "march", entityId, direction: "right"
+            @simulation.worldProxy "commandUnit", "march", entityId: entityId, direction: "right"
 
     @pixiWrapper.on "worldClicked", (data) =>
-      if @keyboardController.isActive("roboType0")
-        pt = data.getLocalPosition(data.target)
-        @simulation.worldProxy "summonRobot", "robot_0", x: pt.x, y: pt.y
-
-      if @keyboardController.isActive("roboType1")
-        pt = data.getLocalPosition(data.target)
-        @simulation.worldProxy "summonRobot", "robot_1", x: pt.x, y: pt.y
+      pt = data.getLocalPosition(data.target)
+      for n in [0..6]
+        if @keyboardController.isActive("roboType#{n}")
+          @simulation.worldProxy "summonRobot", "robot_#{n}", x: pt.x, y: pt.y
 
 
 

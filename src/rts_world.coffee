@@ -115,20 +115,22 @@ class CommandQueueSystem extends makr.IteratingSystem
     while cmd = @commandQueue.shift()
       commands.push(cmd)
     for cmd in commands
-      # command, playerId, entityId
-      targetEntity = @entityFinder.findEntityById(cmd.entityId)
-      owned = targetEntity.get(ComponentRegister.get(Owned))
-      if owned and (cmd.playerId == owned.playerId)
-        if cmd.command == "march"
-          movement = targetEntity.get(ComponentRegister.get(Movement))
-          if cmd.args.direction == "left"
-            movement.vx = -10
+      if cmd.args.entityId?
+        targetEntity = @entityFinder.findEntityById(cmd.args.entityId)
+        owned = targetEntity.get(ComponentRegister.get(Owned))
+        if owned and (cmd.playerId == owned.playerId)
+          if cmd.command == "march"
+            movement = targetEntity.get(ComponentRegister.get(Movement))
+            if cmd.args.direction == "left"
+              movement.vx = -10
+            else if cmd.args.direction == "right"
+              movement.vx = 10
+            else if cmd.args.direction == "stop"
+              movement.vx = 0
           else
-            movement.vx = 10
+            console.log "CommandQueueSystem: UNKNOWN COMMAND:", cmd
         else
-          console.log "CommandQueueSystem: UNKNOWN COMMAND:", cmd
-      else
-        console.log "CommandQueueSystem: ILLEGAL INSTRUCTION, player #{cmd.playerId} may not command entity #{cmd.entityId} because it's owned by #{owned.playerId}"
+          console.log "CommandQueueSystem: ILLEGAL INSTRUCTION, player #{cmd.playerId} may not command entity #{cmd.args.entityId} because it's owned by #{owned.playerId}"
           
 
 class Sprite
@@ -408,11 +410,10 @@ class RtsWorld extends SimSim.WorldBase
     robot = @entityFactory.robot(args.x, args.y, robotType)
     robot.add(new Owned(playerId: playerId), ComponentRegister.get(Owned))
     
-  commandUnit: (playerId, command, entityId, args={}) ->
+  commandUnit: (playerId, command, args={}) ->
     @commandQueue.push(
       command: command,
       playerId: playerId
-      entityId: entityId
       args: args
     )
     

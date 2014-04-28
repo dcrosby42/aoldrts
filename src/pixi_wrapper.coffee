@@ -37,8 +37,9 @@ class PixiWrapper extends SimSim.EventEmitter
   addMiddleGroundSprite: (sprite, entityId=null) ->
     endIndex = @sprites.children.length # ADD ON TOP
     @sprites.addChildAt sprite, endIndex
-    sprite.mousedown = (data) =>
-      @emit "spriteClicked", data, entityId
+    if entityId?
+      sprite.mousedown = (data) =>
+        @emit "spriteClicked", data, entityId
 
   appendViewTo: (el) ->
     @renderer.view.id = "game"

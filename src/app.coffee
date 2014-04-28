@@ -151,16 +151,16 @@ buildPixiWrapper = (opts={})->
   new PixiWrapper(opts)
 
 buildKeyboardController = ->
-  new KeyboardController(
+  actions = {
     r: "myNewRobot"
     t: "theirNewRobot"
     f: "marchMyRobot"
     g: "marchTheirRobot"
+  }
+  for n in [0..6]
+    actions[n] = "roboType#{n}"
 
-    0: "roboType0"
-    1: "roboType1"
-  )
-
+  new KeyboardController(actions)
 
 _copyData = (data) ->
   JSON.parse(JSON.stringify(data))
