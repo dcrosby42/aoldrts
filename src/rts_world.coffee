@@ -46,6 +46,26 @@ class Movement
 class MapTiles
   constructor: ({@seed, @width, @height}) ->
 
+class Powerup
+  constructor: ({@powerup_type}) ->
+
+eachMapTile = (prng, width, height, f) ->
+  tile_sets = ["gray", "orange", "dark_brown", "dark"]
+  features = [[null, 200], ["stone0", 8], ["stone1", 8], ["crater", 2]]
+  bases = [["small_crater", 5], ["basic0", 50], ["basic1", 50]]
+  tile_set = prng.choose(tile_sets)
+  tileSize = 31
+
+  offset_x = (width / 2) * tileSize
+  offset_y = (height / 2) * tileSize
+
+  # tile backwards so that bigger features are overlaid right
+  for x in [width*tileSize..0] by -tileSize
+    for y in [height*tileSize..0] by -tileSize
+      base = prng.weighted_choose(bases)
+      feature = prng.weighted_choose(features)
+      f(x - offset_x, y - offset_y, tile_set, base, feature)
+
 class MapTilesSystem extends makr.IteratingSystem
   constructor: (@pixiWrapper) ->
     makr.IteratingSystem.call(@)
@@ -60,7 +80,7 @@ class MapTilesSystem extends makr.IteratingSystem
   process: (entity, elapsed) ->
     unless @tilesSprites?
       component = entity.get(ComponentRegister.get(MapTiles))
-      @tilesSprites = @createTiles(component.seed)
+      @tilesSprites = @createTiles(component.seed, component.width, component.height)
       @pixiWrapper.sprites.addChildAt(@tilesSprites,0) # ADD ALL THE WAY AT THE BOTTOM
 
   createTile: (tiles, frame, x, y) ->
@@ -69,32 +89,20 @@ class MapTilesSystem extends makr.IteratingSystem
     tile.position.y = y
     tile
 
-  createTiles: (seed) ->
-    tile_sets = ["gray_set_", "orange_set_", "dark_brown_set_", "dark_set_"]
-    features = [["", 90], ["feature0", 4], ["feature1", 4], ["feature2", 2]]
-    bases = [["basic0", 5], ["basic1", 50], ["basic2", 50]]
-
+  createTiles: (seed, width, height) ->
     tiles = new PIXI.DisplayObjectContainer()
-    prng = new ParkMillerRNG(seed)
-    tile_set = prng.choose(tile_sets)
     tiles.position.x = 0
     tiles.position.y = 0
-    tileSize = 31
-    # tile backwards so that bigger features are overlaid right
-    for x in [3200..0] by -tileSize
-      for y in [3200..0] by -tileSize
-        base = prng.weighted_choose(bases)
-        frame = tile_set + base + ".png"
-        tiles.addChild(@createTile(tiles, frame, x, y))
 
-        feature = prng.weighted_choose(features)
-        if feature != ""
-          feature_frame = tile_set + feature + ".png"
+    prng = new ParkMillerRNG(seed)
+    eachMapTile prng, width, height, (x, y, tile_set, base, feature) =>
+        frame = tile_set + "_set_" + base
+        tiles.addChild(@createTile(tiles, frame, x, y))
+        if feature?
+          feature_frame = tile_set + "_set_" + feature
           tiles.addChild(@createTile(tiles, feature_frame, x, y))
 
     tiles.cacheAsBitmap = true
-    tiles.position.x = -1600
-    tiles.position.y = -1600
     tiles
 
 class CommandQueueSystem extends makr.IteratingSystem
@@ -283,10 +291,29 @@ class EntityFactory
     robot.add(new Movement(vx: 0, vy: 0), ComponentRegister.get(Movement))
     robot
 
+  powerup: (x, y, powerup_type) ->
+    powerup_frames = {
+      blue: {
+        right: ["blue-crystal0", "blue-crystal1", "blue-crystal2", "blue-crystal3", "blue-crystal4", "blue-crystal5", "blue-crystal6", "blue-crystal7"]
+      }
+    }
+    p = @ecs.create()
+    p.add(new Position(x: x, y: y), ComponentRegister.get(Position))
+    # movement just added 
+    p.add(new Movement(vx: 0, vy: 0), ComponentRegister.get(Movement))
+    p.add(new Powerup(powerup_type: powerup_type), ComponentRegister.get(Powerup))
+    p.add(new Sprite(framelist: powerup_frames[powerup_type]), ComponentRegister.get(Sprite))
+    p
+
   mapTiles: (seed, width, height) ->
     mapTiles = @ecs.create()
     comp = new MapTiles(seed: seed, width: width, height: height)
     mapTiles.add(comp, ComponentRegister.get(MapTiles))
+    prng = new ParkMillerRNG(seed)
+    eachMapTile prng, width, height, (x, y, tile_set, base, feature) =>
+      if feature == "crater"
+        @powerup(x + 32, y + 32, "blue")
+
     mapTiles
 
 BUNNY_VEL = 3
@@ -300,7 +327,7 @@ class RtsWorld extends SimSim.WorldBase
     @entityFactory = new EntityFactory(@ecs)
     @currentControls = {}
     @setupEntityInspector(@ecs,@entityInspector) if @entityInspector
-    @entityFactory.mapTiles((Math.random() * 1000)|0, 50, 50)
+    @entityFactory.mapTiles((Math.random() * 1000)|0, 100, 100)
 
   setupECS: (pixieWrapper) ->
     ComponentRegister.register(Position)
@@ -309,6 +336,7 @@ class RtsWorld extends SimSim.WorldBase
     ComponentRegister.register(Movement)
     ComponentRegister.register(Controls)
     ComponentRegister.register(MapTiles)
+    ComponentRegister.register(Powerup)
     ecs = new makr.World()
     ecs.registerSystem(new SpriteSyncSystem(@pixiWrapper))
     ecs.registerSystem(new MapTilesSystem(@pixiWrapper))

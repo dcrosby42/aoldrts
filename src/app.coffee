@@ -30,10 +30,12 @@ window.gameConfig = ->
       "images/bunny.png",
       "images/logo.png",
       "images/terrain.png",
+      "images/crystal-qubodup-ccby3-32-blue.png"
       ]
     spriteSheetAssets: [
       "images/EBRobotedit2crMatsuoKaito.json",
-      "images/terrain.json"
+      "images/terrain.json",
+      "images/crystal.json"
     ]
     simSimConnection:
       url: "#{scheme}://#{window.location.hostname}"#:#{window.location.port}"
