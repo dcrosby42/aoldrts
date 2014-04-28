@@ -1074,7 +1074,7 @@ SpriteSyncSystem = (function(_super) {
   };
 
   SpriteSyncSystem.prototype.buildSprite = function(entity, sprite, position) {
-    var endIndex, frame, frameCache, frames, pixiSprite, pose, _ref;
+    var frame, frameCache, frames, pixiSprite, pose, _ref;
     pixiSprite = void 0;
     if (sprite.framelist) {
       if (!this.spriteFrameCache[sprite.name]) {
@@ -1104,9 +1104,6 @@ SpriteSyncSystem = (function(_super) {
     pixiSprite.position.x = position.x;
     pixiSprite.position.y = position.y;
     pixiSprite.setInteractive(true);
-    endIndex = container.children.length;
-    container.addChildAt(pixiSprite, endIndex);
-    console.log("ADDING SPRITE FOR " + entity.id + " at child index " + endIndex);
     this.pixiWrapper.addMiddleGroundSprite(pixiSprite, entity.id);
     sprite.add = false;
     return this.spriteCache[entity.id] = pixiSprite;
@@ -1159,6 +1156,7 @@ EntityFactory = (function() {
 
   EntityFactory.prototype.robot = function(x, y, robotName) {
     var robot;
+    console.log("robot", robotName);
     robot = this.ecs.create();
     robot.add(new Position({
       x: x,
@@ -1263,18 +1261,16 @@ RtsWorld = (function(_super) {
   };
 
   RtsWorld.prototype.summonMyRobot = function(playerId, x, y) {
-    var robot, robotAvatar;
-    robotAvatar = this.generateRobotFrameList();
-    robot = this.entityFactory.robot(x, y, robotAvatar);
+    var robot;
+    robot = this.entityFactory.robot(x, y, "robot_1");
     return robot.add(new Owned({
       playerId: playerId
     }), ComponentRegister.get(Owned));
   };
 
   RtsWorld.prototype.summonTheirRobot = function(playerId, x, y) {
-    var robot, robotAvatar;
-    robotAvatar = this.generateRobotFrameList();
-    robot = this.entityFactory.robot(x, y, robotAvatar);
+    var robot;
+    robot = this.entityFactory.robot(x, y, "robot_2");
     return robot.add(new Owned({
       playerId: "WAT"
     }), ComponentRegister.get(Owned));

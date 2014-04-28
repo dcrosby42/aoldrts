@@ -269,9 +269,6 @@ class SpriteSyncSystem extends makr.IteratingSystem
     pixiSprite.position.y = position.y
     pixiSprite.setInteractive(true)
     
-    endIndex = container.children.length # ADD ON TOP
-    container.addChildAt pixiSprite, endIndex
-    console.log "ADDING SPRITE FOR #{entity.id} at child index #{endIndex}"
     @pixiWrapper.addMiddleGroundSprite( pixiSprite, entity.id )
 
     sprite.add = false
@@ -314,6 +311,7 @@ class EntityFactory
       }
 
   robot: (x,y,robotName) ->
+    console.log "robot", robotName
     robot = @ecs.create()
     robot.add(new Position(x: x, y: y), ComponentRegister.get(Position))
     robot.add(new Sprite(name: robotName, framelist: @generateRobotFrameList(robotName)), ComponentRegister.get(Sprite))
@@ -373,14 +371,12 @@ class RtsWorld extends SimSim.WorldBase
   #
   # XXX:
   summonMyRobot: (playerId, x, y) ->
-    robotAvatar = @generateRobotFrameList()
-    robot = @entityFactory.robot(x, y, robotAvatar)
+    robot = @entityFactory.robot(x, y, "robot_1")
     robot.add(new Owned(playerId: playerId), ComponentRegister.get(Owned))
 
   # XXX:
   summonTheirRobot: (playerId, x, y) ->
-    robotAvatar = @generateRobotFrameList()
-    robot = @entityFactory.robot(x, y, robotAvatar)
+    robot = @entityFactory.robot(x, y, "robot_2")
     robot.add(new Owned(playerId: "WAT"), ComponentRegister.get(Owned))
 
   commandUnit: (playerId, command, entityId) ->

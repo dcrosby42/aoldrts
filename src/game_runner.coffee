@@ -1,7 +1,7 @@
 
 class GameRunner
   constructor: ({@window,@simulation,@pixiWrapper,@stats,@stopWatch,@keyboardController,@entityInspector}) ->
-    @shouldRun = false
+    @shouldRun = false 
     @worldProxyQueue = []
 
     @pixiWrapper.on "spriteClicked", (data,entityId) =>
@@ -11,8 +11,6 @@ class GameRunner
         if owned.playerId == @simulation.clientId()
           movement = entity['Movement']
           @simulation.worldProxy "commandUnit", "march", entityId
-        
-
 
   start: ->
     @simulation.start()
