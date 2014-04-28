@@ -1,10 +1,11 @@
 
 RtsWorld = require './world/rts_world.coffee'
+RtsUI = require './ui/rts_ui.coffee'
 
 StopWatch = require './utils/stop_watch.coffee'
 KeyboardController = require './ui/keyboard_controller.coffee'
 PixiWrapper = require './ui/pixi_wrapper.coffee'
-GameRunner = require './game_runner.coffee'
+GameRunner = require './ui/game_runner.coffee'
 
 ParkMillerRNG = require './utils/pm_prng.coffee'
 
@@ -56,7 +57,6 @@ window.gameConfig = ->
 window.local =
   vars: {}
   gameRunner: null
-  entityInspector: null
   pixiWrapper: null
 
 window.onload = ->
@@ -75,31 +75,37 @@ window.onload = ->
 
 
   pixiWrapper.loadAssets ->
-    entityInspector = new EntityInspector()
-
     world = new RtsWorld(
       pixiWrapper:pixiWrapper
-      entityInspector: entityInspector
+      introspector: new EntityInspector()
     )
 
     simulation = buildSimulation(
-      world: world
+      world: new RtsWorld(
+          pixiWrapper:pixiWrapper
+          introspector: new EntityInspector()
+        )
       url: gameConfig.simSimConnection.url
       secure: gameConfig.simSimConnection.secure
     )
     keyboardController = buildKeyboardController()
     stopWatch = buildStopWatch()
-    gameRunner = new GameRunner(
-      window: window
+
+    rtsUI = new RtsUI(
       simulation: simulation
       pixiWrapper: pixiWrapper
       keyboardController: keyboardController
+    )
+      
+    gameRunner = new GameRunner(
+      simulation: simulation
+      ui: rtsUI
+      window: window
+      pixiWrapper: pixiWrapper
       stats: stats
       stopWatch: stopWatch
-      entityInspector: entityInspector
     )
 
-    window.local.entityInspector = entityInspector
     window.local.gameRunner = gameRunner
     window.local.pixiWrapper = pixiWrapper
 
@@ -114,6 +120,7 @@ buildStopWatch = ->
 
 buildSimulation = (opts={})->
   simulation = SimSim.createSimulation(
+    world: opts.world
     adapter:
       type: 'socket_io'
       options:
@@ -136,7 +143,6 @@ buildSimulation = (opts={})->
     #   step = simulation.simState.step if simulation.simState
     #   console.log ">> turn: #{simulation.currentTurnNumber} step: #{simulation.simState.step} data:", data
 
-    world: opts.world
   )
 
 setupStats = ->
@@ -163,15 +169,17 @@ _copyData = (data) ->
   JSON.parse(JSON.stringify(data))
 
 window.takeSnapshot = ->
-  d = window.local.gameRunner.simulation.world.getData()
-  ss = _copyData(d)
-  console.log ss
-  window.local.vars.snapshot = ss
+  console.log "NO!"
+  # d = window.local.gameRunner.simulation.world.getData()
+  # ss = _copyData(d)
+  # console.log ss
+  # window.local.vars.snapshot = ss
 
 window.restoreSnapshot = ->
-  ss = window.local.vars.snapshot
-  console.log ss
-  window.local.gameRunner.simulation.world.setData _copyData(ss)
+  console.log "NO!"
+  # ss = window.local.vars.snapshot
+  # console.log ss
+  # window.local.gameRunner.simulation.world.setData _copyData(ss)
 
 window.stop = ->
   window.local.gameRunner.stop()
@@ -184,7 +192,7 @@ window.mouseScrollingChanged = ->
   window.local.pixiWrapper.setMouseScrollingOn(onOff)
 
 window.watchData = ->
-  insp = window.local.entityInspector
+  insp = window.local.gameRunner.simulation.getWorldIntrospector()
   pre = document.getElementById("entityInspectorOutput")
   entityCount = insp.entityCount()
 
