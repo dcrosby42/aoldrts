@@ -298,7 +298,15 @@ GameRunner = (function() {
           owned = entity['Owned'];
           if (owned.playerId === _this.simulation.clientId()) {
             movement = entity['Movement'];
-            return _this.simulation.worldProxy("commandUnit", "march", entityId);
+            if (movement.vx > 0) {
+              return _this.simulation.worldProxy("commandUnit", "march", entityId, {
+                direction: "left"
+              });
+            } else {
+              return _this.simulation.worldProxy("commandUnit", "march", entityId, {
+                direction: "right"
+              });
+            }
           }
         });
       };
@@ -888,7 +896,11 @@ CommandQueueSystem = (function(_super) {
       if (owned && (cmd.playerId === owned.playerId)) {
         if (cmd.command === "march") {
           movement = targetEntity.get(ComponentRegister.get(Movement));
-          _results.push(movement.vx = 10);
+          if (cmd.args.direction === "left") {
+            _results.push(movement.vx = -10);
+          } else {
+            _results.push(movement.vx = 10);
+          }
         } else {
           _results.push(console.log("CommandQueueSystem: UNKNOWN COMMAND:", cmd));
         }
@@ -1276,11 +1288,15 @@ RtsWorld = (function(_super) {
     }), ComponentRegister.get(Owned));
   };
 
-  RtsWorld.prototype.commandUnit = function(playerId, command, entityId) {
+  RtsWorld.prototype.commandUnit = function(playerId, command, entityId, args) {
+    if (args == null) {
+      args = {};
+    }
     return this.commandQueue.push({
       command: command,
       playerId: playerId,
-      entityId: entityId
+      entityId: entityId,
+      args: args
     });
   };
 

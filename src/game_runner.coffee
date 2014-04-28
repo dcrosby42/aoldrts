@@ -10,7 +10,10 @@ class GameRunner
         owned = entity['Owned']
         if owned.playerId == @simulation.clientId()
           movement = entity['Movement']
-          @simulation.worldProxy "commandUnit", "march", entityId
+          if movement.vx > 0
+            @simulation.worldProxy "commandUnit", "march", entityId, direction: "left"
+          else
+            @simulation.worldProxy "commandUnit", "march", entityId, direction: "right"
 
   start: ->
     @simulation.start()

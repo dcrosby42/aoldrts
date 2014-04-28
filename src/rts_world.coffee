@@ -112,7 +112,10 @@ class CommandQueueSystem extends makr.IteratingSystem
       if owned and (cmd.playerId == owned.playerId)
         if cmd.command == "march"
           movement = targetEntity.get(ComponentRegister.get(Movement))
-          movement.vx = 10
+          if cmd.args.direction == "left"
+            movement.vx = -10
+          else
+            movement.vx = 10
         else
           console.log "CommandQueueSystem: UNKNOWN COMMAND:", cmd
       else
@@ -379,11 +382,12 @@ class RtsWorld extends SimSim.WorldBase
     robot = @entityFactory.robot(x, y, "robot_2")
     robot.add(new Owned(playerId: "WAT"), ComponentRegister.get(Owned))
 
-  commandUnit: (playerId, command, entityId) ->
+  commandUnit: (playerId, command, entityId, args={}) ->
     @commandQueue.push(
       command: command,
       playerId: playerId
       entityId: entityId
+      args: args
     )
     
   #### SimSim.WorldBase#playerJoined(id)
