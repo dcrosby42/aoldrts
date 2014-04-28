@@ -27,7 +27,7 @@ makr.World.prototype.resurrect = (entId) ->
 
 
 eachMapTile = (prng, width, height, f) ->
-  tile_sets = ["gray", "orange", "dark_brown", "dark"]
+  tile_sets = ["gray", "dark_brown", "dark"]
   features = [[null, 200], ["stone0", 8], ["stone1", 8], ["crater", 2]]
   bases = [["small_crater", 5], ["basic0", 50], ["basic1", 50]]
   tile_set = prng.choose(tile_sets)
