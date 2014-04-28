@@ -1,5 +1,6 @@
 CR = require '../utils/component_register.coffee'
 C = require('../components.coffee')
+Vec2D.useObjects()
 
 class GotoSystem extends makr.IteratingSystem
   constructor: () ->
@@ -15,23 +16,17 @@ class GotoSystem extends makr.IteratingSystem
 
     dx = goto.x - position.x
     dy = goto.y - position.y
+    target = Vec2D.create(dx,dy)
 
-    if Math.abs(dx) < 5 and Math.abs(dy) < 5
+    magnitude = target.magnitude()
+    if magnitude < 5
       entity.remove(CR.get(C.Goto))
       movement.vx = 0
       movement.vy = 0
-      console.log "DONE GOTO!",goto
+      console.log "DONE GOTO!", goto
     else
-      if dx > 0
-        movement.vx = movement.speed
-      else if dx < 0
-        movement.vx = -movement.speed
-
-      if dy > 0
-        movement.vy = movement.speed
-      else if dy < 0
-        movement.vy = -movement.speed
-
-
+      velocity = target.unit().multiplyByScalar(movement.speed)
+      movement.vx = velocity.getX()
+      movement.vy = velocity.getY()
 
 module.exports = GotoSystem

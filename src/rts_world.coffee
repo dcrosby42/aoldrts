@@ -6,6 +6,7 @@ ParkMillerRNG = require './pm_prng.coffee'
 
 CommandQueueSystem = require './systems/command_queue_system.coffee'
 GotoSystem = require './systems/goto_system.coffee'
+WanderControlMappingSystem = require './systems/wander_control_mapping_system.coffee'
 
 ComponentRegister = require './utils/component_register.coffee'
 
@@ -267,6 +268,7 @@ class EntityFactory
     robot.add(new C.Sprite(name: robotName, framelist: @generateRobotFrameList(robotName)), ComponentRegister.get(C.Sprite))
     robot.add(new C.Controls(), ComponentRegister.get(C.Controls))
     robot.add(new C.Movement(vx: 0, vy: 0, speed:15), ComponentRegister.get(C.Movement))
+    robot.add(new C.Wander(range: 50), ComponentRegister.get(C.Wander))
     robot
 
   powerup: (x, y, powerup_type) ->
@@ -319,7 +321,9 @@ class RtsWorld extends SimSim.WorldBase
     ComponentRegister.register(C.MapTiles)
     ComponentRegister.register(C.Powerup)
     ComponentRegister.register(C.Goto)
+    ComponentRegister.register(C.Wander)
     ecs = new makr.World()
+    ecs.registerSystem(new WanderControlMappingSystem())
     ecs.registerSystem(new GotoSystem())
     ecs.registerSystem(new SpriteSyncSystem(@pixiWrapper))
     ecs.registerSystem(new MapTilesSystem(@pixiWrapper))

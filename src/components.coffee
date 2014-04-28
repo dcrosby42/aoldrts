@@ -34,3 +34,6 @@ C.Controls = class Controls
 C.Goto = class Goto
   constructor: ({@x, @y}) ->
 
+C.Wander = class Wander
+  constructor: ({@range}) ->
+

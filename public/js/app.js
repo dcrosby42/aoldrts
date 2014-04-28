@@ -251,7 +251,7 @@ module.exports = ChecksumCalculator;
 
 
 },{}],3:[function(require,module,exports){
-var C, Controls, Goto, MapTiles, Movement, Owned, Position, Powerup, Sprite;
+var C, Controls, Goto, MapTiles, Movement, Owned, Position, Powerup, Sprite, Wander;
 
 C = {};
 
@@ -334,6 +334,15 @@ C.Goto = Goto = (function() {
   }
 
   return Goto;
+
+})();
+
+C.Wander = Wander = (function() {
+  function Wander(_arg) {
+    this.range = _arg.range;
+  }
+
+  return Wander;
 
 })();
 
@@ -729,7 +738,7 @@ PixiWrapper = (function(_super) {
 module.exports = PixiWrapper;
 
 
-},{"./viewport.coffee":14}],8:[function(require,module,exports){
+},{"./viewport.coffee":15}],8:[function(require,module,exports){
 var ParkMillerRNG;
 
 ParkMillerRNG = (function() {
@@ -779,7 +788,7 @@ module.exports = ParkMillerRNG;
 
 
 },{}],9:[function(require,module,exports){
-var BUNNY_VEL, C, ChecksumCalculator, CommandQueueSystem, ComponentRegister, ControlMappingSystem, ControlSystem, EntityFactory, EntityInspectorSystem, GotoSystem, HalfPI, MapTilesSystem, MovementSystem, ParkMillerRNG, RtsWorld, SpriteSyncSystem, eachMapTile, fixFloat,
+var BUNNY_VEL, C, ChecksumCalculator, CommandQueueSystem, ComponentRegister, ControlMappingSystem, ControlSystem, EntityFactory, EntityInspectorSystem, GotoSystem, HalfPI, MapTilesSystem, MovementSystem, ParkMillerRNG, RtsWorld, SpriteSyncSystem, WanderControlMappingSystem, eachMapTile, fixFloat,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
@@ -802,6 +811,8 @@ ParkMillerRNG = require('./pm_prng.coffee');
 CommandQueueSystem = require('./systems/command_queue_system.coffee');
 
 GotoSystem = require('./systems/goto_system.coffee');
+
+WanderControlMappingSystem = require('./systems/wander_control_mapping_system.coffee');
 
 ComponentRegister = require('./utils/component_register.coffee');
 
@@ -1151,6 +1162,9 @@ EntityFactory = (function() {
       vy: 0,
       speed: 15
     }), ComponentRegister.get(C.Movement));
+    robot.add(new C.Wander({
+      range: 50
+    }), ComponentRegister.get(C.Wander));
     return robot;
   };
 
@@ -1240,7 +1254,9 @@ RtsWorld = (function(_super) {
     ComponentRegister.register(C.MapTiles);
     ComponentRegister.register(C.Powerup);
     ComponentRegister.register(C.Goto);
+    ComponentRegister.register(C.Wander);
     ecs = new makr.World();
+    ecs.registerSystem(new WanderControlMappingSystem());
     ecs.registerSystem(new GotoSystem());
     ecs.registerSystem(new SpriteSyncSystem(this.pixiWrapper));
     ecs.registerSystem(new MapTilesSystem(this.pixiWrapper));
@@ -1433,7 +1449,7 @@ RtsWorld = (function(_super) {
 module.exports = RtsWorld;
 
 
-},{"./checksum_calculator.coffee":2,"./components.coffee":3,"./pm_prng.coffee":8,"./systems/command_queue_system.coffee":11,"./systems/goto_system.coffee":12,"./utils/component_register.coffee":13}],10:[function(require,module,exports){
+},{"./checksum_calculator.coffee":2,"./components.coffee":3,"./pm_prng.coffee":8,"./systems/command_queue_system.coffee":11,"./systems/goto_system.coffee":12,"./systems/wander_control_mapping_system.coffee":13,"./utils/component_register.coffee":14}],10:[function(require,module,exports){
 var StopWatch;
 
 StopWatch = (function() {
@@ -1563,7 +1579,7 @@ Commands.Entity.goto = function(entity, cmd) {
 module.exports = CommandQueueSystem;
 
 
-},{"../components.coffee":3,"../utils/component_register.coffee":13}],12:[function(require,module,exports){
+},{"../components.coffee":3,"../utils/component_register.coffee":14}],12:[function(require,module,exports){
 var C, CR, GotoSystem,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -1571,6 +1587,8 @@ var C, CR, GotoSystem,
 CR = require('../utils/component_register.coffee');
 
 C = require('../components.coffee');
+
+Vec2D.useObjects();
 
 GotoSystem = (function(_super) {
   __extends(GotoSystem, _super);
@@ -1583,28 +1601,23 @@ GotoSystem = (function(_super) {
   }
 
   GotoSystem.prototype.process = function(entity, elapsed) {
-    var dx, dy, goto, movement, position;
+    var dx, dy, goto, magnitude, movement, position, target, velocity;
     goto = entity.get(CR.get(C.Goto));
     position = entity.get(CR.get(C.Position));
     movement = entity.get(CR.get(C.Movement));
     dx = goto.x - position.x;
     dy = goto.y - position.y;
-    if (Math.abs(dx) < 5 && Math.abs(dy) < 5) {
+    target = Vec2D.create(dx, dy);
+    magnitude = target.magnitude();
+    if (magnitude < 5) {
       entity.remove(CR.get(C.Goto));
       movement.vx = 0;
       movement.vy = 0;
       return console.log("DONE GOTO!", goto);
     } else {
-      if (dx > 0) {
-        movement.vx = movement.speed;
-      } else if (dx < 0) {
-        movement.vx = -movement.speed;
-      }
-      if (dy > 0) {
-        return movement.vy = movement.speed;
-      } else if (dy < 0) {
-        return movement.vy = -movement.speed;
-      }
+      velocity = target.unit().multiplyByScalar(movement.speed);
+      movement.vx = velocity.getX();
+      return movement.vy = velocity.getY();
     }
   };
 
@@ -1615,7 +1628,52 @@ GotoSystem = (function(_super) {
 module.exports = GotoSystem;
 
 
-},{"../components.coffee":3,"../utils/component_register.coffee":13}],13:[function(require,module,exports){
+},{"../components.coffee":3,"../utils/component_register.coffee":14}],13:[function(require,module,exports){
+var C, CR, ParkMillerRNG, WanderControlMappingSystem,
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+CR = require('../utils/component_register.coffee');
+
+C = require('../components.coffee');
+
+ParkMillerRNG = require('../pm_prng.coffee');
+
+WanderControlMappingSystem = (function(_super) {
+  __extends(WanderControlMappingSystem, _super);
+
+  function WanderControlMappingSystem() {
+    makr.IteratingSystem.call(this);
+    this.registerComponent(CR.get(C.Position));
+    this.registerComponent(CR.get(C.Wander));
+    this.randy = new ParkMillerRNG(1234);
+  }
+
+  WanderControlMappingSystem.prototype.process = function(entity, elapsed) {
+    var dx, dy, goto, position, range, wander;
+    wander = entity.get(CR.get(C.Wander));
+    position = entity.get(CR.get(C.Position));
+    goto = entity.get(CR.get(C.Goto));
+    if (goto == null) {
+      range = wander.range;
+      dx = this.randy.nextInt(-range, range);
+      dy = this.randy.nextInt(-range, range);
+      entity.add(new C.Goto({
+        x: position.x + dx,
+        y: position.y + dy
+      }), CR.get(C.Goto));
+      return console.log(entity.get(CR.get(C.Goto)));
+    }
+  };
+
+  return WanderControlMappingSystem;
+
+})(makr.IteratingSystem);
+
+module.exports = WanderControlMappingSystem;
+
+
+},{"../components.coffee":3,"../pm_prng.coffee":8,"../utils/component_register.coffee":14}],14:[function(require,module,exports){
 var ComponentRegister;
 
 ComponentRegister = (function() {
@@ -1647,7 +1705,7 @@ ComponentRegister = (function() {
 module.exports = ComponentRegister;
 
 
-},{}],14:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 var Viewport;
 
 Viewport = (function() {
