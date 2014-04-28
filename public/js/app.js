@@ -1021,7 +1021,7 @@ SpriteSyncSystem = (function(_super) {
   };
 
   SpriteSyncSystem.prototype.process = function(entity, elapsed) {
-    var movement, pixiSprite, position, sprite;
+    var movement, pixiSprite, position, sprite, vx, vy;
     position = entity.get(ComponentRegister.get(C.Position));
     sprite = entity.get(ComponentRegister.get(C.Sprite));
     movement = entity.get(ComponentRegister.get(C.Movement));
@@ -1034,26 +1034,23 @@ SpriteSyncSystem = (function(_super) {
       pixiSprite.position.x = position.x;
       pixiSprite.position.y = position.y;
     }
-    switch (false) {
-      case !(movement.vx > 0):
-        sprite.facing = "right";
-        sprite.idle = false;
-        break;
-      case !(movement.vx < 0):
-        sprite.facing = "left";
-        sprite.idle = false;
-        break;
-      case !(movement.vy > 0):
-        sprite.facing = "down";
-        sprite.idle = false;
-        break;
-      case !(movement.vy < 0):
-        sprite.facing = "up";
-        sprite.idle = false;
-        break;
-      default:
-        sprite.idle = true;
+    vx = movement.vx;
+    vy = movement.vy;
+    if (vy < 0) {
+      sprite.facing = "up";
     }
+    if (vy > 0) {
+      sprite.facing = "down";
+    }
+    if (Math.abs(vx) > Math.abs(vy)) {
+      if (vx < 0) {
+        sprite.facing = "left";
+      }
+      if (vx > 0) {
+        sprite.facing = "right";
+      }
+    }
+    sprite.idle = vx === 0 && vy === 0;
     if (sprite.framelist) {
       if (sprite.idle) {
         return pixiSprite.textures = this.spriteFrameCache[sprite.name]["" + sprite.facing + "Idle"];

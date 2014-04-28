@@ -180,21 +180,15 @@ class SpriteSyncSystem extends makr.IteratingSystem
       pixiSprite.position.x = position.x
       pixiSprite.position.y = position.y
 
-    switch
-      when movement.vx > 0
-        sprite.facing = "right"
-        sprite.idle = false
-      when movement.vx < 0
-        sprite.facing = "left"
-        sprite.idle = false
-      when movement.vy > 0
-        sprite.facing = "down"
-        sprite.idle = false
-      when movement.vy < 0
-        sprite.facing = "up"
-        sprite.idle = false
-      else
-        sprite.idle = true
+    vx = movement.vx
+    vy = movement.vy
+    sprite.facing = "up" if vy < 0
+    sprite.facing = "down" if vy > 0
+    if Math.abs(vx) > Math.abs(vy)
+      sprite.facing = "left" if vx < 0
+      sprite.facing = "right" if vx > 0
+    sprite.idle = vx == 0 and vy == 0
+
 
     if sprite.framelist
       if sprite.idle
