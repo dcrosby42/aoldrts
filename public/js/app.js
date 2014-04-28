@@ -85,7 +85,8 @@ window.onload = function() {
       pixiWrapper: pixiWrapper,
       keyboardController: keyboardController,
       stats: stats,
-      stopWatch: stopWatch
+      stopWatch: stopWatch,
+      entityInspector: entityInspector
     });
     window.local.entityInspector = entityInspector;
     window.local.gameRunner = gameRunner;
@@ -270,6 +271,10 @@ EntityInspector = (function() {
     return this._data;
   };
 
+  EntityInspector.prototype.getEntity = function(entityId) {
+    return this._data["" + entityId];
+  };
+
   return EntityInspector;
 
 })();
@@ -282,13 +287,19 @@ var GameRunner;
 
 GameRunner = (function() {
   function GameRunner(_arg) {
-    this.window = _arg.window, this.simulation = _arg.simulation, this.pixiWrapper = _arg.pixiWrapper, this.stats = _arg.stats, this.stopWatch = _arg.stopWatch, this.keyboardController = _arg.keyboardController;
+    this.window = _arg.window, this.simulation = _arg.simulation, this.pixiWrapper = _arg.pixiWrapper, this.stats = _arg.stats, this.stopWatch = _arg.stopWatch, this.keyboardController = _arg.keyboardController, this.entityInspector = _arg.entityInspector;
     this.shouldRun = false;
     this.worldProxyQueue = [];
     this.pixiWrapper.on("spriteClicked", (function(_this) {
       return function(data, entityId) {
         return _this.worldProxyQueue.push(function() {
-          return _this.simulation.worldProxy("commandUnit", "march", entityId);
+          var entity, movement, owned;
+          entity = _this.entityInspector.getEntity(entityId);
+          owned = entity['Owned'];
+          if (owned.playerId === _this.simulation.clientId()) {
+            movement = entity['Movement'];
+            return _this.simulation.worldProxy("commandUnit", "march", entityId);
+          }
         });
       };
     })(this));

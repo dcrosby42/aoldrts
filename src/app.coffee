@@ -84,6 +84,7 @@ window.onload = ->
       keyboardController: keyboardController
       stats: stats
       stopWatch: stopWatch
+      entityInspector: entityInspector
     )
 
     window.local.entityInspector = entityInspector
