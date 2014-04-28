@@ -1,9 +1,16 @@
 
 class GameRunner
+  # TODO: @ui
   constructor: ({@window,@simulation,@pixiWrapper,@stats,@stopWatch,@keyboardController,@entityInspector}) ->
     @shouldRun = false
     @worldProxyQueue = []
 
+    # MAYBE... but maybe not.... XXX
+    # @ui.on "worldProxyFn", (fn) ->
+    #   @worldProxyQueue.push fn
+      
+
+    # TODO: Push into @ui ->
     @selectedEntityId = null
 
     @pixiWrapper.on "spriteClicked", (data,entityId) =>
@@ -48,6 +55,10 @@ class GameRunner
     if @shouldRun
       @window.requestAnimationFrame => @update()
 
+      # TODO @ui.update(dt, (toProxy) ->
+                  
+                  
+      # TODO move into @ui
       for action,value of @keyboardController.update()
         if value
           if (action == "myNewRobot")
