@@ -256,10 +256,10 @@ class SpriteSyncSystem extends makr.IteratingSystem
     pixiSprite.anchor.x = pixiSprite.anchor.y = 0.5
     pixiSprite.position.x = position.x
     pixiSprite.position.y = position.y
-    container = @pixiWrapper.sprites
+    pixiSprite.setInteractive(true)
     
-    endIndex = container.children.length # ADD ON TOP
-    container.addChildAt pixiSprite, endIndex
+
+    @pixiWrapper.addMiddleGroundSprite( pixiSprite, entity.id )
 
 
     @spriteCache[entity.id] = pixiSprite

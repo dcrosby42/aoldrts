@@ -1,5 +1,5 @@
 RtsInterface = require './rts_interface.coffee'
-class PixiWrapper
+class PixiWrapper extends SimSim.EventEmitter
   constructor: (opts) ->
     @stage = new PIXI.Stage(0xDDDDDD, true)
     @renderer = PIXI.autoDetectRenderer(opts.width, opts.height, undefined, false)
@@ -9,6 +9,16 @@ class PixiWrapper
     @sprites.setInteractive true
     @stage.addChild @sprites
     @interface = new RtsInterface(sprites: @sprites, renderer: @renderer)
+
+    # @stage.mousedown = (data) ->
+    #   console.log "Stage mouse down!", data, data.getLocalPosition(data.target)
+
+
+  addMiddleGroundSprite: (sprite, entityId) ->
+    endIndex = @sprites.children.length # ADD ON TOP
+    @sprites.addChildAt sprite, endIndex
+    sprite.mousedown = (data) =>
+      @emit "spriteClicked", data, entityId
 
   appendViewTo: (el) ->
     @renderer.view.id = "game"

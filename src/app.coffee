@@ -45,6 +45,7 @@ window.local =
   vars: {}
   gameRunner: null
   entityInspector: null
+  pixiWrapper: null
 
 window.onload = ->
   gameConfig = window.gameConfig()

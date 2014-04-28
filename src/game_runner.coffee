@@ -2,6 +2,12 @@
 class GameRunner
   constructor: ({@window,@simulation,@pixiWrapper,@stats,@stopWatch,@keyboardController}) ->
     @shouldRun = false
+    @worldProxyQueue = []
+
+    @pixiWrapper.on "spriteClicked", (data,entityId) =>
+      @worldProxyQueue.push =>
+        @simulation.worldProxy "commandUnit", "march", entityId
+
 
   start: ->
     @simulation.start()
@@ -22,10 +28,14 @@ class GameRunner
             @simulation.worldProxy "summonMyRobot", 200, 100
           else if (action == "theirNewRobot")
             @simulation.worldProxy "summonTheirRobot", 400, 400
-          else if (action == "marchMyRobot")
-            @simulation.worldProxy "commandUnit", "march", 1 # DA CHEAT
-          else if (action == "marchTheirRobot")
-            @simulation.worldProxy "commandUnit", "march", 2
+          # else if (action == "marchMyRobot")
+          #   @simulation.worldProxy "commandUnit", "march", 1 # DA CHEAT
+          # else if (action == "marchTheirRobot")
+          #   @simulation.worldProxy "commandUnit", "march", 2
+
+      # Accumulated ui actions:
+      while action = @worldProxyQueue.shift()
+        action()
 
       @simulation.update(@stopWatch.elapsedSeconds())
       @pixiWrapper.render()

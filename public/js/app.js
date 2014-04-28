@@ -50,7 +50,8 @@ window.gameConfig = function() {
 window.local = {
   vars: {},
   gameRunner: null,
-  entityInspector: null
+  entityInspector: null,
+  pixiWrapper: null
 };
 
 window.onload = function() {
@@ -283,6 +284,14 @@ GameRunner = (function() {
   function GameRunner(_arg) {
     this.window = _arg.window, this.simulation = _arg.simulation, this.pixiWrapper = _arg.pixiWrapper, this.stats = _arg.stats, this.stopWatch = _arg.stopWatch, this.keyboardController = _arg.keyboardController;
     this.shouldRun = false;
+    this.worldProxyQueue = [];
+    this.pixiWrapper.on("spriteClicked", (function(_this) {
+      return function(data, entityId) {
+        return _this.worldProxyQueue.push(function() {
+          return _this.simulation.worldProxy("commandUnit", "march", entityId);
+        });
+      };
+    })(this));
   }
 
   GameRunner.prototype.start = function() {
@@ -312,12 +321,11 @@ GameRunner = (function() {
             this.simulation.worldProxy("summonMyRobot", 200, 100);
           } else if (action === "theirNewRobot") {
             this.simulation.worldProxy("summonTheirRobot", 400, 400);
-          } else if (action === "marchMyRobot") {
-            this.simulation.worldProxy("commandUnit", "march", 1);
-          } else if (action === "marchTheirRobot") {
-            this.simulation.worldProxy("commandUnit", "march", 2);
           }
         }
+      }
+      while (action = this.worldProxyQueue.shift()) {
+        action();
       }
       this.simulation.update(this.stopWatch.elapsedSeconds());
       this.pixiWrapper.render();
@@ -462,11 +470,15 @@ module.exports = KeyboardController;
 
 
 },{}],6:[function(require,module,exports){
-var PixiWrapper, RtsInterface;
+var PixiWrapper, RtsInterface,
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 RtsInterface = require('./rts_interface.coffee');
 
-PixiWrapper = (function() {
+PixiWrapper = (function(_super) {
+  __extends(PixiWrapper, _super);
+
   function PixiWrapper(opts) {
     var sheet;
     this.stage = new PIXI.Stage(0xDDDDDD, true);
@@ -490,6 +502,17 @@ PixiWrapper = (function() {
       renderer: this.renderer
     });
   }
+
+  PixiWrapper.prototype.addMiddleGroundSprite = function(sprite, entityId) {
+    var endIndex;
+    endIndex = this.sprites.children.length;
+    this.sprites.addChildAt(sprite, endIndex);
+    return sprite.mousedown = (function(_this) {
+      return function(data) {
+        return _this.emit("spriteClicked", data, entityId);
+      };
+    })(this);
+  };
 
   PixiWrapper.prototype.appendViewTo = function(el) {
     var onEnter, onExit;
@@ -549,7 +572,7 @@ PixiWrapper = (function() {
 
   return PixiWrapper;
 
-})();
+})(SimSim.EventEmitter);
 
 module.exports = PixiWrapper;
 
@@ -1028,7 +1051,7 @@ SpriteSyncSystem = (function(_super) {
   };
 
   SpriteSyncSystem.prototype.buildSprite = function(entity, sprite, position) {
-    var container, endIndex, frame, pixiSprite, spriteTextures;
+    var frame, pixiSprite, spriteTextures;
     pixiSprite = void 0;
     if (sprite.framelist) {
       spriteTextures = (function() {
@@ -1050,9 +1073,8 @@ SpriteSyncSystem = (function(_super) {
     pixiSprite.anchor.x = pixiSprite.anchor.y = 0.5;
     pixiSprite.position.x = position.x;
     pixiSprite.position.y = position.y;
-    container = this.pixiWrapper.sprites;
-    endIndex = container.children.length;
-    container.addChildAt(pixiSprite, endIndex);
+    pixiSprite.setInteractive(true);
+    this.pixiWrapper.addMiddleGroundSprite(pixiSprite, entity.id);
     this.spriteCache[entity.id] = pixiSprite;
     return sprite.add = false;
   };
