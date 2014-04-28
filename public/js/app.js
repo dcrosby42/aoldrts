@@ -1234,6 +1234,7 @@ RtsWorld = (function(_super) {
       throw new Error("Need pixiWrapper");
     })();
     this.commandQueue = [];
+    this.randomNumberGenerator = new ParkMillerRNG((Math.random() * 1000) | 0);
     this.checksumCalculator = new ChecksumCalculator();
     this.ecs = this.setupECS(this.pixieWrapper);
     this.entityFactory = new EntityFactory(this.ecs);
@@ -1256,7 +1257,7 @@ RtsWorld = (function(_super) {
     ComponentRegister.register(C.Goto);
     ComponentRegister.register(C.Wander);
     ecs = new makr.World();
-    ecs.registerSystem(new WanderControlMappingSystem());
+    ecs.registerSystem(new WanderControlMappingSystem(this.randomNumberGenerator));
     ecs.registerSystem(new GotoSystem());
     ecs.registerSystem(new SpriteSyncSystem(this.pixiWrapper));
     ecs.registerSystem(new MapTilesSystem(this.pixiWrapper));
@@ -1352,6 +1353,7 @@ RtsWorld = (function(_super) {
     var c, comp, components, comps, ent, entId, entity, staleEnts, _i, _len, _ref, _results;
     this.players = data.players;
     this.ecs._nextEntityID = data.nextEntityId;
+    this.randomNumberGenerator.seed = data.sacredSeed;
     console.log("setData: @ecs._nextEntityID set to " + this.ecs._nextEntityID);
     staleEnts = this.ecs._alive.slice(0);
     for (_i = 0, _len = staleEnts.length; _i < _len; _i++) {
@@ -1412,7 +1414,8 @@ RtsWorld = (function(_super) {
     data = {
       players: this.players,
       componentBags: componentBags,
-      nextEntityId: this.ecs._nextEntityID
+      nextEntityId: this.ecs._nextEntityID,
+      sacredSeed: this.randomNumberGenerator.seed
     };
     console.log(data);
     return data;
@@ -1642,11 +1645,11 @@ ParkMillerRNG = require('../pm_prng.coffee');
 WanderControlMappingSystem = (function(_super) {
   __extends(WanderControlMappingSystem, _super);
 
-  function WanderControlMappingSystem() {
+  function WanderControlMappingSystem(randomNumberGenerator) {
+    this.randomNumberGenerator = randomNumberGenerator;
     makr.IteratingSystem.call(this);
     this.registerComponent(CR.get(C.Position));
     this.registerComponent(CR.get(C.Wander));
-    this.randy = new ParkMillerRNG(1234);
   }
 
   WanderControlMappingSystem.prototype.process = function(entity, elapsed) {
@@ -1656,8 +1659,8 @@ WanderControlMappingSystem = (function(_super) {
     goto = entity.get(CR.get(C.Goto));
     if (goto == null) {
       range = wander.range;
-      dx = this.randy.nextInt(-range, range);
-      dy = this.randy.nextInt(-range, range);
+      dx = this.randomNumberGenerator.nextInt(-range, range);
+      dy = this.randomNumberGenerator.nextInt(-range, range);
       entity.add(new C.Goto({
         x: position.x + dx,
         y: position.y + dy

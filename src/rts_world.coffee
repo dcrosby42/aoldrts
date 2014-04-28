@@ -304,7 +304,7 @@ class RtsWorld extends SimSim.WorldBase
   constructor: ({@pixiWrapper, @entityInspector}) ->
     @pixiWrapper or throw new Error("Need pixiWrapper")
     @commandQueue = []
-
+    @randomNumberGenerator = new ParkMillerRNG((Math.random() * 1000)|0)
     @checksumCalculator = new ChecksumCalculator()
     @ecs = @setupECS(@pixieWrapper)
     @entityFactory = new EntityFactory(@ecs)
@@ -323,7 +323,7 @@ class RtsWorld extends SimSim.WorldBase
     ComponentRegister.register(C.Goto)
     ComponentRegister.register(C.Wander)
     ecs = new makr.World()
-    ecs.registerSystem(new WanderControlMappingSystem())
+    ecs.registerSystem(new WanderControlMappingSystem(@randomNumberGenerator))
     ecs.registerSystem(new GotoSystem())
     ecs.registerSystem(new SpriteSyncSystem(@pixiWrapper))
     ecs.registerSystem(new MapTilesSystem(@pixiWrapper))
@@ -383,6 +383,7 @@ class RtsWorld extends SimSim.WorldBase
   setData: (data) ->
     @players = data.players
     @ecs._nextEntityID = data.nextEntityId
+    @randomNumberGenerator.seed = data.sacredSeed
     console.log "setData: @ecs._nextEntityID set to #{@ecs._nextEntityID}"
     staleEnts = @ecs._alive[..]
     for ent in staleEnts
@@ -413,6 +414,7 @@ class RtsWorld extends SimSim.WorldBase
       players: @players
       componentBags: componentBags
       nextEntityId: @ecs._nextEntityID
+      sacredSeed: @randomNumberGenerator.seed
     console.log data
     data
 
