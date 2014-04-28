@@ -1,7 +1,7 @@
 Array::compact = ->
   (elem for elem in this when elem?)
 
-PlayerColors = [ 0xBDFFBD, 0xFFBDBD, 0xBDBDFF ]
+PlayerColors = [ 0x99FF99, 0xFF99FF, 0xFFFF99, 0x9999FF, 0xFF9999, 0x99FFFF ]
 
 ChecksumCalculator = require '../utils/checksum_calculator.coffee'
 ParkMillerRNG =      require '../utils/pm_prng.coffee'
