@@ -8,7 +8,8 @@ C.Position = class Position
   constructor: ({@x, @y}) ->
 
 C.Movement = class Movement
-  constructor: ({@vx, @vy}) ->
+  constructor: ({@vx, @vy, @speed}) ->
+    @speed ||= 0
 
 C.MapTiles = class MapTiles
   constructor: ({@seed, @width, @height}) ->
@@ -29,4 +30,7 @@ C.Controls = class Controls
     @down = false
     @left = false
     @right = false
+
+C.Goto = class Goto
+  constructor: ({@x, @y}) ->
 

@@ -5,6 +5,7 @@ ChecksumCalculator = require './checksum_calculator.coffee'
 ParkMillerRNG = require './pm_prng.coffee'
 
 CommandQueueSystem = require './systems/command_queue_system.coffee'
+GotoSystem = require './systems/goto_system.coffee'
 
 ComponentRegister = require './utils/component_register.coffee'
 
@@ -265,7 +266,7 @@ class EntityFactory
     robot.add(new C.Position(x: x, y: y), ComponentRegister.get(C.Position))
     robot.add(new C.Sprite(name: robotName, framelist: @generateRobotFrameList(robotName)), ComponentRegister.get(C.Sprite))
     robot.add(new C.Controls(), ComponentRegister.get(C.Controls))
-    robot.add(new C.Movement(vx: 0, vy: 0), ComponentRegister.get(C.Movement))
+    robot.add(new C.Movement(vx: 0, vy: 0, speed:15), ComponentRegister.get(C.Movement))
     robot
 
   powerup: (x, y, powerup_type) ->
@@ -317,7 +318,9 @@ class RtsWorld extends SimSim.WorldBase
     ComponentRegister.register(C.Controls)
     ComponentRegister.register(C.MapTiles)
     ComponentRegister.register(C.Powerup)
+    ComponentRegister.register(C.Goto)
     ecs = new makr.World()
+    ecs.registerSystem(new GotoSystem())
     ecs.registerSystem(new SpriteSyncSystem(@pixiWrapper))
     ecs.registerSystem(new MapTilesSystem(@pixiWrapper))
     ecs.registerSystem(new CommandQueueSystem(@commandQueue, @))  # passing "this" as the entityFinder

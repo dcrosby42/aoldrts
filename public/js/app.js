@@ -153,10 +153,7 @@ buildPixiWrapper = function(opts) {
 buildKeyboardController = function() {
   var actions, n, _i;
   actions = {
-    r: "myNewRobot",
-    t: "theirNewRobot",
-    f: "marchMyRobot",
-    g: "marchTheirRobot"
+    g: "goto"
   };
   for (n = _i = 0; _i <= 6; n = ++_i) {
     actions[n] = "roboType" + n;
@@ -254,7 +251,7 @@ module.exports = ChecksumCalculator;
 
 
 },{}],3:[function(require,module,exports){
-var C, Controls, MapTiles, Movement, Owned, Position, Powerup, Sprite;
+var C, Controls, Goto, MapTiles, Movement, Owned, Position, Powerup, Sprite;
 
 C = {};
 
@@ -280,7 +277,8 @@ C.Position = Position = (function() {
 
 C.Movement = Movement = (function() {
   function Movement(_arg) {
-    this.vx = _arg.vx, this.vy = _arg.vy;
+    this.vx = _arg.vx, this.vy = _arg.vy, this.speed = _arg.speed;
+    this.speed || (this.speed = 0);
   }
 
   return Movement;
@@ -327,6 +325,15 @@ C.Controls = Controls = (function() {
   }
 
   return Controls;
+
+})();
+
+C.Goto = Goto = (function() {
+  function Goto(_arg) {
+    this.x = _arg.x, this.y = _arg.y;
+  }
+
+  return Goto;
 
 })();
 
@@ -378,50 +385,40 @@ GameRunner = (function() {
     this.window = _arg.window, this.simulation = _arg.simulation, this.pixiWrapper = _arg.pixiWrapper, this.stats = _arg.stats, this.stopWatch = _arg.stopWatch, this.keyboardController = _arg.keyboardController, this.entityInspector = _arg.entityInspector;
     this.shouldRun = false;
     this.worldProxyQueue = [];
+    this.selectedEntityId = null;
     this.pixiWrapper.on("spriteClicked", (function(_this) {
       return function(data, entityId) {
         return _this.worldProxyQueue.push(function() {
-          var entity, movement, owned;
+          var entity, owned;
           entity = _this.entityInspector.getEntity(entityId);
           owned = entity['Owned'];
           if (owned.playerId === _this.simulation.clientId()) {
-            movement = entity['Movement'];
-            if (movement.vx > 0) {
-              return _this.simulation.worldProxy("commandUnit", "march", {
-                entityId: entityId,
-                direction: "left"
-              });
-            } else if (movement.vx < 0) {
-              return _this.simulation.worldProxy("commandUnit", "march", {
-                entityId: entityId,
-                direction: "stop"
-              });
-            } else {
-              return _this.simulation.worldProxy("commandUnit", "march", {
-                entityId: entityId,
-                direction: "right"
-              });
-            }
+            _this.selectedEntityId = entityId;
+            return console.log("SELECTED " + entityId);
           }
         });
       };
     })(this));
     this.pixiWrapper.on("worldClicked", (function(_this) {
       return function(data) {
-        var n, pt, _i, _results;
+        var n, pt, _i;
         pt = data.getLocalPosition(data.target);
-        _results = [];
         for (n = _i = 0; _i <= 6; n = ++_i) {
           if (_this.keyboardController.isActive("roboType" + n)) {
-            _results.push(_this.simulation.worldProxy("summonRobot", "robot_" + n, {
+            _this.simulation.worldProxy("summonRobot", "robot_" + n, {
               x: pt.x,
               y: pt.y
-            }));
-          } else {
-            _results.push(void 0);
+            });
           }
         }
-        return _results;
+        if (_this.selectedEntityId && _this.keyboardController.isActive("goto")) {
+          _this.simulation.worldProxy("commandUnit", "goto", {
+            entityId: _this.selectedEntityId,
+            x: pt.x,
+            y: pt.y
+          });
+          return _this.selectedEntityId = null;
+        }
       };
     })(this));
   }
@@ -732,7 +729,7 @@ PixiWrapper = (function(_super) {
 module.exports = PixiWrapper;
 
 
-},{"./viewport.coffee":13}],8:[function(require,module,exports){
+},{"./viewport.coffee":14}],8:[function(require,module,exports){
 var ParkMillerRNG;
 
 ParkMillerRNG = (function() {
@@ -782,7 +779,7 @@ module.exports = ParkMillerRNG;
 
 
 },{}],9:[function(require,module,exports){
-var BUNNY_VEL, C, ChecksumCalculator, CommandQueueSystem, ComponentRegister, ControlMappingSystem, ControlSystem, EntityFactory, EntityInspectorSystem, HalfPI, MapTilesSystem, MovementSystem, ParkMillerRNG, RtsWorld, SpriteSyncSystem, eachMapTile, fixFloat,
+var BUNNY_VEL, C, ChecksumCalculator, CommandQueueSystem, ComponentRegister, ControlMappingSystem, ControlSystem, EntityFactory, EntityInspectorSystem, GotoSystem, HalfPI, MapTilesSystem, MovementSystem, ParkMillerRNG, RtsWorld, SpriteSyncSystem, eachMapTile, fixFloat,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
@@ -803,6 +800,8 @@ ChecksumCalculator = require('./checksum_calculator.coffee');
 ParkMillerRNG = require('./pm_prng.coffee');
 
 CommandQueueSystem = require('./systems/command_queue_system.coffee');
+
+GotoSystem = require('./systems/goto_system.coffee');
 
 ComponentRegister = require('./utils/component_register.coffee');
 
@@ -1149,7 +1148,8 @@ EntityFactory = (function() {
     robot.add(new C.Controls(), ComponentRegister.get(C.Controls));
     robot.add(new C.Movement({
       vx: 0,
-      vy: 0
+      vy: 0,
+      speed: 15
     }), ComponentRegister.get(C.Movement));
     return robot;
   };
@@ -1239,7 +1239,9 @@ RtsWorld = (function(_super) {
     ComponentRegister.register(C.Controls);
     ComponentRegister.register(C.MapTiles);
     ComponentRegister.register(C.Powerup);
+    ComponentRegister.register(C.Goto);
     ecs = new makr.World();
+    ecs.registerSystem(new GotoSystem());
     ecs.registerSystem(new SpriteSyncSystem(this.pixiWrapper));
     ecs.registerSystem(new MapTilesSystem(this.pixiWrapper));
     ecs.registerSystem(new CommandQueueSystem(this.commandQueue, this));
@@ -1431,7 +1433,7 @@ RtsWorld = (function(_super) {
 module.exports = RtsWorld;
 
 
-},{"./checksum_calculator.coffee":2,"./components.coffee":3,"./pm_prng.coffee":8,"./systems/command_queue_system.coffee":11,"./utils/component_register.coffee":12}],10:[function(require,module,exports){
+},{"./checksum_calculator.coffee":2,"./components.coffee":3,"./pm_prng.coffee":8,"./systems/command_queue_system.coffee":11,"./systems/goto_system.coffee":12,"./utils/component_register.coffee":13}],10:[function(require,module,exports){
 var StopWatch;
 
 StopWatch = (function() {
@@ -1468,7 +1470,7 @@ module.exports = StopWatch;
 
 
 },{}],11:[function(require,module,exports){
-var C, CommandQueueSystem, ComponentRegister,
+var C, CommandQueueSystem, Commands, ComponentRegister,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
@@ -1486,7 +1488,7 @@ CommandQueueSystem = (function(_super) {
   }
 
   CommandQueueSystem.prototype.processEntities = function() {
-    var cmd, commands, movement, owned, targetEntity, _i, _len, _results;
+    var cmd, commands, _i, _len, _results;
     commands = [];
     while (cmd = this.commandQueue.shift()) {
       commands.push(cmd);
@@ -1495,41 +1497,125 @@ CommandQueueSystem = (function(_super) {
     for (_i = 0, _len = commands.length; _i < _len; _i++) {
       cmd = commands[_i];
       if (cmd.args.entityId != null) {
-        targetEntity = this.entityFinder.findEntityById(cmd.args.entityId);
-        owned = targetEntity.get(ComponentRegister.get(C.Owned));
-        if (owned && (cmd.playerId === owned.playerId)) {
-          if (cmd.command === "march") {
-            movement = targetEntity.get(ComponentRegister.get(C.Movement));
-            if (cmd.args.direction === "left") {
-              _results.push(movement.vx = -10);
-            } else if (cmd.args.direction === "right") {
-              _results.push(movement.vx = 10);
-            } else if (cmd.args.direction === "stop") {
-              _results.push(movement.vx = 0);
-            } else {
-              _results.push(void 0);
-            }
-          } else {
-            _results.push(console.log("CommandQueueSystem: UNKNOWN COMMAND:", cmd));
-          }
-        } else {
-          _results.push(console.log("CommandQueueSystem: ILLEGAL INSTRUCTION, player " + cmd.playerId + " may not command entity " + cmd.args.entityId + " because it's owned by " + owned.playerId));
-        }
+        _results.push(this._handleEntityCommand(cmd));
       } else {
-        _results.push(void 0);
+        _results.push(this._handleCommand(cmd));
       }
     }
     return _results;
+  };
+
+  CommandQueueSystem.prototype._handleCommands = function(cmd) {
+    var commandFn;
+    commandFn = Commands[cmd.command];
+    if (commandFn != null) {
+      return commandFn(cmd);
+    } else {
+      return console.log("CommandQueueSystem: No Command defined for " + cmd.command, cmd);
+    }
+  };
+
+  CommandQueueSystem.prototype._handleEntityCommand = function(cmd) {
+    var commandFn, owned, targetEntity;
+    targetEntity = this.entityFinder.findEntityById(cmd.args.entityId);
+    owned = targetEntity.get(ComponentRegister.get(C.Owned));
+    if (owned && (cmd.playerId === owned.playerId)) {
+      commandFn = Commands.Entity[cmd.command];
+      if (commandFn != null) {
+        return commandFn(targetEntity, cmd);
+      } else {
+        return console.log("CommandQueueSystem: No Entity Command defined for " + cmd.command, cmd);
+      }
+    } else {
+      return console.log("CommandQueueSystem: ILLEGAL INSTRUCTION, player " + cmd.playerId + " may not command entity " + cmd.args.entityId + " because it's owned by " + owned.playerId);
+    }
   };
 
   return CommandQueueSystem;
 
 })(makr.IteratingSystem);
 
+Commands = {};
+
+Commands.Entity = {};
+
+Commands.Entity.march = function(entity, cmd) {
+  var movement;
+  movement = entity.get(ComponentRegister.get(C.Movement));
+  if (cmd.args.direction === "left") {
+    return movement.vx = -movement.speed;
+  } else if (cmd.args.direction === "right") {
+    return movement.vx = movement.speed;
+  } else if (cmd.args.direction === "stop") {
+    return movement.vx = 0;
+  }
+};
+
+Commands.Entity.goto = function(entity, cmd) {
+  var comp;
+  comp = new C.Goto({
+    x: cmd.args.x,
+    y: cmd.args.y
+  });
+  return entity.add(comp, ComponentRegister.get(C.Goto));
+};
+
 module.exports = CommandQueueSystem;
 
 
-},{"../components.coffee":3,"../utils/component_register.coffee":12}],12:[function(require,module,exports){
+},{"../components.coffee":3,"../utils/component_register.coffee":13}],12:[function(require,module,exports){
+var C, CR, GotoSystem,
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+CR = require('../utils/component_register.coffee');
+
+C = require('../components.coffee');
+
+GotoSystem = (function(_super) {
+  __extends(GotoSystem, _super);
+
+  function GotoSystem() {
+    makr.IteratingSystem.call(this);
+    this.registerComponent(CR.get(C.Goto));
+    this.registerComponent(CR.get(C.Position));
+    this.registerComponent(CR.get(C.Movement));
+  }
+
+  GotoSystem.prototype.process = function(entity, elapsed) {
+    var dx, dy, goto, movement, position;
+    goto = entity.get(CR.get(C.Goto));
+    position = entity.get(CR.get(C.Position));
+    movement = entity.get(CR.get(C.Movement));
+    dx = goto.x - position.x;
+    dy = goto.y - position.y;
+    if (Math.abs(dx) < 5 && Math.abs(dy) < 5) {
+      entity.remove(CR.get(C.Goto));
+      movement.vx = 0;
+      movement.vy = 0;
+      return console.log("DONE GOTO!", goto);
+    } else {
+      if (dx > 0) {
+        movement.vx = movement.speed;
+      } else if (dx < 0) {
+        movement.vx = -movement.speed;
+      }
+      if (dy > 0) {
+        return movement.vy = movement.speed;
+      } else if (dy < 0) {
+        return movement.vy = -movement.speed;
+      }
+    }
+  };
+
+  return GotoSystem;
+
+})(makr.IteratingSystem);
+
+module.exports = GotoSystem;
+
+
+},{"../components.coffee":3,"../utils/component_register.coffee":13}],13:[function(require,module,exports){
 var ComponentRegister;
 
 ComponentRegister = (function() {
@@ -1561,7 +1647,7 @@ ComponentRegister = (function() {
 module.exports = ComponentRegister;
 
 
-},{}],13:[function(require,module,exports){
+},{}],14:[function(require,module,exports){
 var Viewport;
 
 Viewport = (function() {

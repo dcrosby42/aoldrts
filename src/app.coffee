@@ -152,10 +152,7 @@ buildPixiWrapper = (opts={})->
 
 buildKeyboardController = ->
   actions = {
-    r: "myNewRobot"
-    t: "theirNewRobot"
-    f: "marchMyRobot"
-    g: "marchTheirRobot"
+    g: "goto"
   }
   for n in [0..6]
     actions[n] = "roboType#{n}"
