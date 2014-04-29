@@ -230,7 +230,11 @@ GameRunner = (function() {
   GameRunner.prototype.start = function() {
     this.simulation.start();
     this.shouldRun = true;
-    return this.update();
+    return this.updateFn = this.window.setInterval((function(_this) {
+      return function() {
+        return _this.update();
+      };
+    })(this), 16);
   };
 
   GameRunner.prototype.stop = function() {
@@ -239,16 +243,25 @@ GameRunner = (function() {
   };
 
   GameRunner.prototype.update = function() {
+    var currentElapsedSeconds, deltaSeconds, msg;
     if (this.shouldRun) {
-      this.window.requestAnimationFrame((function(_this) {
-        return function() {
-          return _this.update();
-        };
-      })(this));
-      this.ui.update(0.17);
-      this.simulation.update(this.stopWatch.elapsedSeconds());
+      this.previousElapsedSeconds || (this.previousElapsedSeconds = this.stopWatch.elapsedSeconds());
+      currentElapsedSeconds = this.stopWatch.elapsedSeconds();
+      deltaSeconds = currentElapsedSeconds - this.previousElapsedSeconds;
+      this.previousElapsedSeconds = currentElapsedSeconds;
+      if (deltaSeconds > 5) {
+        msg = "Activity Timeout: Did you tab away? Now we refresh!";
+        console.log(msg);
+        this.stop();
+        this.window.alert(msg);
+        this.window.location.reload();
+      }
+      this.ui.update(deltaSeconds);
+      this.simulation.update(currentElapsedSeconds);
       this.pixiWrapper.render();
       return this.stats.update();
+    } else {
+      return clearInterval(this.updateFn);
     }
   };
 

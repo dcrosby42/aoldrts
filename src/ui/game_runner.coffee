@@ -6,7 +6,9 @@ class GameRunner
   start: ->
     @simulation.start()
     @shouldRun = true
-    @update()
+    @updateFn = @window.setInterval =>
+      @update()
+    , 16
 
   stop: ->
     @shouldRun = false
@@ -14,12 +16,26 @@ class GameRunner
 
   update: ->
     if @shouldRun
-      @window.requestAnimationFrame => @update()
+      # see http://stackoverflow.com/a/16033979/671533
+      # @window.requestAnimationFrame => @update()
 
-      @ui.update(0.17) # TODO Use StopWatch to get this right.
+      @previousElapsedSeconds ||= @stopWatch.elapsedSeconds()
+      currentElapsedSeconds = @stopWatch.elapsedSeconds()
+      deltaSeconds =  currentElapsedSeconds - @previousElapsedSeconds
+      @previousElapsedSeconds = currentElapsedSeconds
 
-      @simulation.update(@stopWatch.elapsedSeconds()) 
+      if deltaSeconds > 5
+        msg = "Activity Timeout: Did you tab away? Now we refresh!"
+        console.log msg
+        @stop()
+        @window.alert(msg)
+        @window.location.reload()
+      @ui.update(deltaSeconds)
+
+      @simulation.update(currentElapsedSeconds) 
       @pixiWrapper.render()
       @stats.update()
+    else
+      clearInterval(@updateFn)
 
 module.exports = GameRunner
