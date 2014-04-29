@@ -3,4 +3,4 @@ tags
 /server.log
 /tools/*.txt
 /node_modules
-
+.DS_Store
