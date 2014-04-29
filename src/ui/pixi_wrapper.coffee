@@ -5,15 +5,22 @@ class PixiWrapper extends SimSim.EventEmitter
     @renderer = PIXI.autoDetectRenderer(opts.width, opts.height, undefined, false)
     @loader = new PIXI.AssetLoader(opts.assets)
     @spriteSheetLoaders = (new PIXI.SpriteSheetLoader(sheet) for sheet in opts.spriteSheets)
+
     @sprites = new PIXI.DisplayObjectContainer()
     @sprites.setInteractive true
     @stage.addChild @sprites
+
+    @bgSprites = new PIXI.DisplayObjectContainer()
+    @bgSprites.setInteractive true
+    @stage.addChildAt @bgSprites, 0
+
     @viewport = new Viewport
-      sprites: @sprites
+      spriteGroups: [@sprites, @bgSprites]
       width: @renderer.width
       height: @renderer.height
 
     @stage.mousedown = (data) => @emit "stageClicked", data
+    @bgSprites.mousedown = (data) => @emit "worldClicked", data
     @sprites.mousedown = (data) => @emit "worldClicked", data
 
     # MINIMAP
@@ -32,7 +39,7 @@ class PixiWrapper extends SimSim.EventEmitter
     #   console.log "Stage mouse down!", data, data.getLocalPosition(data.target)
 
   addBackgroundSprite: (sprite, entityId=null) ->
-    @sprites.addChildAt sprite, 0 # ADD ALL THE WAY AT THE BOTTOM
+    @bgSprites.addChildAt sprite, 0 # ADD ALL THE WAY AT THE BOTTOM
 
   addMiddleGroundSprite: (sprite, entityId=null) ->
     endIndex = @sprites.children.length # ADD ON TOP
@@ -78,6 +85,13 @@ class PixiWrapper extends SimSim.EventEmitter
     null
 
   render: ->
+    feet_y = (sprite) ->
+      sprite.y + sprite.height/2
+    @sprites.children.sort (a,b) ->
+      return -1 if(feet_y(a) < feet_y(b))
+      return 1 if (feet_y(a) > feet_y(b))
+      return 0
+
     @viewport.update()
     @renderer.render(@stage)
     # @minimapRenderer.render @sprites
