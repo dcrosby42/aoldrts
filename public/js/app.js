@@ -563,7 +563,7 @@ RtsUI = (function() {
         var pt, robos, x, _i;
         pt = data.getLocalPosition(data.target);
         robos = [];
-        for (x = _i = 0; _i <= 6; x = ++_i) {
+        for (x = _i = 1; _i <= 5; x = ++_i) {
           if (_this.keyboardController.isActive("roboType" + x)) {
             robos.push("robot_" + x);
           }

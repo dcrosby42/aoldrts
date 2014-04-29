@@ -30,7 +30,7 @@ class RtsUI
     @pixiWrapper.on "worldClicked", (data) =>
       pt = data.getLocalPosition(data.target)
       robos = []
-      for x in [0..6]
+      for x in [1..5]
         if @keyboardController.isActive("roboType#{x}")
           robos.push "robot_#{x}"
       if robos.length > 0
