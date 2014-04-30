@@ -1260,6 +1260,8 @@ SpriteSyncSystem = (function(_super) {
     pixiSprite.position.x = position.x;
     pixiSprite.position.y = position.y;
     if (owner != null) {
+      console.log(owner.playerId);
+      console.log(this.playerFinder.playerMetadata);
       pixiSprite.tint = this.playerFinder.playerMetadata[owner.playerId].color;
       console.log(pixiSprite.tint);
     }
