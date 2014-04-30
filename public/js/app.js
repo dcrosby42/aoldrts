@@ -1548,6 +1548,7 @@ RtsWorld = (function(_super) {
 
   RtsWorld.prototype.playerJoined = function(playerId) {
     var _base;
+    console.log("Player " + playerId + " JOINED");
     (_base = this.playerMetadata)[playerId] || (_base[playerId] = {});
     return this.playerMetadata[playerId].color = this.randomNumberGenerator.choose(PlayerColors);
   };

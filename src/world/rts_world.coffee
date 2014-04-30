@@ -348,6 +348,7 @@ class RtsWorld extends SimSim.WorldBase
 
   #### SimSim.WorldBase#playerJoined(id)
   playerJoined: (playerId) ->
+    console.log "Player #{playerId} JOINED"
     @playerMetadata[playerId] ||= {}
     @playerMetadata[playerId].color = @randomNumberGenerator.choose(PlayerColors)
 
