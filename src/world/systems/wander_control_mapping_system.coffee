@@ -17,6 +17,5 @@ class WanderControlMappingSystem extends makr.IteratingSystem
       dx = @randomNumberGenerator.nextInt(-range,range)
       dy = @randomNumberGenerator.nextInt(-range,range)
       entity.add(new C.Goto(x: position.x + dx, y: position.y + dy), CR.get(C.Goto))
-      console.log entity.get(CR.get(C.Goto))
 
 module.exports = WanderControlMappingSystem

@@ -230,7 +230,11 @@ GameRunner = (function() {
   GameRunner.prototype.start = function() {
     this.simulation.start();
     this.shouldRun = true;
-    return this.update();
+    return this.updateFn = this.window.setInterval((function(_this) {
+      return function() {
+        return _this.update();
+      };
+    })(this), 16);
   };
 
   GameRunner.prototype.stop = function() {
@@ -239,16 +243,25 @@ GameRunner = (function() {
   };
 
   GameRunner.prototype.update = function() {
+    var currentElapsedSeconds, deltaSeconds, msg;
     if (this.shouldRun) {
-      this.window.requestAnimationFrame((function(_this) {
-        return function() {
-          return _this.update();
-        };
-      })(this));
-      this.ui.update(0.17);
-      this.simulation.update(this.stopWatch.elapsedSeconds());
+      this.previousElapsedSeconds || (this.previousElapsedSeconds = this.stopWatch.elapsedSeconds());
+      currentElapsedSeconds = this.stopWatch.elapsedSeconds();
+      deltaSeconds = currentElapsedSeconds - this.previousElapsedSeconds;
+      this.previousElapsedSeconds = currentElapsedSeconds;
+      if (deltaSeconds > 5) {
+        msg = "Activity Timeout: Did you tab away? Now we refresh!";
+        console.log(msg);
+        this.stop();
+        this.window.alert(msg);
+        this.window.location.reload();
+      }
+      this.ui.update(deltaSeconds);
+      this.simulation.update(currentElapsedSeconds);
       this.pixiWrapper.render();
       return this.stats.update();
+    } else {
+      return clearInterval(this.updateFn);
     }
   };
 
@@ -416,14 +429,22 @@ PixiWrapper = (function(_super) {
     this.sprites = new PIXI.DisplayObjectContainer();
     this.sprites.setInteractive(true);
     this.stage.addChild(this.sprites);
+    this.bgSprites = new PIXI.DisplayObjectContainer();
+    this.bgSprites.setInteractive(true);
+    this.stage.addChildAt(this.bgSprites, 0);
     this.viewport = new Viewport({
-      sprites: this.sprites,
+      spriteGroups: [this.sprites, this.bgSprites],
       width: this.renderer.width,
       height: this.renderer.height
     });
     this.stage.mousedown = (function(_this) {
       return function(data) {
         return _this.emit("stageClicked", data);
+      };
+    })(this);
+    this.bgSprites.mousedown = (function(_this) {
+      return function(data) {
+        return _this.emit("worldClicked", data);
       };
     })(this);
     this.sprites.mousedown = (function(_this) {
@@ -437,7 +458,7 @@ PixiWrapper = (function(_super) {
     if (entityId == null) {
       entityId = null;
     }
-    return this.sprites.addChildAt(sprite, 0);
+    return this.bgSprites.addChildAt(sprite, 0);
   };
 
   PixiWrapper.prototype.addMiddleGroundSprite = function(sprite, entityId) {
@@ -509,6 +530,19 @@ PixiWrapper = (function(_super) {
   };
 
   PixiWrapper.prototype.render = function() {
+    var feet_y;
+    feet_y = function(sprite) {
+      return sprite.y + sprite.height / 2;
+    };
+    this.sprites.children.sort(function(a, b) {
+      if (feet_y(a) < feet_y(b)) {
+        return -1;
+      }
+      if (feet_y(a) > feet_y(b)) {
+        return 1;
+      }
+      return 0;
+    });
     this.viewport.update();
     return this.renderer.render(this.stage);
   };
@@ -617,56 +651,71 @@ var Viewport;
 
 Viewport = (function() {
   function Viewport(_arg) {
-    var buffer, height, speed, width;
-    this.sprites = _arg.sprites, width = _arg.width, height = _arg.height;
+    var buffer, height, speed, sprites, width, _i, _j, _len, _len1, _ref, _ref1;
+    this.spriteGroups = _arg.spriteGroups, width = _arg.width, height = _arg.height;
     this.x_move = 0;
     this.y_move = 0;
     buffer = 32;
     speed = 8;
     this.on = true;
-    this.sprites.mouseout = (function(_this) {
-      return function(data) {
-        _this.x_move = 0;
-        return _this.y_move = 0;
-      };
-    })(this);
-    this.sprites.mousemove = (function(_this) {
-      return function(data) {
-        var negSpeed, posSpeed, x, y;
-        if (!_this.on) {
-          return;
-        }
-        x = data.global.x;
-        y = data.global.y;
-        negSpeed = function(p, b, speed) {
-          return -1 * ((p - b) / b) * speed;
-        };
-        posSpeed = function(p, b, s, speed) {
-          return -1 * ((p - (s - b)) / b) * speed;
-        };
-        if (x <= buffer) {
-          _this.x_move = negSpeed(x, buffer, speed);
-        } else if (x >= width - buffer) {
-          _this.x_move = posSpeed(x, buffer, width, speed);
-        } else {
+    _ref = this.spriteGroups;
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      sprites = _ref[_i];
+      sprites.mouseout = (function(_this) {
+        return function(data) {
           _this.x_move = 0;
-        }
-        if (y <= buffer) {
-          _this.y_move = negSpeed(y, buffer, speed);
-        } else if (y >= height - buffer) {
-          _this.y_move = posSpeed(y, buffer, height, speed);
-        } else {
-          _this.y_move = 0;
-        }
-        return false;
-      };
-    })(this);
+          return _this.y_move = 0;
+        };
+      })(this);
+    }
+    _ref1 = this.spriteGroups;
+    for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
+      sprites = _ref1[_j];
+      sprites.mousemove = (function(_this) {
+        return function(data) {
+          var negSpeed, posSpeed, x, y;
+          if (!_this.on) {
+            return;
+          }
+          x = data.global.x;
+          y = data.global.y;
+          negSpeed = function(p, b, speed) {
+            return -1 * ((p - b) / b) * speed;
+          };
+          posSpeed = function(p, b, s, speed) {
+            return -1 * ((p - (s - b)) / b) * speed;
+          };
+          if (x <= buffer) {
+            _this.x_move = negSpeed(x, buffer, speed);
+          } else if (x >= width - buffer) {
+            _this.x_move = posSpeed(x, buffer, width, speed);
+          } else {
+            _this.x_move = 0;
+          }
+          if (y <= buffer) {
+            _this.y_move = negSpeed(y, buffer, speed);
+          } else if (y >= height - buffer) {
+            _this.y_move = posSpeed(y, buffer, height, speed);
+          } else {
+            _this.y_move = 0;
+          }
+          return false;
+        };
+      })(this);
+    }
   }
 
   Viewport.prototype.update = function() {
+    var sprites, _i, _len, _ref, _results;
     if (this.on) {
-      this.sprites.position.x += this.x_move;
-      return this.sprites.position.y += this.y_move;
+      _ref = this.spriteGroups;
+      _results = [];
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        sprites = _ref[_i];
+        sprites.position.x += this.x_move;
+        _results.push(sprites.position.y += this.y_move);
+      }
+      return _results;
     }
   };
 
@@ -1804,11 +1853,10 @@ WanderControlMappingSystem = (function(_super) {
       range = wander.range;
       dx = this.randomNumberGenerator.nextInt(-range, range);
       dy = this.randomNumberGenerator.nextInt(-range, range);
-      entity.add(new C.Goto({
+      return entity.add(new C.Goto({
         x: position.x + dx,
         y: position.y + dy
       }), CR.get(C.Goto));
-      return console.log(entity.get(CR.get(C.Goto)));
     }
   };
 
