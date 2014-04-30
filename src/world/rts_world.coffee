@@ -350,7 +350,8 @@ class RtsWorld extends SimSim.WorldBase
   playerJoined: (playerId) ->
     console.log "Player #{playerId} JOINED"
     @playerMetadata[playerId] ||= {}
-    if @playerMetadata[playerId]
+    color = @playerMetadata[playerId]
+    if color?
       @playerMetadata[playerId].color = @randomNumberGenerator.choose(PlayerColors)
 
   #### SimSim.WorldBase#playerLeft(id)
