@@ -1550,7 +1550,9 @@ RtsWorld = (function(_super) {
     var _base;
     console.log("Player " + playerId + " JOINED");
     (_base = this.playerMetadata)[playerId] || (_base[playerId] = {});
-    return this.playerMetadata[playerId].color = this.randomNumberGenerator.choose(PlayerColors);
+    if (this.playerMetadata[playerId]) {
+      return this.playerMetadata[playerId].color = this.randomNumberGenerator.choose(PlayerColors);
+    }
   };
 
   RtsWorld.prototype.playerLeft = function(playerId) {
