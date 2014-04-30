@@ -1311,7 +1311,9 @@ SpriteSyncSystem = (function(_super) {
     if (owner != null) {
       console.log(owner.playerId);
       console.log(this.playerFinder.playerMetadata);
-      pixiSprite.tint = this.playerFinder.playerMetadata[owner.playerId].color;
+      if (this.playerFinder.playerMetadata[owner.playerId] != null) {
+        pixiSprite.tint = this.playerFinder.playerMetadata[owner.playerId].color;
+      }
       console.log(pixiSprite.tint);
     }
     pixiSprite.setInteractive(true);
@@ -1547,13 +1549,10 @@ RtsWorld = (function(_super) {
   };
 
   RtsWorld.prototype.playerJoined = function(playerId) {
-    var color, _base;
+    var _base;
     console.log("Player " + playerId + " JOINED");
     (_base = this.playerMetadata)[playerId] || (_base[playerId] = {});
-    color = this.playerMetadata[playerId];
-    if (color != null) {
-      return this.playerMetadata[playerId].color = this.randomNumberGenerator.choose(PlayerColors);
-    }
+    return this.playerMetadata[playerId].color = this.randomNumberGenerator.choose(PlayerColors);
   };
 
   RtsWorld.prototype.playerLeft = function(playerId) {

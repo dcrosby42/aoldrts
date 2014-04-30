@@ -194,7 +194,8 @@ class SpriteSyncSystem extends makr.IteratingSystem
     if owner?
       console.log owner.playerId
       console.log @playerFinder.playerMetadata
-      pixiSprite.tint = @playerFinder.playerMetadata[owner.playerId].color
+      if @playerFinder.playerMetadata[owner.playerId]?
+        pixiSprite.tint = @playerFinder.playerMetadata[owner.playerId].color
       # foo = Math.random() * 0xFFFFFF #
       # console.log foo
       # pixiSprite.tint = foo
@@ -350,9 +351,7 @@ class RtsWorld extends SimSim.WorldBase
   playerJoined: (playerId) ->
     console.log "Player #{playerId} JOINED"
     @playerMetadata[playerId] ||= {}
-    color = @playerMetadata[playerId]
-    if color?
-      @playerMetadata[playerId].color = @randomNumberGenerator.choose(PlayerColors)
+    @playerMetadata[playerId].color = @randomNumberGenerator.choose(PlayerColors)
 
   #### SimSim.WorldBase#playerLeft(id)
   playerLeft: (playerId) ->
