@@ -15,7 +15,7 @@ class RobotDeathSystem extends makr.IteratingSystem
       entity = @entityFinder.findEntityById(eventArgs.entityId)
       if entity?
         pos = entity.get(CR.get(C.Position))
-        @entityFactory.powerup(pos.x+100, pos.y, "grey")
+        @entityFactory.powerup(pos.x, pos.y, "grey")
       else
         console.log "RobotDeathSystem could not find entity corpse from args [#{eventArgs}]"
       

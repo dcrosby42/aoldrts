@@ -1953,7 +1953,7 @@ HealthSystem = (function(_super) {
   HealthSystem.prototype.process = function(entity, elapsed) {
     var health;
     health = entity.get(CR.get(C.Health));
-    health.health -= elapsed * 10;
+    health.health -= elapsed * 5;
     if (health.health < 0) {
       entity.kill();
       return this.eventBus.push(E.Death, {
@@ -1999,7 +1999,7 @@ RobotDeathSystem = (function(_super) {
       entity = this.entityFinder.findEntityById(eventArgs.entityId);
       if (entity != null) {
         pos = entity.get(CR.get(C.Position));
-        _results.push(this.entityFactory.powerup(pos.x + 100, pos.y, "grey"));
+        _results.push(this.entityFactory.powerup(pos.x, pos.y, "grey"));
       } else {
         _results.push(console.log("RobotDeathSystem could not find entity corpse from args [" + eventArgs + "]"));
       }

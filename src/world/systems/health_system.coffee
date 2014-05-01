@@ -9,7 +9,7 @@ class HealthSystem extends makr.IteratingSystem
 
   process: (entity, elapsed) ->
     health = entity.get(CR.get(C.Health))
-    health.health -= elapsed*10
+    health.health -= elapsed*5
     if health.health < 0
       entity.kill() 
       @eventBus.push(E.Death, {entityId: entity.id})
