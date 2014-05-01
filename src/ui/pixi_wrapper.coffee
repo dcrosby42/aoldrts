@@ -14,8 +14,13 @@ class PixiWrapper extends SimSim.EventEmitter
     @bgSprites.setInteractive true
     @stage.addChildAt @bgSprites, 0
 
+    @uiSprites = new PIXI.DisplayObjectContainer()
+    @uiSprites.setInteractive true
+    @stage.addChild @uiSprites
+
+    # TODO can this use a DisplayObjectContainer to contain the sprite groups?
     @viewport = new Viewport
-      spriteGroups: [@sprites, @bgSprites]
+      spriteGroups: [@sprites, @bgSprites, @uiSprites]
       width: @renderer.width
       height: @renderer.height
 
@@ -37,6 +42,11 @@ class PixiWrapper extends SimSim.EventEmitter
 
     # @stage.mousedown = (data) ->
     #   console.log "Stage mouse down!", data, data.getLocalPosition(data.target)
+  addUISprite: (sprite) ->
+    @uiSprites.addChild sprite
+
+  removeUISprite: (sprite) ->
+    @uiSprites.removeChild sprite
 
   addBackgroundSprite: (sprite, entityId=null) ->
     @bgSprites.addChildAt sprite, 0 # ADD ALL THE WAY AT THE BOTTOM

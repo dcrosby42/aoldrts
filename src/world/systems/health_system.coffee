@@ -13,9 +13,5 @@ class HealthSystem extends makr.IteratingSystem
     if health.health < 0
       entity.kill() 
       @eventBus.push(E.Death, {entityId: entity.id})
-      # sprite = entity.get(CR.get(C.Sprite))
-      # pos = entity.get(CR.get(C.Position))
-      # console.log @world
-      # @world.entityFactory.robot(pos.x+10, pos.y, sprite.name)
 
 module.exports = HealthSystem

@@ -192,20 +192,20 @@ window.mouseScrollingChanged = ->
   window.local.pixiWrapper.setMouseScrollingOn(onOff)
 
 window.watchData = ->
-  insp = window.local.gameRunner.simulation.getWorldIntrospector()
-  pre = document.getElementById("entityInspectorOutput")
-  entityCount = insp.entityCount()
+  # insp = window.local.gameRunner.simulation.getWorldIntrospector()
+  # pre = document.getElementById("entityInspectorOutput")
+  # entityCount = insp.entityCount()
 
-  txt = "Entity count #{entityCount}:\n"
-  for entityId, components of insp.componentsByEntity()
-    txt += "Entity #{entityId}:\n"
-    for compType, comp of components
-      txt += "  #{compType}:\n"
-      for k,v of comp
-        txt += "    #{k}: #{v} (#{typeof v})\n"
-  pre.textContent = txt
+  # txt = "Entity count #{entityCount}:\n"
+  # for entityId, components of insp.componentsByEntity()
+  #   txt += "Entity #{entityId}:\n"
+  #   for compType, comp of components
+  #     txt += "  #{compType}:\n"
+  #     for k,v of comp
+  #       txt += "    #{k}: #{v} (#{typeof v})\n"
+  # pre.textContent = txt
 
-  insp.reset()
+  # insp.reset()
 
-  setTimeout(window.watchData, 500)
+  # setTimeout(window.watchData, 500)
   

@@ -42,7 +42,7 @@ class EntityFactory
     robot
 
   powerup: (x, y, powerup_type) ->
-    crystal_frames = ["#{powerup_type}-crystal0", "#{powerup_type}-crystal1", "#{powerup_type}-crystal2", "#{powerup_type}-crystal3", "#{powerup_type}-crystal4", "#{powerup_type}-crystal5", "#{powerup_type}-crystal6", "#{powerup_type}-crystal7"]
+    crystal_frames = ("#{powerup_type}-crystal#{i}" for i in  [0..7])
     powerup_frames = {
       downIdle: crystal_frames
       down: crystal_frames

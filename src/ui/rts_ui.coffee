@@ -1,3 +1,4 @@
+HealthDisplay = require './health_display.coffee'
 class RtsUI
   constructor: ({@pixiWrapper, @keyboardController, @simulation}) ->
     @updateQueue = []
@@ -6,6 +7,7 @@ class RtsUI
     @_setupUnitSelection()
     @_setupRobotSpawner()
     @_setupUnitCommand()
+    @_setupHealthDisplays()
 
   update: (dt) ->
     keyEvents = @keyboardController.update()
@@ -13,10 +15,15 @@ class RtsUI
     while fn = @updateQueue.shift()
       fn(dt)
 
+    @healthDisplay.update()
+
     # for action,value of keyEvents
     #   if value
     #     if (action == "myNewRobot")
     #       @simulation.worldProxy "summonMyRobot", 200, 100
+
+  _setupHealthDisplays: ->
+    @healthDisplay = new HealthDisplay(@pixiWrapper, @introspector)
 
   _setupUnitSelection: ->
     @selectedEntityId = null
