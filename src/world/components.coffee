@@ -1,6 +1,9 @@
 C = {}
 module.exports = C
 
+C.Health = class Health
+  constructor: ({@maxHealth, @health}) ->
+
 C.Owned = class Owned
   constructor: ({@playerId}) ->
 

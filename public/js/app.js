@@ -218,7 +218,7 @@ window.watchData = function() {
 };
 
 
-},{"./ui/game_runner.coffee":2,"./ui/keyboard_controller.coffee":3,"./ui/pixi_wrapper.coffee":4,"./ui/rts_ui.coffee":5,"./utils/pm_prng.coffee":9,"./utils/stop_watch.coffee":10,"./world/entity_inspector.coffee":12,"./world/rts_world.coffee":13}],2:[function(require,module,exports){
+},{"./ui/game_runner.coffee":2,"./ui/keyboard_controller.coffee":3,"./ui/pixi_wrapper.coffee":4,"./ui/rts_ui.coffee":5,"./utils/pm_prng.coffee":9,"./utils/stop_watch.coffee":10,"./world/entity_inspector.coffee":13,"./world/rts_world.coffee":17}],2:[function(require,module,exports){
 var GameRunner;
 
 GameRunner = (function() {
@@ -468,7 +468,6 @@ PixiWrapper = (function(_super) {
     }
     endIndex = this.sprites.children.length;
     this.sprites.addChildAt(sprite, endIndex);
-    console.log("ADDED SPRITE for " + entityId, sprite);
     if (entityId != null) {
       return sprite.mousedown = (function(_this) {
         return function(data) {
@@ -881,11 +880,20 @@ module.exports = StopWatch;
 
 
 },{}],11:[function(require,module,exports){
-var C, Controls, Goto, MapTiles, Movement, Owned, Position, Powerup, Sprite, Wander;
+var C, Controls, Goto, Health, MapTiles, Movement, Owned, Position, Powerup, Sprite, Wander;
 
 C = {};
 
 module.exports = C;
+
+C.Health = Health = (function() {
+  function Health(_arg) {
+    this.maxHealth = _arg.maxHealth, this.health = _arg.health;
+  }
+
+  return Health;
+
+})();
 
 C.Owned = Owned = (function() {
   function Owned(_arg) {
@@ -978,6 +986,134 @@ C.Wander = Wander = (function() {
 
 
 },{}],12:[function(require,module,exports){
+var C, CR, EntityFactory, MapHelpers, ParkMillerRNG;
+
+CR = require('../utils/component_register.coffee');
+
+C = require('./components.coffee');
+
+ParkMillerRNG = require('../utils/pm_prng.coffee');
+
+MapHelpers = require('./map_helpers.coffee');
+
+EntityFactory = (function() {
+  function EntityFactory(ecs) {
+    this.ecs = ecs;
+  }
+
+  EntityFactory.prototype.generateRobotFrameList = function(robotName) {
+    if (robotName.indexOf("robot_4") === 0) {
+      return {
+        down: ["" + robotName + "_down_0", "" + robotName + "_down_1", "" + robotName + "_down_2", "" + robotName + "_down_1"],
+        left: ["" + robotName + "_left_0", "" + robotName + "_left_1", "" + robotName + "_left_2", "" + robotName + "_left_1"],
+        up: ["" + robotName + "_up_0", "" + robotName + "_up_1", "" + robotName + "_up_2", "" + robotName + "_up_1"],
+        right: ["" + robotName + "_right_0", "" + robotName + "_right_1", "" + robotName + "_right_2", "" + robotName + "_right_1"],
+        downIdle: ["" + robotName + "_down_0", "" + robotName + "_down_1", "" + robotName + "_down_2", "" + robotName + "_down_1"],
+        leftIdle: ["" + robotName + "_left_0", "" + robotName + "_left_1", "" + robotName + "_left_2", "" + robotName + "_left_1"],
+        upIdle: ["" + robotName + "_up_0", "" + robotName + "_up_1", "" + robotName + "_up_2", "" + robotName + "_up_1"],
+        rightIdle: ["" + robotName + "_right_0", "" + robotName + "_right_1", "" + robotName + "_right_2", "" + robotName + "_right_1"]
+      };
+    } else {
+      return {
+        down: ["" + robotName + "_down_0", "" + robotName + "_down_1", "" + robotName + "_down_2", "" + robotName + "_down_1"],
+        left: ["" + robotName + "_left_0", "" + robotName + "_left_1", "" + robotName + "_left_2", "" + robotName + "_left_1"],
+        up: ["" + robotName + "_up_0", "" + robotName + "_up_1", "" + robotName + "_up_2", "" + robotName + "_up_1"],
+        right: ["" + robotName + "_right_0", "" + robotName + "_right_1", "" + robotName + "_right_2", "" + robotName + "_right_1"],
+        downIdle: ["" + robotName + "_down_1"],
+        leftIdle: ["" + robotName + "_left_1"],
+        upIdle: ["" + robotName + "_up_1"],
+        rightIdle: ["" + robotName + "_right_1"]
+      };
+    }
+  };
+
+  EntityFactory.prototype.robot = function(x, y, robotName) {
+    var robot;
+    console.log("robot", robotName);
+    robot = this.ecs.create();
+    robot.add(new C.Position({
+      x: x,
+      y: y
+    }), CR.get(C.Position));
+    robot.add(new C.Sprite({
+      name: robotName,
+      framelist: this.generateRobotFrameList(robotName)
+    }), CR.get(C.Sprite));
+    robot.add(new C.Controls(), CR.get(C.Controls));
+    robot.add(new C.Movement({
+      vx: 0,
+      vy: 0,
+      speed: 15
+    }), CR.get(C.Movement));
+    robot.add(new C.Wander({
+      range: 50
+    }), CR.get(C.Wander));
+    robot.add(new C.Health({
+      maxHealth: 100,
+      health: 100
+    }), CR.get(C.Health));
+    return robot;
+  };
+
+  EntityFactory.prototype.powerup = function(x, y, powerup_type) {
+    var crystal_frames, p, powerup_frames;
+    crystal_frames = ["" + powerup_type + "-crystal0", "" + powerup_type + "-crystal1", "" + powerup_type + "-crystal2", "" + powerup_type + "-crystal3", "" + powerup_type + "-crystal4", "" + powerup_type + "-crystal5", "" + powerup_type + "-crystal6", "" + powerup_type + "-crystal7"];
+    powerup_frames = {
+      downIdle: crystal_frames,
+      down: crystal_frames
+    };
+    p = this.ecs.create();
+    p.add(new C.Position({
+      x: x,
+      y: y
+    }), CR.get(C.Position));
+    p.add(new C.Movement({
+      vx: 0,
+      vy: 0
+    }), CR.get(C.Movement));
+    p.add(new C.Powerup({
+      powerup_type: powerup_type
+    }), CR.get(C.Powerup));
+    p.add(new C.Sprite({
+      name: "" + powerup_type + "-crystal",
+      framelist: powerup_frames
+    }), CR.get(C.Sprite));
+    return p;
+  };
+
+  EntityFactory.prototype.mapTiles = function(seed, width, height) {
+    var comp, mapTiles, prng;
+    mapTiles = this.ecs.create();
+    comp = new C.MapTiles({
+      seed: seed,
+      width: width,
+      height: height
+    });
+    mapTiles.add(comp, CR.get(C.MapTiles));
+    prng = new ParkMillerRNG(seed);
+    MapHelpers.eachMapTile(prng, width, height, (function(_this) {
+      return function(x, y, tile_set, base, feature, spare) {
+        var p, sparePRNG;
+        sparePRNG = new ParkMillerRNG(spare);
+        if (feature === "crater") {
+          p = sparePRNG.weighted_choose([["blue", 25], ["green", 25], [null, 50]]);
+          if (p != null) {
+            return _this.powerup(x + 32, y + 32, p);
+          }
+        }
+      };
+    })(this));
+    return mapTiles;
+  };
+
+  return EntityFactory;
+
+})();
+
+module.exports = EntityFactory;
+
+
+},{"../utils/component_register.coffee":8,"../utils/pm_prng.coffee":9,"./components.coffee":11,"./map_helpers.coffee":16}],13:[function(require,module,exports){
 var EntityInspector;
 
 EntityInspector = (function() {
@@ -1016,8 +1152,84 @@ EntityInspector = (function() {
 module.exports = EntityInspector;
 
 
-},{}],13:[function(require,module,exports){
-var C, ChecksumCalculator, CommandQueueSystem, ComponentRegister, ControlSystem, EntityFactory, EntityInspectorSystem, GotoSystem, HalfPI, MapTilesSystem, MovementSystem, ParkMillerRNG, PlayerColors, RtsWorld, SpriteSyncSystem, WanderControlMappingSystem, eachMapTile, fixFloat,
+},{}],14:[function(require,module,exports){
+var EventBus;
+
+EventBus = (function() {
+  function EventBus() {
+    this.clear();
+  }
+
+  EventBus.prototype.push = function(event_type, args) {
+    var _base;
+    if (args == null) {
+      args = {};
+    }
+    (_base = this._eventBag)[event_type] || (_base[event_type] = []);
+    return this._eventBag[event_type].push(args);
+  };
+
+  EventBus.prototype.clear = function() {
+    return this._eventBag = {};
+  };
+
+  EventBus.prototype.eventsFor = function(event_type) {
+    return this._eventBag[event_type] || [];
+  };
+
+  return EventBus;
+
+})();
+
+module.exports = EventBus;
+
+
+},{}],15:[function(require,module,exports){
+var E;
+
+E = {};
+
+module.exports = E;
+
+E.Death = "e_ent_death";
+
+
+},{}],16:[function(require,module,exports){
+var MapHelpers;
+
+MapHelpers = {
+  eachMapTile: function(prng, width, height, f) {
+    var base, bases, feature, features, offset_x, offset_y, spare_seed, tileSize, tile_set, tile_sets, x, y, _i, _ref, _results;
+    tile_sets = ["gray", "dark_brown", "dark"];
+    features = [[null, 200], ["stone0", 8], ["stone1", 8], ["crater", 2]];
+    bases = [["small_crater", 5], ["basic0", 50], ["basic1", 50]];
+    tile_set = prng.choose(tile_sets);
+    tileSize = 31;
+    offset_x = (width / 2) * tileSize;
+    offset_y = (height / 2) * tileSize;
+    _results = [];
+    for (x = _i = _ref = width * tileSize; -tileSize > 0 ? _i <= 0 : _i >= 0; x = _i += -tileSize) {
+      _results.push((function() {
+        var _j, _ref1, _results1;
+        _results1 = [];
+        for (y = _j = _ref1 = height * tileSize; -tileSize > 0 ? _j <= 0 : _j >= 0; y = _j += -tileSize) {
+          base = prng.weighted_choose(bases);
+          feature = prng.weighted_choose(features);
+          spare_seed = prng.gen();
+          _results1.push(f(x - offset_x, y - offset_y, tile_set, base, feature, spare_seed));
+        }
+        return _results1;
+      })());
+    }
+    return _results;
+  }
+};
+
+module.exports = MapHelpers;
+
+
+},{}],17:[function(require,module,exports){
+var C, CR, ChecksumCalculator, CommandQueueSystem, ControlSystem, EntityFactory, EntityInspectorSystem, EventBus, GotoSystem, HealthSystem, MapHelpers, MapTilesSystem, MovementSystem, ParkMillerRNG, PlayerColors, RobotDeathSystem, RtsWorld, SpriteSyncSystem, WanderControlMappingSystem,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
@@ -1039,7 +1251,11 @@ ChecksumCalculator = require('../utils/checksum_calculator.coffee');
 
 ParkMillerRNG = require('../utils/pm_prng.coffee');
 
-ComponentRegister = require('../utils/component_register.coffee');
+CR = require('../utils/component_register.coffee');
+
+C = require('./components.coffee');
+
+EventBus = require('./event_bus.coffee');
 
 CommandQueueSystem = require('./systems/command_queue_system.coffee');
 
@@ -1047,7 +1263,32 @@ GotoSystem = require('./systems/goto_system.coffee');
 
 WanderControlMappingSystem = require('./systems/wander_control_mapping_system.coffee');
 
-C = require('./components.coffee');
+HealthSystem = require('./systems/health_system.coffee');
+
+RobotDeathSystem = require('./systems/robot_death_system.coffee');
+
+EntityFactory = require('./entity_factory.coffee');
+
+MapHelpers = require('./map_helpers.coffee');
+
+makr.IteratingSystem.prototype.processEntities = function(entities, elapsed) {
+  var entity, sortedEntities, _i, _len, _results;
+  sortedEntities = entities.sort(function(a, b) {
+    if (a.id < b.id) {
+      return -1;
+    }
+    if (a.id > b.id) {
+      return 1;
+    }
+    return 0;
+  });
+  _results = [];
+  for (_i = 0, _len = sortedEntities.length; _i < _len; _i++) {
+    entity = sortedEntities[_i];
+    _results.push(this.process(entity, elapsed));
+  }
+  return _results;
+};
 
 makr.World.prototype.resurrect = function(entId) {
   var entity;
@@ -1064,39 +1305,13 @@ makr.World.prototype.resurrect = function(entId) {
   return entity;
 };
 
-eachMapTile = function(prng, width, height, f) {
-  var base, bases, feature, features, offset_x, offset_y, spare_seed, tileSize, tile_set, tile_sets, x, y, _i, _ref, _results;
-  tile_sets = ["gray", "dark_brown", "dark"];
-  features = [[null, 200], ["stone0", 8], ["stone1", 8], ["crater", 2]];
-  bases = [["small_crater", 5], ["basic0", 50], ["basic1", 50]];
-  tile_set = prng.choose(tile_sets);
-  tileSize = 31;
-  offset_x = (width / 2) * tileSize;
-  offset_y = (height / 2) * tileSize;
-  _results = [];
-  for (x = _i = _ref = width * tileSize; -tileSize > 0 ? _i <= 0 : _i >= 0; x = _i += -tileSize) {
-    _results.push((function() {
-      var _j, _ref1, _results1;
-      _results1 = [];
-      for (y = _j = _ref1 = height * tileSize; -tileSize > 0 ? _j <= 0 : _j >= 0; y = _j += -tileSize) {
-        base = prng.weighted_choose(bases);
-        feature = prng.weighted_choose(features);
-        spare_seed = prng.gen();
-        _results1.push(f(x - offset_x, y - offset_y, tile_set, base, feature, spare_seed));
-      }
-      return _results1;
-    })());
-  }
-  return _results;
-};
-
 MapTilesSystem = (function(_super) {
   __extends(MapTilesSystem, _super);
 
   function MapTilesSystem(pixiWrapper) {
     this.pixiWrapper = pixiWrapper;
     makr.IteratingSystem.call(this);
-    this.registerComponent(ComponentRegister.get(C.MapTiles));
+    this.registerComponent(CR.get(C.MapTiles));
     this.tilesSprites = void 0;
   }
 
@@ -1110,7 +1325,7 @@ MapTilesSystem = (function(_super) {
   MapTilesSystem.prototype.process = function(entity, elapsed) {
     var component;
     if (this.tilesSprites == null) {
-      component = entity.get(ComponentRegister.get(C.MapTiles));
+      component = entity.get(CR.get(C.MapTiles));
       this.tilesSprites = this.createTiles(component.seed, component.width, component.height);
       return this.pixiWrapper.addBackgroundSprite(this.tilesSprites);
     }
@@ -1130,7 +1345,7 @@ MapTilesSystem = (function(_super) {
     tiles.position.x = 0;
     tiles.position.y = 0;
     prng = new ParkMillerRNG(seed);
-    eachMapTile(prng, width, height, (function(_this) {
+    MapHelpers.eachMapTile(prng, width, height, (function(_this) {
       return function(x, y, tile_set, base, feature) {
         var feature_frame, frame;
         frame = tile_set + "_set_" + base;
@@ -1156,12 +1371,12 @@ EntityInspectorSystem = (function(_super) {
     this.entityInspector = entityInspector;
     this.componentClass = componentClass;
     makr.IteratingSystem.call(this);
-    this.registerComponent(ComponentRegister.get(this.componentClass));
+    this.registerComponent(CR.get(this.componentClass));
   }
 
   EntityInspectorSystem.prototype.process = function(entity, elapsed) {
     var component;
-    component = entity.get(ComponentRegister.get(this.componentClass));
+    component = entity.get(CR.get(this.componentClass));
     return this.entityInspector.update(entity.id, component);
   };
 
@@ -1175,13 +1390,13 @@ ControlSystem = (function(_super) {
   function ControlSystem(rtsWorld) {
     this.rtsWorld = rtsWorld;
     makr.IteratingSystem.call(this);
-    this.registerComponent(ComponentRegister.get(C.Controls));
-    this.registerComponent(ComponentRegister.get(C.Owned));
+    this.registerComponent(CR.get(C.Controls));
+    this.registerComponent(CR.get(C.Owned));
   }
 
   ControlSystem.prototype.process = function(entity, elapsed) {
     var action, controls, entityControls, value, _i, _len, _ref;
-    controls = entity.get(ComponentRegister.get(C.Controls));
+    controls = entity.get(CR.get(C.Controls));
     entityControls = this.rtsWorld.currentControls[entity.id] || [];
     for (_i = 0, _len = entityControls.length; _i < _len; _i++) {
       _ref = entityControls[_i], action = _ref[0], value = _ref[1];
@@ -1199,14 +1414,14 @@ MovementSystem = (function(_super) {
 
   function MovementSystem() {
     makr.IteratingSystem.call(this);
-    this.registerComponent(ComponentRegister.get(C.Movement));
-    this.registerComponent(ComponentRegister.get(C.Position));
+    this.registerComponent(CR.get(C.Movement));
+    this.registerComponent(CR.get(C.Position));
   }
 
   MovementSystem.prototype.process = function(entity, elapsed) {
     var movement, position;
-    position = entity.get(ComponentRegister.get(C.Position));
-    movement = entity.get(ComponentRegister.get(C.Movement));
+    position = entity.get(CR.get(C.Position));
+    movement = entity.get(CR.get(C.Movement));
     if (position == null) {
       console.log("Y NO Position?", entity);
     }
@@ -1225,9 +1440,9 @@ SpriteSyncSystem = (function(_super) {
     this.pixiWrapper = pixiWrapper;
     this.playerFinder = playerFinder;
     makr.IteratingSystem.call(this);
-    this.registerComponent(ComponentRegister.get(C.Sprite));
-    this.registerComponent(ComponentRegister.get(C.Position));
-    this.registerComponent(ComponentRegister.get(C.Movement));
+    this.registerComponent(CR.get(C.Sprite));
+    this.registerComponent(CR.get(C.Position));
+    this.registerComponent(CR.get(C.Movement));
     this.spriteCache = {};
     this.spriteFrameCache = {};
   }
@@ -1239,10 +1454,10 @@ SpriteSyncSystem = (function(_super) {
 
   SpriteSyncSystem.prototype.process = function(entity, elapsed) {
     var movement, owner, pixiSprite, position, sprite, vx, vy;
-    position = entity.get(ComponentRegister.get(C.Position));
-    sprite = entity.get(ComponentRegister.get(C.Sprite));
-    movement = entity.get(ComponentRegister.get(C.Movement));
-    owner = entity.get(ComponentRegister.get(C.Owned));
+    position = entity.get(CR.get(C.Position));
+    sprite = entity.get(CR.get(C.Sprite));
+    movement = entity.get(CR.get(C.Movement));
+    owner = entity.get(CR.get(C.Owned));
     pixiSprite = this.spriteCache[entity.id];
     if (pixiSprite == null) {
       pixiSprite = this.buildSprite(entity, sprite, position, owner);
@@ -1332,120 +1547,6 @@ SpriteSyncSystem = (function(_super) {
 
 })(makr.IteratingSystem);
 
-fixFloat = SimSim.Util.fixFloat;
-
-HalfPI = Math.PI / 2;
-
-EntityFactory = (function() {
-  function EntityFactory(ecs) {
-    this.ecs = ecs;
-  }
-
-  EntityFactory.prototype.generateRobotFrameList = function(robotName) {
-    if (robotName.indexOf("robot_4") === 0) {
-      return {
-        down: ["" + robotName + "_down_0", "" + robotName + "_down_1", "" + robotName + "_down_2", "" + robotName + "_down_1"],
-        left: ["" + robotName + "_left_0", "" + robotName + "_left_1", "" + robotName + "_left_2", "" + robotName + "_left_1"],
-        up: ["" + robotName + "_up_0", "" + robotName + "_up_1", "" + robotName + "_up_2", "" + robotName + "_up_1"],
-        right: ["" + robotName + "_right_0", "" + robotName + "_right_1", "" + robotName + "_right_2", "" + robotName + "_right_1"],
-        downIdle: ["" + robotName + "_down_0", "" + robotName + "_down_1", "" + robotName + "_down_2", "" + robotName + "_down_1"],
-        leftIdle: ["" + robotName + "_left_0", "" + robotName + "_left_1", "" + robotName + "_left_2", "" + robotName + "_left_1"],
-        upIdle: ["" + robotName + "_up_0", "" + robotName + "_up_1", "" + robotName + "_up_2", "" + robotName + "_up_1"],
-        rightIdle: ["" + robotName + "_right_0", "" + robotName + "_right_1", "" + robotName + "_right_2", "" + robotName + "_right_1"]
-      };
-    } else {
-      return {
-        down: ["" + robotName + "_down_0", "" + robotName + "_down_1", "" + robotName + "_down_2", "" + robotName + "_down_1"],
-        left: ["" + robotName + "_left_0", "" + robotName + "_left_1", "" + robotName + "_left_2", "" + robotName + "_left_1"],
-        up: ["" + robotName + "_up_0", "" + robotName + "_up_1", "" + robotName + "_up_2", "" + robotName + "_up_1"],
-        right: ["" + robotName + "_right_0", "" + robotName + "_right_1", "" + robotName + "_right_2", "" + robotName + "_right_1"],
-        downIdle: ["" + robotName + "_down_1"],
-        leftIdle: ["" + robotName + "_left_1"],
-        upIdle: ["" + robotName + "_up_1"],
-        rightIdle: ["" + robotName + "_right_1"]
-      };
-    }
-  };
-
-  EntityFactory.prototype.robot = function(x, y, robotName) {
-    var robot;
-    console.log("robot", robotName);
-    robot = this.ecs.create();
-    robot.add(new C.Position({
-      x: x,
-      y: y
-    }), ComponentRegister.get(C.Position));
-    robot.add(new C.Sprite({
-      name: robotName,
-      framelist: this.generateRobotFrameList(robotName)
-    }), ComponentRegister.get(C.Sprite));
-    robot.add(new C.Controls(), ComponentRegister.get(C.Controls));
-    robot.add(new C.Movement({
-      vx: 0,
-      vy: 0,
-      speed: 15
-    }), ComponentRegister.get(C.Movement));
-    robot.add(new C.Wander({
-      range: 50
-    }), ComponentRegister.get(C.Wander));
-    return robot;
-  };
-
-  EntityFactory.prototype.powerup = function(x, y, powerup_type) {
-    var crystal_frames, p, powerup_frames;
-    crystal_frames = ["" + powerup_type + "-crystal0", "" + powerup_type + "-crystal1", "" + powerup_type + "-crystal2", "" + powerup_type + "-crystal3", "" + powerup_type + "-crystal4", "" + powerup_type + "-crystal5", "" + powerup_type + "-crystal6", "" + powerup_type + "-crystal7"];
-    powerup_frames = {
-      downIdle: crystal_frames,
-      down: crystal_frames
-    };
-    p = this.ecs.create();
-    p.add(new C.Position({
-      x: x,
-      y: y
-    }), ComponentRegister.get(C.Position));
-    p.add(new C.Movement({
-      vx: 0,
-      vy: 0
-    }), ComponentRegister.get(C.Movement));
-    p.add(new C.Powerup({
-      powerup_type: powerup_type
-    }), ComponentRegister.get(C.Powerup));
-    p.add(new C.Sprite({
-      name: "" + powerup_type + "-crystal",
-      framelist: powerup_frames
-    }), ComponentRegister.get(C.Sprite));
-    return p;
-  };
-
-  EntityFactory.prototype.mapTiles = function(seed, width, height) {
-    var comp, mapTiles, prng;
-    mapTiles = this.ecs.create();
-    comp = new C.MapTiles({
-      seed: seed,
-      width: width,
-      height: height
-    });
-    mapTiles.add(comp, ComponentRegister.get(C.MapTiles));
-    prng = new ParkMillerRNG(seed);
-    eachMapTile(prng, width, height, (function(_this) {
-      return function(x, y, tile_set, base, feature, spare) {
-        var p, sparePRNG;
-        sparePRNG = new ParkMillerRNG(spare);
-        if (feature === "crater") {
-          p = sparePRNG.weighted_choose([["blue", 25], ["green", 25], [null, 50]]);
-          if (p != null) {
-            return _this.powerup(x + 32, y + 32, p);
-          }
-        }
-      };
-    })(this));
-    return mapTiles;
-  };
-
-  return EntityFactory;
-
-})();
-
 RtsWorld = (function(_super) {
   __extends(RtsWorld, _super);
 
@@ -1460,38 +1561,40 @@ RtsWorld = (function(_super) {
     this.playerMetadata = {};
     this.currentControls = {};
     this.commandQueue = [];
+    this.eventBus = new EventBus();
     this.randomNumberGenerator = new ParkMillerRNG((Math.random() * 1000) | 0);
     this.checksumCalculator = new ChecksumCalculator();
-    this.ecs = this._setupECS(this.pixieWrapper);
+    this.ecs = new makr.World();
     this.entityFactory = new EntityFactory(this.ecs);
+    this._setupECS(this.ecs, this.pixieWrapper);
     this._setupIntrospector(this.ecs, this.introspector);
     this.entityFactory.mapTiles((Math.random() * 1000) | 0, 100, 100);
   }
 
-  RtsWorld.prototype._setupECS = function(pixieWrapper) {
-    var ecs;
-    ComponentRegister.register(C.Position);
-    ComponentRegister.register(C.Sprite);
-    ComponentRegister.register(C.Owned);
-    ComponentRegister.register(C.Movement);
-    ComponentRegister.register(C.Controls);
-    ComponentRegister.register(C.MapTiles);
-    ComponentRegister.register(C.Powerup);
-    ComponentRegister.register(C.Goto);
-    ComponentRegister.register(C.Wander);
-    ecs = new makr.World();
+  RtsWorld.prototype._setupECS = function(ecs, pixieWrapper) {
+    CR.register(C.Position);
+    CR.register(C.Sprite);
+    CR.register(C.Owned);
+    CR.register(C.Movement);
+    CR.register(C.Controls);
+    CR.register(C.MapTiles);
+    CR.register(C.Powerup);
+    CR.register(C.Goto);
+    CR.register(C.Wander);
+    CR.register(C.Health);
     ecs.registerSystem(new WanderControlMappingSystem(this.randomNumberGenerator));
     ecs.registerSystem(new GotoSystem());
     ecs.registerSystem(new SpriteSyncSystem(this.pixiWrapper, this));
     ecs.registerSystem(new MapTilesSystem(this.pixiWrapper));
     ecs.registerSystem(new CommandQueueSystem(this.commandQueue, this));
     ecs.registerSystem(new MovementSystem());
-    return ecs;
+    ecs.registerSystem(new HealthSystem(this.eventBus));
+    return ecs.registerSystem(new RobotDeathSystem(this.eventBus, this, this.entityFactory));
   };
 
   RtsWorld.prototype._setupIntrospector = function(ecs, introspector) {
     var componentClass, _i, _len, _ref, _results;
-    _ref = [C.Position, C.Movement, C.Owned, C.MapTiles];
+    _ref = [C.Position, C.Movement, C.Owned, C.MapTiles, C.Health];
     _results = [];
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
       componentClass = _ref[_i];
@@ -1530,7 +1633,7 @@ RtsWorld = (function(_super) {
     robot = this.entityFactory.robot(args.x, args.y, robotType);
     return robot.add(new C.Owned({
       playerId: playerId
-    }), ComponentRegister.get(C.Owned));
+    }), CR.get(C.Owned));
   };
 
   RtsWorld.prototype.commandUnit = function(playerId, command, args) {
@@ -1562,7 +1665,7 @@ RtsWorld = (function(_super) {
     _results = [];
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
       ent = _ref[_i];
-      owner = ent.get(ComponentRegister.get(C.Owned));
+      owner = ent.get(CR.get(C.Owned));
       if ((owner != null) && (owner.playerId === playerId)) {
         _results.push(ent.kill());
       } else {
@@ -1578,7 +1681,8 @@ RtsWorld = (function(_super) {
   };
 
   RtsWorld.prototype.step = function(dt) {
-    return this.ecs.update(dt);
+    this.ecs.update(dt);
+    return this.eventBus.clear();
   };
 
   RtsWorld.prototype.setData = function(data) {
@@ -1615,7 +1719,7 @@ RtsWorld = (function(_super) {
         for (_j = 0, _len1 = comps.length; _j < _len1; _j++) {
           comp = comps[_j];
           console.log("setData: adding component to " + entity.id + ":", comp);
-          _results1.push(entity.add(comp, ComponentRegister.get(comp.constructor)));
+          _results1.push(entity.add(comp, CR.get(comp.constructor)));
         }
         return _results1;
       })());
@@ -1684,7 +1788,7 @@ RtsWorld = (function(_super) {
 module.exports = RtsWorld;
 
 
-},{"../utils/checksum_calculator.coffee":7,"../utils/component_register.coffee":8,"../utils/pm_prng.coffee":9,"./components.coffee":11,"./systems/command_queue_system.coffee":14,"./systems/goto_system.coffee":15,"./systems/wander_control_mapping_system.coffee":16}],14:[function(require,module,exports){
+},{"../utils/checksum_calculator.coffee":7,"../utils/component_register.coffee":8,"../utils/pm_prng.coffee":9,"./components.coffee":11,"./entity_factory.coffee":12,"./event_bus.coffee":14,"./map_helpers.coffee":16,"./systems/command_queue_system.coffee":18,"./systems/goto_system.coffee":19,"./systems/health_system.coffee":20,"./systems/robot_death_system.coffee":21,"./systems/wander_control_mapping_system.coffee":22}],18:[function(require,module,exports){
 var C, CommandQueueSystem, Commands, ComponentRegister,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -1778,7 +1882,7 @@ Commands.Entity.goto = function(entity, cmd) {
 module.exports = CommandQueueSystem;
 
 
-},{"../../utils/component_register.coffee":8,"../components.coffee":11}],15:[function(require,module,exports){
+},{"../../utils/component_register.coffee":8,"../components.coffee":11}],19:[function(require,module,exports){
 var C, CR, GotoSystem,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -1826,7 +1930,91 @@ GotoSystem = (function(_super) {
 module.exports = GotoSystem;
 
 
-},{"../../utils/component_register.coffee":8,"../components.coffee":11}],16:[function(require,module,exports){
+},{"../../utils/component_register.coffee":8,"../components.coffee":11}],20:[function(require,module,exports){
+var C, CR, E, HealthSystem,
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+CR = require('../../utils/component_register.coffee');
+
+C = require('../components.coffee');
+
+E = require('../events.coffee');
+
+HealthSystem = (function(_super) {
+  __extends(HealthSystem, _super);
+
+  function HealthSystem(eventBus) {
+    this.eventBus = eventBus;
+    makr.IteratingSystem.call(this);
+    this.registerComponent(CR.get(C.Health));
+  }
+
+  HealthSystem.prototype.process = function(entity, elapsed) {
+    var health;
+    health = entity.get(CR.get(C.Health));
+    health.health -= elapsed * 10;
+    if (health.health < 0) {
+      entity.kill();
+      return this.eventBus.push(E.Death, {
+        entityId: entity.id
+      });
+    }
+  };
+
+  return HealthSystem;
+
+})(makr.IteratingSystem);
+
+module.exports = HealthSystem;
+
+
+},{"../../utils/component_register.coffee":8,"../components.coffee":11,"../events.coffee":15}],21:[function(require,module,exports){
+var C, CR, E, RobotDeathSystem,
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+CR = require('../../utils/component_register.coffee');
+
+C = require('../components.coffee');
+
+E = require('../events.coffee');
+
+RobotDeathSystem = (function(_super) {
+  __extends(RobotDeathSystem, _super);
+
+  function RobotDeathSystem(eventBus, entityFinder, entityFactory) {
+    this.eventBus = eventBus;
+    this.entityFinder = entityFinder;
+    this.entityFactory = entityFactory;
+    RobotDeathSystem.__super__.constructor.call(this, this);
+  }
+
+  RobotDeathSystem.prototype.processEntities = function(entities, elapsed) {
+    var entity, eventArgs, pos, _i, _len, _ref, _results;
+    _ref = this.eventBus.eventsFor(E.Death);
+    _results = [];
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      eventArgs = _ref[_i];
+      entity = this.entityFinder.findEntityById(eventArgs.entityId);
+      if (entity != null) {
+        pos = entity.get(CR.get(C.Position));
+        _results.push(this.entityFactory.powerup(pos.x + 100, pos.y, "grey"));
+      } else {
+        _results.push(console.log("RobotDeathSystem could not find entity corpse from args [" + eventArgs + "]"));
+      }
+    }
+    return _results;
+  };
+
+  return RobotDeathSystem;
+
+})(makr.IteratingSystem);
+
+module.exports = RobotDeathSystem;
+
+
+},{"../../utils/component_register.coffee":8,"../components.coffee":11,"../events.coffee":15}],22:[function(require,module,exports){
 var C, CR, ParkMillerRNG, WanderControlMappingSystem,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
