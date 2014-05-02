@@ -295,6 +295,11 @@ class RtsWorld extends SimSim.WorldBase
 
   #### SimSim.WorldBase#step(data)
   step: (dt) ->
+    @resetTimer ||= 0
+    @resetTimer += dt
+    if @resetTimer > 500
+      @entityInspector.reset()
+      @resetTimer = 0
     @ecs.update(dt)
     @eventBus.clear()
   

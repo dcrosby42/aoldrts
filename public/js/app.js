@@ -1746,6 +1746,12 @@ RtsWorld = (function(_super) {
   };
 
   RtsWorld.prototype.step = function(dt) {
+    this.resetTimer || (this.resetTimer = 0);
+    this.resetTimer += dt;
+    if (this.resetTimer > 500) {
+      this.entityInspector.reset();
+      this.resetTimer = 0;
+    }
     this.ecs.update(dt);
     return this.eventBus.clear();
   };
