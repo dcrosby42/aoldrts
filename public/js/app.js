@@ -67,11 +67,7 @@ window.onload = function() {
   });
   pixiWrapper.appendViewTo(document.getElementById('gameDiv'));
   return pixiWrapper.loadAssets(function() {
-    var gameRunner, keyboardController, rtsUI, simulation, stopWatch, world;
-    world = new RtsWorld({
-      pixiWrapper: pixiWrapper,
-      introspector: new EntityInspector()
-    });
+    var gameRunner, keyboardController, rtsUI, simulation, stopWatch;
     simulation = buildSimulation({
       world: new RtsWorld({
         pixiWrapper: pixiWrapper,
@@ -261,14 +257,14 @@ HealthDisplay = (function() {
   }
 
   HealthDisplay.prototype.update = function() {
-    var components, comps, eid, ents_with_comps, health, pixiSprite, pos, sprite, _i, _len, _ref, _results;
+    var components, comps, eid, ents_with_comps, health, healthRatio, indicator, pos, sprite, _i, _len, _ref, _results;
     ents_with_comps = this.introspector.entitiesWithComponent("Health");
     for (eid in ents_with_comps) {
       components = ents_with_comps[eid];
       if (this.healthDisplaysByEntityId[eid] == null) {
-        pixiSprite = new PIXI.Sprite(PIXI.Texture.fromImage('images/bunny.png'));
-        this.pixiWrapper.addUISprite(pixiSprite);
-        this.healthDisplaysByEntityId[eid] = pixiSprite;
+        indicator = new PIXI.Graphics();
+        this.pixiWrapper.addUISprite(indicator);
+        this.healthDisplaysByEntityId[eid] = indicator;
       }
     }
     _ref = Object.keys(this.healthDisplaysByEntityId);
@@ -282,7 +278,12 @@ HealthDisplay = (function() {
         health = comps["Health"];
         sprite.position.x = pos.x;
         sprite.position.y = pos.y;
-        _results.push(sprite.scale.y = health.health / health.maxHealth);
+        healthRatio = health.health / health.maxHealth;
+        sprite.clear();
+        sprite.beginFill(0x009900);
+        sprite.lineStyle(1, 0x00FF00);
+        sprite.drawRect(-15, 20, 30 * healthRatio, 6);
+        _results.push(sprite.endFill());
       } else {
         this.pixiWrapper.removeUISprite(sprite);
         _results.push(delete this.healthDisplaysByEntityId[eid]);

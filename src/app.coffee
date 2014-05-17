@@ -75,11 +75,6 @@ window.onload = ->
 
 
   pixiWrapper.loadAssets ->
-    world = new RtsWorld(
-      pixiWrapper:pixiWrapper
-      introspector: new EntityInspector()
-    )
-
     simulation = buildSimulation(
       world: new RtsWorld(
           pixiWrapper:pixiWrapper

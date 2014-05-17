@@ -17,11 +17,6 @@ class RtsUI
 
     @healthDisplay.update()
 
-    # for action,value of keyEvents
-    #   if value
-    #     if (action == "myNewRobot")
-    #       @simulation.worldProxy "summonMyRobot", 200, 100
-
   _setupHealthDisplays: ->
     @healthDisplay = new HealthDisplay(@pixiWrapper, @introspector)
 
