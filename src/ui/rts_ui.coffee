@@ -1,4 +1,3 @@
-HealthDisplay = require './health_display.coffee'
 
 
 
@@ -9,16 +8,13 @@ class RtsUI
 
     @uiState = @introspector.uiState
     # TODO ARGH!!!!  (this should probably be composed in app.coffee or someplace earlier)
-    window.ui = @uiState
     @uiState.set 'pixiWrapper', @pixiWrapper
+    window.ui = @uiState
     # See the "Unconsumed computed properties" section of http://emberjs.com/guides/object-model/observers/
-    @uiState.get('selectedUnits')
-    @uiState.get('entitiesWithHealth')
 
     @_setupUnitSelection()
     @_setupRobotSpawner()
     @_setupUnitCommand()
-    # @_setupHealthDisplays()
 
 
   update: (dt) ->
@@ -26,11 +22,6 @@ class RtsUI
 
     while fn = @updateQueue.shift()
       fn(dt)
-
-    # @healthDisplay.update()
-
-  _setupHealthDisplays: ->
-    @healthDisplay = new HealthDisplay(@pixiWrapper, @introspector)
 
   _setupUnitSelection: ->
     @pixiWrapper.on "spriteClicked", (data,entityId) =>

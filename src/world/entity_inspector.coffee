@@ -57,6 +57,11 @@ HealthView = Ember.Object.extend
   ).observes('sprite', 'healthRatio')
   
 UIState = Ember.Object.extend
+  init: ->
+    @_super()
+    @get('selectedUnits')
+    @get('entitiesWithHealth')
+
   pixiWrapper: null
 
   selectedEntityId: null

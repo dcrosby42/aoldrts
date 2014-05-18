@@ -192,7 +192,7 @@ window.mouseScrollingChanged = function() {
 window.watchData = function() {};
 
 
-},{"./ui/game_runner.coffee":2,"./ui/keyboard_controller.coffee":4,"./ui/pixi_wrapper.coffee":5,"./ui/rts_ui.coffee":6,"./utils/pm_prng.coffee":11,"./utils/stop_watch.coffee":12,"./world/entity_inspector.coffee":15,"./world/rts_world.coffee":19}],2:[function(require,module,exports){
+},{"./ui/game_runner.coffee":2,"./ui/keyboard_controller.coffee":3,"./ui/pixi_wrapper.coffee":4,"./ui/rts_ui.coffee":5,"./utils/pm_prng.coffee":10,"./utils/stop_watch.coffee":11,"./world/entity_inspector.coffee":14,"./world/rts_world.coffee":18}],2:[function(require,module,exports){
 var GameRunner;
 
 GameRunner = (function() {
@@ -247,59 +247,6 @@ module.exports = GameRunner;
 
 
 },{}],3:[function(require,module,exports){
-var HealthDisplay;
-
-HealthDisplay = (function() {
-  function HealthDisplay(pixiWrapper, introspector) {
-    this.pixiWrapper = pixiWrapper;
-    this.introspector = introspector;
-    this.healthDisplaysByEntityId = {};
-  }
-
-  HealthDisplay.prototype.update = function() {
-    var components, comps, eid, ents_with_comps, health, healthRatio, indicator, pos, sprite, _i, _len, _ref, _results;
-    ents_with_comps = this.introspector.entitiesWithComponent("Health");
-    for (eid in ents_with_comps) {
-      components = ents_with_comps[eid];
-      if (this.healthDisplaysByEntityId[eid] == null) {
-        indicator = new PIXI.Graphics();
-        this.pixiWrapper.addUISprite(indicator);
-        this.healthDisplaysByEntityId[eid] = indicator;
-      }
-    }
-    _ref = Object.keys(this.healthDisplaysByEntityId);
-    _results = [];
-    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-      eid = _ref[_i];
-      sprite = this.healthDisplaysByEntityId[eid];
-      comps = ents_with_comps[eid];
-      if (comps != null) {
-        pos = comps["Position"];
-        health = comps["Health"];
-        sprite.position.x = pos.x;
-        sprite.position.y = pos.y;
-        healthRatio = health.health / health.maxHealth;
-        sprite.clear();
-        sprite.beginFill(0x009900);
-        sprite.lineStyle(1, 0x00FF00);
-        sprite.drawRect(-15, 20, 30 * healthRatio, 6);
-        _results.push(sprite.endFill());
-      } else {
-        this.pixiWrapper.removeUISprite(sprite);
-        _results.push(delete this.healthDisplaysByEntityId[eid]);
-      }
-    }
-    return _results;
-  };
-
-  return HealthDisplay;
-
-})();
-
-module.exports = HealthDisplay;
-
-
-},{}],4:[function(require,module,exports){
 var InputState, KeyboardController, KeyboardWrapper;
 
 KeyboardWrapper = (function() {
@@ -428,7 +375,7 @@ KeyboardController = (function() {
 module.exports = KeyboardController;
 
 
-},{}],5:[function(require,module,exports){
+},{}],4:[function(require,module,exports){
 var PixiWrapper, Viewport,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -591,10 +538,8 @@ PixiWrapper = (function(_super) {
 module.exports = PixiWrapper;
 
 
-},{"./viewport.coffee":8}],6:[function(require,module,exports){
-var HealthDisplay, RtsUI;
-
-HealthDisplay = require('./health_display.coffee');
+},{"./viewport.coffee":7}],5:[function(require,module,exports){
+var RtsUI;
 
 RtsUI = (function() {
   function RtsUI(_arg) {
@@ -602,10 +547,8 @@ RtsUI = (function() {
     this.updateQueue = [];
     this.introspector = this.simulation.getWorldIntrospector();
     this.uiState = this.introspector.uiState;
-    window.ui = this.uiState;
     this.uiState.set('pixiWrapper', this.pixiWrapper);
-    this.uiState.get('selectedUnits');
-    this.uiState.get('entitiesWithHealth');
+    window.ui = this.uiState;
     this._setupUnitSelection();
     this._setupRobotSpawner();
     this._setupUnitCommand();
@@ -619,10 +562,6 @@ RtsUI = (function() {
       _results.push(fn(dt));
     }
     return _results;
-  };
-
-  RtsUI.prototype._setupHealthDisplays = function() {
-    return this.healthDisplay = new HealthDisplay(this.pixiWrapper, this.introspector);
   };
 
   RtsUI.prototype._setupUnitSelection = function() {
@@ -693,7 +632,7 @@ RtsUI = (function() {
 module.exports = RtsUI;
 
 
-},{"./health_display.coffee":3}],7:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
 var StatefulBinding;
 
 StatefulBinding = {};
@@ -751,7 +690,7 @@ StatefulBinding.processDifferences = function(old, current, fns) {
 module.exports = StatefulBinding;
 
 
-},{}],8:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 var Viewport;
 
 Viewport = (function() {
@@ -837,7 +776,7 @@ Viewport = (function() {
 module.exports = Viewport;
 
 
-},{}],9:[function(require,module,exports){
+},{}],8:[function(require,module,exports){
 var CRC32_TABLE, ChecksumCalculator;
 
 CRC32_TABLE = "00000000 77073096 EE0E612C 990951BA 076DC419 706AF48F E963A535 9E6495A3 0EDB8832 79DCB8A4 E0D5E91E 97D2D988 09B64C2B 7EB17CBD E7B82D07 90BF1D91 1DB71064 6AB020F2 F3B97148 84BE41DE 1ADAD47D 6DDDE4EB F4D4B551 83D385C7 136C9856 646BA8C0 FD62F97A 8A65C9EC 14015C4F 63066CD9 FA0F3D63 8D080DF5 3B6E20C8 4C69105E D56041E4 A2677172 3C03E4D1 4B04D447 D20D85FD A50AB56B 35B5A8FA 42B2986C DBBBC9D6 ACBCF940 32D86CE3 45DF5C75 DCD60DCF ABD13D59 26D930AC 51DE003A C8D75180 BFD06116 21B4F4B5 56B3C423 CFBA9599 B8BDA50F 2802B89E 5F058808 C60CD9B2 B10BE924 2F6F7C87 58684C11 C1611DAB B6662D3D 76DC4190 01DB7106 98D220BC EFD5102A 71B18589 06B6B51F 9FBFE4A5 E8B8D433 7807C9A2 0F00F934 9609A88E E10E9818 7F6A0DBB 086D3D2D 91646C97 E6635C01 6B6B51F4 1C6C6162 856530D8 F262004E 6C0695ED 1B01A57B 8208F4C1 F50FC457 65B0D9C6 12B7E950 8BBEB8EA FCB9887C 62DD1DDF 15DA2D49 8CD37CF3 FBD44C65 4DB26158 3AB551CE A3BC0074 D4BB30E2 4ADFA541 3DD895D7 A4D1C46D D3D6F4FB 4369E96A 346ED9FC AD678846 DA60B8D0 44042D73 33031DE5 AA0A4C5F DD0D7CC9 5005713C 270241AA BE0B1010 C90C2086 5768B525 206F85B3 B966D409 CE61E49F 5EDEF90E 29D9C998 B0D09822 C7D7A8B4 59B33D17 2EB40D81 B7BD5C3B C0BA6CAD EDB88320 9ABFB3B6 03B6E20C 74B1D29A EAD54739 9DD277AF 04DB2615 73DC1683 E3630B12 94643B84 0D6D6A3E 7A6A5AA8 E40ECF0B 9309FF9D 0A00AE27 7D079EB1 F00F9344 8708A3D2 1E01F268 6906C2FE F762575D 806567CB 196C3671 6E6B06E7 FED41B76 89D32BE0 10DA7A5A 67DD4ACC F9B9DF6F 8EBEEFF9 17B7BE43 60B08ED5 D6D6A3E8 A1D1937E 38D8C2C4 4FDFF252 D1BB67F1 A6BC5767 3FB506DD 48B2364B D80D2BDA AF0A1B4C 36034AF6 41047A60 DF60EFC3 A867DF55 316E8EEF 4669BE79 CB61B38C BC66831A 256FD2A0 5268E236 CC0C7795 BB0B4703 220216B9 5505262F C5BA3BBE B2BD0B28 2BB45A92 5CB36A04 C2D7FFA7 B5D0CF31 2CD99E8B 5BDEAE1D 9B64C2B0 EC63F226 756AA39C 026D930A 9C0906A9 EB0E363F 72076785 05005713 95BF4A82 E2B87A14 7BB12BAE 0CB61B38 92D28E9B E5D5BE0D 7CDCEFB7 0BDBDF21 86D3D2D4 F1D4E242 68DDB3F8 1FDA836E 81BE16CD F6B9265B 6FB077E1 18B74777 88085AE6 FF0F6A70 66063BCA 11010B5C 8F659EFF F862AE69 616BFFD3 166CCF45 A00AE278 D70DD2EE 4E048354 3903B3C2 A7672661 D06016F7 4969474D 3E6E77DB AED16A4A D9D65ADC 40DF0B66 37D83BF0 A9BCAE53 DEBB9EC5 47B2CF7F 30B5FFE9 BDBDF21C CABAC28A 53B39330 24B4A3A6 BAD03605 CDD70693 54DE5729 23D967BF B3667A2E C4614AB8 5D681B02 2A6F2B94 B40BBE37 C30C8EA1 5A05DF1B 2D02EF8D";
@@ -868,7 +807,7 @@ ChecksumCalculator = (function() {
 module.exports = ChecksumCalculator;
 
 
-},{}],10:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 var ComponentRegister;
 
 ComponentRegister = (function() {
@@ -900,7 +839,7 @@ ComponentRegister = (function() {
 module.exports = ComponentRegister;
 
 
-},{}],11:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 var ParkMillerRNG;
 
 ParkMillerRNG = (function() {
@@ -949,7 +888,7 @@ ParkMillerRNG = (function() {
 module.exports = ParkMillerRNG;
 
 
-},{}],12:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 var StopWatch;
 
 StopWatch = (function() {
@@ -985,7 +924,7 @@ StopWatch = (function() {
 module.exports = StopWatch;
 
 
-},{}],13:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 var C, Controls, Goto, Health, MapTiles, Movement, Owned, Position, Powerup, Sprite, Wander;
 
 C = {};
@@ -1091,7 +1030,7 @@ C.Wander = Wander = (function() {
 })();
 
 
-},{}],14:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
 var C, CR, EntityFactory, MapHelpers, ParkMillerRNG;
 
 CR = require('../utils/component_register.coffee');
@@ -1226,7 +1165,7 @@ EntityFactory = (function() {
 module.exports = EntityFactory;
 
 
-},{"../utils/component_register.coffee":10,"../utils/pm_prng.coffee":11,"./components.coffee":13,"./map_helpers.coffee":18}],15:[function(require,module,exports){
+},{"../utils/component_register.coffee":9,"../utils/pm_prng.coffee":10,"./components.coffee":12,"./map_helpers.coffee":17}],14:[function(require,module,exports){
 var EntityInspector, HaloView, HealthView, StatefulBinding, UIState;
 
 StatefulBinding = require('../ui/stateful_binding.coffee');
@@ -1296,6 +1235,11 @@ HealthView = Ember.Object.extend({
 });
 
 UIState = Ember.Object.extend({
+  init: function() {
+    this._super();
+    this.get('selectedUnits');
+    return this.get('entitiesWithHealth');
+  },
   pixiWrapper: null,
   selectedEntityId: null,
   entities: [],
@@ -1457,7 +1401,7 @@ EntityInspector = (function() {
 module.exports = EntityInspector;
 
 
-},{"../ui/stateful_binding.coffee":7}],16:[function(require,module,exports){
+},{"../ui/stateful_binding.coffee":6}],15:[function(require,module,exports){
 var EventBus;
 
 EventBus = (function() {
@@ -1489,7 +1433,7 @@ EventBus = (function() {
 module.exports = EventBus;
 
 
-},{}],17:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
 var E;
 
 E = {};
@@ -1499,7 +1443,7 @@ module.exports = E;
 E.Death = "e_ent_death";
 
 
-},{}],18:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 var MapHelpers;
 
 MapHelpers = {
@@ -1533,7 +1477,7 @@ MapHelpers = {
 module.exports = MapHelpers;
 
 
-},{}],19:[function(require,module,exports){
+},{}],18:[function(require,module,exports){
 var C, CR, ChecksumCalculator, CommandQueueSystem, ControlSystem, EntityFactory, EntityInspectorSystem, EventBus, GotoSystem, HealthSystem, MapHelpers, MapTilesSystem, MovementSystem, ParkMillerRNG, PlayerColors, RobotDeathSystem, RtsWorld, SpriteSyncSystem, WanderControlMappingSystem,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -2095,7 +2039,7 @@ RtsWorld = (function(_super) {
 module.exports = RtsWorld;
 
 
-},{"../utils/checksum_calculator.coffee":9,"../utils/component_register.coffee":10,"../utils/pm_prng.coffee":11,"./components.coffee":13,"./entity_factory.coffee":14,"./event_bus.coffee":16,"./map_helpers.coffee":18,"./systems/command_queue_system.coffee":20,"./systems/goto_system.coffee":21,"./systems/health_system.coffee":22,"./systems/robot_death_system.coffee":23,"./systems/wander_control_mapping_system.coffee":24}],20:[function(require,module,exports){
+},{"../utils/checksum_calculator.coffee":8,"../utils/component_register.coffee":9,"../utils/pm_prng.coffee":10,"./components.coffee":12,"./entity_factory.coffee":13,"./event_bus.coffee":15,"./map_helpers.coffee":17,"./systems/command_queue_system.coffee":19,"./systems/goto_system.coffee":20,"./systems/health_system.coffee":21,"./systems/robot_death_system.coffee":22,"./systems/wander_control_mapping_system.coffee":23}],19:[function(require,module,exports){
 var C, CommandQueueSystem, Commands, ComponentRegister,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -2189,7 +2133,7 @@ Commands.Entity.goto = function(entity, cmd) {
 module.exports = CommandQueueSystem;
 
 
-},{"../../utils/component_register.coffee":10,"../components.coffee":13}],21:[function(require,module,exports){
+},{"../../utils/component_register.coffee":9,"../components.coffee":12}],20:[function(require,module,exports){
 var C, CR, GotoSystem,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -2237,7 +2181,7 @@ GotoSystem = (function(_super) {
 module.exports = GotoSystem;
 
 
-},{"../../utils/component_register.coffee":10,"../components.coffee":13}],22:[function(require,module,exports){
+},{"../../utils/component_register.coffee":9,"../components.coffee":12}],21:[function(require,module,exports){
 var C, CR, E, HealthSystem,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -2276,7 +2220,7 @@ HealthSystem = (function(_super) {
 module.exports = HealthSystem;
 
 
-},{"../../utils/component_register.coffee":10,"../components.coffee":13,"../events.coffee":17}],23:[function(require,module,exports){
+},{"../../utils/component_register.coffee":9,"../components.coffee":12,"../events.coffee":16}],22:[function(require,module,exports){
 var C, CR, E, RobotDeathSystem,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -2321,7 +2265,7 @@ RobotDeathSystem = (function(_super) {
 module.exports = RobotDeathSystem;
 
 
-},{"../../utils/component_register.coffee":10,"../components.coffee":13,"../events.coffee":17}],24:[function(require,module,exports){
+},{"../../utils/component_register.coffee":9,"../components.coffee":12,"../events.coffee":16}],23:[function(require,module,exports){
 var C, CR, ParkMillerRNG, WanderControlMappingSystem,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -2365,4 +2309,4 @@ WanderControlMappingSystem = (function(_super) {
 module.exports = WanderControlMappingSystem;
 
 
-},{"../../utils/component_register.coffee":10,"../../utils/pm_prng.coffee":11,"../components.coffee":13}]},{},[1])
+},{"../../utils/component_register.coffee":9,"../../utils/pm_prng.coffee":10,"../components.coffee":12}]},{},[1])
