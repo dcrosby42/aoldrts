@@ -605,19 +605,20 @@ RtsUI = (function() {
     window.ui = this.uiState;
     this.uiState.set('pixiWrapper', this.pixiWrapper);
     this.uiState.get('selectedUnits');
+    this.uiState.get('entitiesWithHealth');
     this._setupUnitSelection();
     this._setupRobotSpawner();
     this._setupUnitCommand();
-    this._setupHealthDisplays();
   }
 
   RtsUI.prototype.update = function(dt) {
-    var fn, keyEvents;
+    var fn, keyEvents, _results;
     keyEvents = this.keyboardController.update();
+    _results = [];
     while (fn = this.updateQueue.shift()) {
-      fn(dt);
+      _results.push(fn(dt));
     }
-    return this.healthDisplay.update();
+    return _results;
   };
 
   RtsUI.prototype._setupHealthDisplays = function() {
@@ -1226,7 +1227,7 @@ module.exports = EntityFactory;
 
 
 },{"../utils/component_register.coffee":10,"../utils/pm_prng.coffee":11,"./components.coffee":13,"./map_helpers.coffee":18}],15:[function(require,module,exports){
-var EntityInspector, HaloView, StatefulBinding, UIState;
+var EntityInspector, HaloView, HealthView, StatefulBinding, UIState;
 
 StatefulBinding = require('../ui/stateful_binding.coffee');
 
@@ -1253,6 +1254,47 @@ HaloView = Ember.Object.extend({
   }).observes('sprite', 'x', 'y')
 });
 
+HealthView = Ember.Object.extend({
+  unit: null,
+  sprite: null,
+  entityIdBinding: 'unit.entityId',
+  xBinding: 'unit.Position.x',
+  yBinding: 'unit.Position.y',
+  healthRatio: (function() {
+    var health;
+    if (health = this.get('unit.Health')) {
+      return health.get('health') / health.get('maxHealth');
+    } else {
+      return 0;
+    }
+  }).property('unit.Health', 'unit.Health.health', 'unit.Health.maxHealth'),
+  init: function() {
+    var sprite;
+    this._super();
+    sprite = new PIXI.Graphics();
+    this.set('sprite', sprite);
+    return this.get('healthRatio');
+  },
+  _syncPosition: (function() {
+    var sprite;
+    if (sprite = this.get('sprite')) {
+      sprite.position.x = this.get('x');
+      return sprite.position.y = this.get('y');
+    }
+  }).observes('sprite', 'x', 'y'),
+  _redraw: (function() {
+    var healthRatio, sprite;
+    if (sprite = this.get('sprite')) {
+      healthRatio = this.get('healthRatio');
+      sprite.clear();
+      sprite.beginFill(0x009900);
+      sprite.lineStyle(1, 0x00FF00);
+      sprite.drawRect(-15, 20, 30 * healthRatio, 6);
+      return sprite.endFill();
+    }
+  }).observes('sprite', 'healthRatio')
+});
+
 UIState = Ember.Object.extend({
   pixiWrapper: null,
   selectedEntityId: null,
@@ -1265,6 +1307,18 @@ UIState = Ember.Object.extend({
       return [];
     }
   }).property('entities.[]', 'selectedEntityId'),
+  entitiesWithHealth: (function() {
+    return this.get('entities').map((function(_this) {
+      return function(entity) {
+        if (entity.get('Health')) {
+          return entity;
+        }
+      };
+    })(this)).compact();
+  }).property('entities.[]'),
+  _ewh: (function() {
+    return console.log("entitiesWithHealth CHANGED:", this.get('entitiesWithHealth'));
+  }).observes('entitiesWithHealth.[]'),
   haloViews: [],
   _syncHaloViews: StatefulBinding.create({
     from: "selectedUnits",
@@ -1282,6 +1336,25 @@ UIState = Ember.Object.extend({
     },
     remove: function(unit, haloView) {
       return this.get('pixiWrapper').removeUISprite(haloView.get('sprite'));
+    }
+  }),
+  healthViews: [],
+  _syncHealthViews: StatefulBinding.create({
+    from: "entitiesWithHealth",
+    to: 'healthViews',
+    add: function(unit) {
+      var view;
+      view = HealthView.create({
+        unit: unit
+      });
+      this.get('pixiWrapper').addUISprite(view.get('sprite'));
+      return view;
+    },
+    find: function(unit, col) {
+      return col.findBy("entityId", unit.entityId);
+    },
+    remove: function(unit, healthView) {
+      return this.get('pixiWrapper').removeUISprite(healthView.get('sprite'));
     }
   })
 });
@@ -1337,7 +1410,7 @@ EntityInspector = (function() {
   };
 
   EntityInspector.prototype.afterStep = function() {
-    var compData, compType, componentsByType, entities, entityId, uiComp, uiEnt, watchList, _i, _len, _ref, _results;
+    var compData, compType, componentsByType, entities, entityId, newEntity, uiComp, uiEnt, watchList, _i, _len, _ref, _results;
     entities = this.uiState.get('entities');
     watchList = entities.mapBy('entityId');
     _ref = this._data;
@@ -1346,12 +1419,13 @@ EntityInspector = (function() {
       entityId = "" + entityId;
       watchList.removeObject(entityId);
       uiEnt = null;
+      newEntity = null;
       if (!(uiEnt = entities.findBy('entityId', entityId))) {
         console.log("Making uiEnt " + entityId);
         uiEnt = Ember.Object.create({
           entityId: entityId
         });
-        entities.pushObject(uiEnt);
+        newEntity = true;
       }
       for (compType in componentsByType) {
         compData = componentsByType[compType];
@@ -1363,6 +1437,9 @@ EntityInspector = (function() {
           uiEnt.set(compType, uiComp);
         }
         uiComp.setProperties(compData);
+      }
+      if (newEntity) {
+        entities.pushObject(uiEnt);
       }
     }
     _results = [];

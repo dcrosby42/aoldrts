@@ -20,6 +20,41 @@ HaloView = Ember.Object.extend
       sprite.position.y = @get('y')
   ).observes('sprite', 'x', 'y')
 
+HealthView = Ember.Object.extend
+  unit: null
+  sprite: null
+  entityIdBinding: 'unit.entityId'
+  xBinding: 'unit.Position.x'
+  yBinding: 'unit.Position.y'
+
+  healthRatio: (->
+    if health = @get('unit.Health')
+      health.get('health') / health.get('maxHealth')
+    else
+      0
+  ).property('unit.Health', 'unit.Health.health', 'unit.Health.maxHealth')
+
+  init: ->
+    @_super()
+    sprite = new PIXI.Graphics()
+    @set 'sprite', sprite
+    @get('healthRatio')
+
+  _syncPosition: (->
+    if sprite = @get('sprite')
+      sprite.position.x = @get('x')
+      sprite.position.y = @get('y')
+  ).observes('sprite', 'x', 'y')
+
+  _redraw: (->
+    if sprite = @get('sprite')
+      healthRatio = @get('healthRatio')
+      sprite.clear()
+      sprite.beginFill 0x009900
+      sprite.lineStyle 1, 0x00FF00
+      sprite.drawRect -15,20,(30*healthRatio),6
+      sprite.endFill()
+  ).observes('sprite', 'healthRatio')
   
 UIState = Ember.Object.extend
   pixiWrapper: null
@@ -37,6 +72,15 @@ UIState = Ember.Object.extend
       []
   ).property('entities.[]', 'selectedEntityId')
 
+  entitiesWithHealth: (->
+    @get('entities').map((entity) => entity if entity.get('Health')).compact()
+  ).property('entities.[]')
+
+  _ewh: (->
+    console.log "entitiesWithHealth CHANGED:",@get('entitiesWithHealth')
+  ).observes('entitiesWithHealth.[]')
+
+
   haloViews: []
   _syncHaloViews: StatefulBinding.create
     from: "selectedUnits"
@@ -49,6 +93,19 @@ UIState = Ember.Object.extend
       col.findBy("entityId", unit.entityId)
     remove: (unit, haloView) ->
       @get('pixiWrapper').removeUISprite haloView.get('sprite') # <-- External stateful sideeffect
+
+  healthViews: []
+  _syncHealthViews: StatefulBinding.create
+    from: "entitiesWithHealth"
+    to: 'healthViews'
+    add: (unit) ->
+      view = HealthView.create(unit: unit)
+      @get('pixiWrapper').addUISprite view.get('sprite') # <-- External stateful sideeffect
+      view
+    find: (unit,col) ->
+      col.findBy("entityId", unit.entityId)
+    remove: (unit, healthView) ->
+      @get('pixiWrapper').removeUISprite healthView.get('sprite') # <-- External stateful sideeffect
 
 class EntityInspector
   constructor: ->
@@ -97,11 +154,12 @@ class EntityInspector
       watchList.removeObject entityId
       # Find or create an object in the UI to store this Entity's data
       uiEnt = null
+      newEntity = null
       unless uiEnt = entities.findBy('entityId',entityId)
         console.log "Making uiEnt #{entityId}"
         uiEnt = Ember.Object.create(entityId: entityId)
-        entities.pushObject uiEnt
-      # TODO: remove the UI entities for all entities who are NO LONGER PRESENT IN UI WORLD
+        newEntity = true
+
       # Update the Entity object with the component data
       for compType, compData of componentsByType
         uiComp = null
@@ -110,6 +168,8 @@ class EntityInspector
           uiEnt.set(compType, uiComp)
         uiComp.setProperties compData
         # TODO: remove the UI Components for all components who are NO LONGER PRESENT IN UI WORLD
+      entities.pushObject(uiEnt) if newEntity
+
     for entityId in watchList
       entities.removeObject entities.findBy('entityId', entityId)
 
