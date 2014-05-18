@@ -9,7 +9,9 @@ GameRunner = require './ui/game_runner.coffee'
 
 ParkMillerRNG = require './utils/pm_prng.coffee'
 
+UIState = require './ui/ui_state.coffee'
 EntityInspector = require './world/entity_inspector.coffee'
+
 
 getMeta = (name) ->
   for meta in document.getElementsByTagName('meta')
@@ -75,10 +77,16 @@ window.onload = ->
 
 
   pixiWrapper.loadAssets ->
+    uiState = UIState.create(
+      pixiWrapper:pixiWrapper
+    )
+    introspector = new EntityInspector(
+      uiState: uiState
+    )
     simulation = buildSimulation(
       world: new RtsWorld(
           pixiWrapper:pixiWrapper
-          introspector: new EntityInspector()
+          introspector:introspector
         )
       url: gameConfig.simSimConnection.url
       secure: gameConfig.simSimConnection.secure
