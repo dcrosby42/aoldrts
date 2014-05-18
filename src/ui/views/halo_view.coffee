@@ -1,10 +1,10 @@
 
 HaloView = Ember.Object.extend
-  unit: null
+  entity: null
   sprite: null
-  entityIdBinding: 'unit.entityId'
-  xBinding: 'unit.Position.x'
-  yBinding: 'unit.Position.y'
+  entityIdBinding: 'entity.entityId'
+  xBinding: 'entity.Position.x'
+  yBinding: 'entity.Position.y'
 
   init: ->
     @_super()

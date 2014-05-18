@@ -1,17 +1,17 @@
 
 HealthView = Ember.Object.extend
-  unit: null
+  entity: null
   sprite: null
-  entityIdBinding: 'unit.entityId'
-  xBinding: 'unit.Position.x'
-  yBinding: 'unit.Position.y'
+  entityIdBinding: 'entity.entityId'
+  xBinding: 'entity.Position.x'
+  yBinding: 'entity.Position.y'
 
   healthRatio: (->
-    if health = @get('unit.Health')
+    if health = @get('entity.Health')
       health.get('health') / health.get('maxHealth')
     else
       0
-  ).property('unit.Health', 'unit.Health.health', 'unit.Health.maxHealth')
+  ).property('entity.Health', 'entity.Health.health', 'entity.Health.maxHealth')
 
   init: ->
     @_super()

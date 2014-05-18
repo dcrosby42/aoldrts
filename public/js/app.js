@@ -701,7 +701,7 @@ EntityViewBinding.create = function(viewClass, opts) {
   opts.add = function(entity) {
     var view;
     view = viewClass.create({
-      unit: entity
+      entity: entity
     });
     this.get('pixiWrapper').addUISprite(view.get('sprite'));
     return view;
@@ -866,11 +866,11 @@ module.exports = Viewport;
 var HaloView;
 
 HaloView = Ember.Object.extend({
-  unit: null,
+  entity: null,
   sprite: null,
-  entityIdBinding: 'unit.entityId',
-  xBinding: 'unit.Position.x',
-  yBinding: 'unit.Position.y',
+  entityIdBinding: 'entity.entityId',
+  xBinding: 'entity.Position.x',
+  yBinding: 'entity.Position.y',
   init: function() {
     var sprite;
     this._super();
@@ -895,19 +895,19 @@ module.exports = HaloView;
 var HealthView;
 
 HealthView = Ember.Object.extend({
-  unit: null,
+  entity: null,
   sprite: null,
-  entityIdBinding: 'unit.entityId',
-  xBinding: 'unit.Position.x',
-  yBinding: 'unit.Position.y',
+  entityIdBinding: 'entity.entityId',
+  xBinding: 'entity.Position.x',
+  yBinding: 'entity.Position.y',
   healthRatio: (function() {
     var health;
-    if (health = this.get('unit.Health')) {
+    if (health = this.get('entity.Health')) {
       return health.get('health') / health.get('maxHealth');
     } else {
       return 0;
     }
-  }).property('unit.Health', 'unit.Health.health', 'unit.Health.maxHealth'),
+  }).property('entity.Health', 'entity.Health.health', 'entity.Health.maxHealth'),
   init: function() {
     var sprite;
     this._super();
