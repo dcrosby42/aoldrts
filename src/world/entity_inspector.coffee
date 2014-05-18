@@ -45,7 +45,6 @@ class EntityInspector
       uiEnt = null
       newEntity = null
       unless uiEnt = entities.findBy('entityId',entityId)
-        console.log "Making uiEnt #{entityId}"
         uiEnt = Ember.Object.create(entityId: entityId)
         newEntity = true
 
