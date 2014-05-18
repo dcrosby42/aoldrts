@@ -293,15 +293,20 @@ class RtsWorld extends SimSim.WorldBase
     @resetData()
     console.log "THE END"
 
-  #### SimSim.WorldBase#step(data)
+  #### SimSim.WorldBase#step(dtInFractionalSeconds)
   step: (dt) ->
-    @resetTimer ||= 0
-    @resetTimer += dt
-    if @resetTimer > 500
-      @entityInspector.reset()
-      @resetTimer = 0
+    # @entityInspector.markIn()
+    # @resetTimer ||= 0
+    # @resetTimer += dt
+    # if @resetTimer > 500
+      # @entityInspector.reset()
+      # @resetTimer = 0
+    @introspector.beforeStep()
     @ecs.update(dt)
     @eventBus.clear()
+    @introspector.afterStep()
+    # if @entityInspector
+    #   @entityInspector.markOut()
   
   #### SimSim.WorldBase#setData()
   setData: (data) ->

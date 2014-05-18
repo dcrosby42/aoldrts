@@ -1,13 +1,24 @@
 HealthDisplay = require './health_display.coffee'
+
+
+
+
 class RtsUI
   constructor: ({@pixiWrapper, @keyboardController, @simulation}) ->
     @updateQueue = []
     @introspector = @simulation.getWorldIntrospector()
 
+    @uiState = @introspector.uiState
+    # TODO ARGH!!!!  (this should probably be composed in app.coffee or someplace earlier)
+    window.ui = @uiState
+    @uiState.set 'pixiWrapper', @pixiWrapper
+    @uiState.get('selectedUnits') # See the "Unconsumed computed properties" section of http://emberjs.com/guides/object-model/observers/
+
     @_setupUnitSelection()
     @_setupRobotSpawner()
     @_setupUnitCommand()
     @_setupHealthDisplays()
+
 
   update: (dt) ->
     keyEvents = @keyboardController.update()
@@ -27,6 +38,8 @@ class RtsUI
       owned = entity['Owned']
       if owned? and owned.playerId == @simulation.clientId()
         @selectedEntityId = entityId
+        @uiState.set('selectedEntityId', "#{entityId}")
+
 
   _setupRobotSpawner: ->
     @pixiWrapper.on "worldClicked", (data) =>
@@ -47,6 +60,7 @@ class RtsUI
         @updateQueue.push =>
           @simulation.worldProxy "commandUnit", "goto", entityId: @selectedEntityId, x: pt.x, y: pt.y
           @selectedEntityId = null
+          @uiState.set('selectedEntityId', null)
 
 module.exports = RtsUI
 

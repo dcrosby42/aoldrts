@@ -32,7 +32,7 @@ class GameRunner
         @window.location.reload()
       @ui.update(deltaSeconds)
 
-      @simulation.update(currentElapsedSeconds) 
+      @simulation.update(currentElapsedSeconds)
       @pixiWrapper.render()
       @stats.update()
     else
