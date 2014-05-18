@@ -32,12 +32,10 @@ class RtsUI
     @healthDisplay = new HealthDisplay(@pixiWrapper, @introspector)
 
   _setupUnitSelection: ->
-    @selectedEntityId = null
     @pixiWrapper.on "spriteClicked", (data,entityId) =>
       entity = @introspector.getEntity(entityId)
       owned = entity['Owned']
       if owned? and owned.playerId == @simulation.clientId()
-        @selectedEntityId = entityId
         @uiState.set('selectedEntityId', "#{entityId}")
 
 
@@ -56,11 +54,10 @@ class RtsUI
   _setupUnitCommand: ->
     @pixiWrapper.on "worldClicked", (data) =>
       pt = data.getLocalPosition(data.target)
-      if @selectedEntityId and @keyboardController.isActive("goto")
+      entityId = @uiState.get('selectedEntityId')
+      if entityId and @keyboardController.isActive("goto")
         @updateQueue.push =>
-          @simulation.worldProxy "commandUnit", "goto", entityId: @selectedEntityId, x: pt.x, y: pt.y
-          @selectedEntityId = null
-          @uiState.set('selectedEntityId', null)
+          @simulation.worldProxy "commandUnit", "goto", entityId: entityId, x: pt.x, y: pt.y
 
 module.exports = RtsUI
 

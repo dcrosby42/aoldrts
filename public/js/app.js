@@ -625,14 +625,12 @@ RtsUI = (function() {
   };
 
   RtsUI.prototype._setupUnitSelection = function() {
-    this.selectedEntityId = null;
     return this.pixiWrapper.on("spriteClicked", (function(_this) {
       return function(data, entityId) {
         var entity, owned;
         entity = _this.introspector.getEntity(entityId);
         owned = entity['Owned'];
         if ((owned != null) && owned.playerId === _this.simulation.clientId()) {
-          _this.selectedEntityId = entityId;
           return _this.uiState.set('selectedEntityId', "" + entityId);
         }
       };
@@ -671,17 +669,16 @@ RtsUI = (function() {
   RtsUI.prototype._setupUnitCommand = function() {
     return this.pixiWrapper.on("worldClicked", (function(_this) {
       return function(data) {
-        var pt;
+        var entityId, pt;
         pt = data.getLocalPosition(data.target);
-        if (_this.selectedEntityId && _this.keyboardController.isActive("goto")) {
+        entityId = _this.uiState.get('selectedEntityId');
+        if (entityId && _this.keyboardController.isActive("goto")) {
           return _this.updateQueue.push(function() {
-            _this.simulation.worldProxy("commandUnit", "goto", {
-              entityId: _this.selectedEntityId,
+            return _this.simulation.worldProxy("commandUnit", "goto", {
+              entityId: entityId,
               x: pt.x,
               y: pt.y
             });
-            _this.selectedEntityId = null;
-            return _this.uiState.set('selectedEntityId', null);
           });
         }
       };
