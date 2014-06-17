@@ -223,7 +223,7 @@ class RtsWorld extends SimSim.WorldBase
     @_setupECS(@ecs, @pixieWrapper)
     @_setupIntrospector(@ecs, @introspector)
 
-    @entityFactory.mapTiles((Math.random() * 1000)|0, 100, 100)
+    @map = @entityFactory.mapTiles((Math.random() * 1000)|0, 100, 100)
 
   _setupECS: (ecs, pixieWrapper) ->
     CR.register(C.Position)
@@ -280,6 +280,15 @@ class RtsWorld extends SimSim.WorldBase
     console.log "Player #{playerId} JOINED"
     @playerMetadata[playerId] ||= {}
     @playerMetadata[playerId].color = @randomNumberGenerator.choose(PlayerColors)
+    mapInfo = @map.get C.MapTiles
+    v = @pixiWrapper.viewport
+
+    # 1. choose random initial map location and set player's viewport to see it
+    # 2. set a beacon in the center, spawn three bots and get them moving
+    
+    @playerMetadata[playerId].viewport =
+      x: @randomNumberGenerator.nextInt(v.width, mapInfo.width - v.width)
+      y: @randomNumberGenerator.nextInt(v.height, mapInfo.height - v.height)
 
   #### SimSim.WorldBase#playerLeft(id)
   playerLeft: (playerId) ->

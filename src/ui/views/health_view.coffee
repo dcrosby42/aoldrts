@@ -29,6 +29,8 @@ HealthView = Ember.Object.extend
     if sprite = @get('sprite')
       healthRatio = @get('healthRatio')
       sprite.clear()
+      sprite.lineStyle 1, 0x00d000
+      sprite.drawRect -15,20,30,6
       sprite.beginFill 0x009900
       sprite.lineStyle 1, 0x00FF00
       sprite.drawRect -15,20,(30*healthRatio),6

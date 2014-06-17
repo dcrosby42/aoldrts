@@ -1,4 +1,4 @@
-MapHelpers = {
+MapHelpers =
   eachMapTile: (prng, width, height, f) ->
     tile_sets = ["gray", "dark_brown", "dark"]
     features = [[null, 200], ["stone0", 8], ["stone1", 8], ["crater", 2]]
@@ -16,7 +16,6 @@ MapHelpers = {
         feature = prng.weighted_choose(features)
         spare_seed = prng.gen()
         f(x - offset_x, y - offset_y, tile_set, base, feature, spare_seed)
-}
 
 module.exports = MapHelpers
 

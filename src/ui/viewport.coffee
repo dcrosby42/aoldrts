@@ -45,6 +45,11 @@ class Viewport
         sprites.position.x += @x_move
         sprites.position.y += @y_move
 
+  centerOn: (point) ->
+    if @on
+      @x_move = point.x
+      @y_move = point.y
+
   setMouseScrollingOn: (onOff) ->
     document.getElementById("game").setAttribute('tabindex', 1)
     document.getElementById("game").focus()

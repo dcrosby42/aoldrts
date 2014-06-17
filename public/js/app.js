@@ -849,6 +849,13 @@ Viewport = (function() {
     }
   };
 
+  Viewport.prototype.centerOn = function(point) {
+    if (this.on) {
+      this.x_move = point.x;
+      return this.y_move = point.y;
+    }
+  };
+
   Viewport.prototype.setMouseScrollingOn = function(onOff) {
     document.getElementById("game").setAttribute('tabindex', 1);
     document.getElementById("game").focus();
@@ -927,6 +934,8 @@ HealthView = Ember.Object.extend({
     if (sprite = this.get('sprite')) {
       healthRatio = this.get('healthRatio');
       sprite.clear();
+      sprite.lineStyle(1, 0x00d000);
+      sprite.drawRect(-15, 20, 30, 6);
       sprite.beginFill(0x009900);
       sprite.lineStyle(1, 0x00FF00);
       sprite.drawRect(-15, 20, 30 * healthRatio, 6);
@@ -1461,11 +1470,11 @@ module.exports = EventBus;
 },{}],20:[function(require,module,exports){
 var E;
 
-E = {};
+E = {
+  Death: 'e_ent_death'
+};
 
 module.exports = E;
-
-E.Death = "e_ent_death";
 
 
 },{}],21:[function(require,module,exports){
@@ -1842,7 +1851,7 @@ RtsWorld = (function(_super) {
     this.entityFactory = new EntityFactory(this.ecs);
     this._setupECS(this.ecs, this.pixieWrapper);
     this._setupIntrospector(this.ecs, this.introspector);
-    this.entityFactory.mapTiles((Math.random() * 1000) | 0, 100, 100);
+    this.map = this.entityFactory.mapTiles((Math.random() * 1000) | 0, 100, 100);
   }
 
   RtsWorld.prototype._setupECS = function(ecs, pixieWrapper) {
@@ -1926,10 +1935,16 @@ RtsWorld = (function(_super) {
   };
 
   RtsWorld.prototype.playerJoined = function(playerId) {
-    var _base;
+    var mapInfo, v, _base;
     console.log("Player " + playerId + " JOINED");
     (_base = this.playerMetadata)[playerId] || (_base[playerId] = {});
-    return this.playerMetadata[playerId].color = this.randomNumberGenerator.choose(PlayerColors);
+    this.playerMetadata[playerId].color = this.randomNumberGenerator.choose(PlayerColors);
+    mapInfo = this.map.get(C.MapTiles);
+    v = this.pixiWrapper.viewport;
+    return this.playerMetadata[playerId].viewport = {
+      x: this.randomNumberGenerator.nextInt(v.width, mapInfo.width - v.width),
+      y: this.randomNumberGenerator.nextInt(v.height, mapInfo.height - v.height)
+    };
   };
 
   RtsWorld.prototype.playerLeft = function(playerId) {
