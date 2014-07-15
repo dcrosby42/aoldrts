@@ -200,7 +200,7 @@ window.mouseScrollingChanged = function() {
 window.watchData = function() {};
 
 
-},{"./ui/game_runner.coffee":2,"./ui/keyboard_controller.coffee":3,"./ui/pixi_wrapper.coffee":4,"./ui/rts_ui.coffee":5,"./ui/ui_state.coffee":6,"./utils/pm_prng.coffee":14,"./utils/stop_watch.coffee":15,"./world/entity_inspector.coffee":18,"./world/rts_world.coffee":22}],2:[function(require,module,exports){
+},{"./ui/game_runner.coffee":2,"./ui/keyboard_controller.coffee":3,"./ui/pixi_wrapper.coffee":4,"./ui/rts_ui.coffee":5,"./ui/ui_state.coffee":6,"./utils/pm_prng.coffee":15,"./utils/stop_watch.coffee":16,"./world/entity_inspector.coffee":19,"./world/rts_world.coffee":23}],2:[function(require,module,exports){
 var GameRunner;
 
 GameRunner = (function() {
@@ -1011,6 +1011,42 @@ module.exports = ComponentRegister;
 
 
 },{}],14:[function(require,module,exports){
+makr.IteratingSystem.prototype.processEntities = function(entities, elapsed) {
+  var entity, sortedEntities, _i, _len, _results;
+  sortedEntities = entities.sort(function(a, b) {
+    if (a.id < b.id) {
+      return -1;
+    }
+    if (a.id > b.id) {
+      return 1;
+    }
+    return 0;
+  });
+  _results = [];
+  for (_i = 0, _len = sortedEntities.length; _i < _len; _i++) {
+    entity = sortedEntities[_i];
+    _results.push(this.process(entity, elapsed));
+  }
+  return _results;
+};
+
+makr.World.prototype.resurrect = function(entId) {
+  var entity;
+  entity = null;
+  if (this._dead.length > 0) {
+    entity = this._dead.pop();
+    entity._alive = true;
+    entity._id = entId;
+    entity._componentMask.reset();
+  } else {
+    entity = new makr.Entity(this, +entId);
+  }
+  this._alive.push(entity);
+  return entity;
+};
+
+
+},{}],15:[function(require,module,exports){
 var ParkMillerRNG;
 
 ParkMillerRNG = (function() {
@@ -1059,7 +1095,7 @@ ParkMillerRNG = (function() {
 module.exports = ParkMillerRNG;
 
 
-},{}],15:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
 var StopWatch;
 
 StopWatch = (function() {
@@ -1095,7 +1131,7 @@ StopWatch = (function() {
 module.exports = StopWatch;
 
 
-},{}],16:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 var C, Controls, Goto, Health, MapTiles, Movement, Owned, Position, Powerup, Sprite, Wander;
 
 C = {};
@@ -1201,7 +1237,7 @@ C.Wander = Wander = (function() {
 })();
 
 
-},{}],17:[function(require,module,exports){
+},{}],18:[function(require,module,exports){
 var C, CR, EntityFactory, MapHelpers, ParkMillerRNG;
 
 CR = require('../utils/component_register.coffee');
@@ -1336,7 +1372,7 @@ EntityFactory = (function() {
 module.exports = EntityFactory;
 
 
-},{"../utils/component_register.coffee":13,"../utils/pm_prng.coffee":14,"./components.coffee":16,"./map_helpers.coffee":21}],18:[function(require,module,exports){
+},{"../utils/component_register.coffee":13,"../utils/pm_prng.coffee":15,"./components.coffee":17,"./map_helpers.coffee":22}],19:[function(require,module,exports){
 var EntityInspector;
 
 EntityInspector = (function() {
@@ -1435,7 +1471,7 @@ EntityInspector = (function() {
 module.exports = EntityInspector;
 
 
-},{}],19:[function(require,module,exports){
+},{}],20:[function(require,module,exports){
 var EventBus;
 
 EventBus = (function() {
@@ -1467,7 +1503,7 @@ EventBus = (function() {
 module.exports = EventBus;
 
 
-},{}],20:[function(require,module,exports){
+},{}],21:[function(require,module,exports){
 var E;
 
 E = {
@@ -1477,7 +1513,7 @@ E = {
 module.exports = E;
 
 
-},{}],21:[function(require,module,exports){
+},{}],22:[function(require,module,exports){
 var MapHelpers;
 
 MapHelpers = {
@@ -1511,7 +1547,7 @@ MapHelpers = {
 module.exports = MapHelpers;
 
 
-},{}],22:[function(require,module,exports){
+},{}],23:[function(require,module,exports){
 var C, CR, ChecksumCalculator, CommandQueueSystem, ControlSystem, EntityFactory, EntityInspectorSystem, EventBus, GotoSystem, HealthSystem, MapHelpers, MapTilesSystem, MovementSystem, ParkMillerRNG, PlayerColors, RobotDeathSystem, RtsWorld, SpriteSyncSystem, WanderControlMappingSystem,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -1554,39 +1590,7 @@ EntityFactory = require('./entity_factory.coffee');
 
 MapHelpers = require('./map_helpers.coffee');
 
-makr.IteratingSystem.prototype.processEntities = function(entities, elapsed) {
-  var entity, sortedEntities, _i, _len, _results;
-  sortedEntities = entities.sort(function(a, b) {
-    if (a.id < b.id) {
-      return -1;
-    }
-    if (a.id > b.id) {
-      return 1;
-    }
-    return 0;
-  });
-  _results = [];
-  for (_i = 0, _len = sortedEntities.length; _i < _len; _i++) {
-    entity = sortedEntities[_i];
-    _results.push(this.process(entity, elapsed));
-  }
-  return _results;
-};
-
-makr.World.prototype.resurrect = function(entId) {
-  var entity;
-  entity = null;
-  if (this._dead.length > 0) {
-    entity = this._dead.pop();
-    entity._alive = true;
-    entity._id = entId;
-    entity._componentMask.reset();
-  } else {
-    entity = new makr.Entity(this, +entId);
-  }
-  this._alive.push(entity);
-  return entity;
-};
+require('../utils/makr_extensions.coffee');
 
 MapTilesSystem = (function(_super) {
   __extends(MapTilesSystem, _super);
@@ -2079,7 +2083,7 @@ RtsWorld = (function(_super) {
 module.exports = RtsWorld;
 
 
-},{"../utils/checksum_calculator.coffee":12,"../utils/component_register.coffee":13,"../utils/pm_prng.coffee":14,"./components.coffee":16,"./entity_factory.coffee":17,"./event_bus.coffee":19,"./map_helpers.coffee":21,"./systems/command_queue_system.coffee":23,"./systems/goto_system.coffee":24,"./systems/health_system.coffee":25,"./systems/robot_death_system.coffee":26,"./systems/wander_control_mapping_system.coffee":27}],23:[function(require,module,exports){
+},{"../utils/checksum_calculator.coffee":12,"../utils/component_register.coffee":13,"../utils/makr_extensions.coffee":14,"../utils/pm_prng.coffee":15,"./components.coffee":17,"./entity_factory.coffee":18,"./event_bus.coffee":20,"./map_helpers.coffee":22,"./systems/command_queue_system.coffee":24,"./systems/goto_system.coffee":25,"./systems/health_system.coffee":26,"./systems/robot_death_system.coffee":27,"./systems/wander_control_mapping_system.coffee":28}],24:[function(require,module,exports){
 var C, CommandQueueSystem, Commands, ComponentRegister,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -2173,7 +2177,7 @@ Commands.Entity.goto = function(entity, cmd) {
 module.exports = CommandQueueSystem;
 
 
-},{"../../utils/component_register.coffee":13,"../components.coffee":16}],24:[function(require,module,exports){
+},{"../../utils/component_register.coffee":13,"../components.coffee":17}],25:[function(require,module,exports){
 var C, CR, GotoSystem,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -2221,7 +2225,7 @@ GotoSystem = (function(_super) {
 module.exports = GotoSystem;
 
 
-},{"../../utils/component_register.coffee":13,"../components.coffee":16}],25:[function(require,module,exports){
+},{"../../utils/component_register.coffee":13,"../components.coffee":17}],26:[function(require,module,exports){
 var C, CR, E, HealthSystem,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -2260,7 +2264,7 @@ HealthSystem = (function(_super) {
 module.exports = HealthSystem;
 
 
-},{"../../utils/component_register.coffee":13,"../components.coffee":16,"../events.coffee":20}],26:[function(require,module,exports){
+},{"../../utils/component_register.coffee":13,"../components.coffee":17,"../events.coffee":21}],27:[function(require,module,exports){
 var C, CR, E, RobotDeathSystem,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -2305,7 +2309,7 @@ RobotDeathSystem = (function(_super) {
 module.exports = RobotDeathSystem;
 
 
-},{"../../utils/component_register.coffee":13,"../components.coffee":16,"../events.coffee":20}],27:[function(require,module,exports){
+},{"../../utils/component_register.coffee":13,"../components.coffee":17,"../events.coffee":21}],28:[function(require,module,exports){
 var C, CR, ParkMillerRNG, WanderControlMappingSystem,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -2349,4 +2353,4 @@ WanderControlMappingSystem = (function(_super) {
 module.exports = WanderControlMappingSystem;
 
 
-},{"../../utils/component_register.coffee":13,"../../utils/pm_prng.coffee":14,"../components.coffee":16}]},{},[1])
+},{"../../utils/component_register.coffee":13,"../../utils/pm_prng.coffee":15,"../components.coffee":17}]},{},[1])
