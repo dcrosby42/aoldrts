@@ -18,7 +18,6 @@ RobotDeathSystem =           require './systems/robot_death_system.coffee'
 ControlSystem =              require './systems/control_system.coffee'
 MovementSystem =             require './systems/movement_system.coffee'
 IntrospectorSystem =         require './systems/introspector_system.coffee'
-# SpriteSyncSystem =           require './systems/sprite_sync_system.coffee'
 
 class RtsWorld extends SimSim.WorldBase
   constructor: ({@introspector}) ->

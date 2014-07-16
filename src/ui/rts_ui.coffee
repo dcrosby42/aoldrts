@@ -1,6 +1,4 @@
 
-
-
 class RtsUI
   constructor: ({@pixiWrapper, @keyboardController, @simulation}) ->
     @updateQueue = []
