@@ -964,10 +964,12 @@ ActorView = Ember.Object.extend({
   relayClicks: true,
   init: function() {
     var sprite;
+    console.log("APE");
     this._super();
     this.spriteFrameCache = SpriteFrameCache;
     sprite = this._buildSprite(this.get('entity.Sprite'));
-    return this.set('sprite', sprite);
+    this.set('sprite', sprite);
+    return this._syncPosition();
   },
   _buildSprite: function(spriteComp, ownedComp) {
     var frame, frameCache, framelist, frames, pose, sprite, spriteFacing, spriteName;
@@ -975,7 +977,7 @@ ActorView = Ember.Object.extend({
     framelist = spriteComp.get('framelist');
     spriteName = spriteComp.get('name');
     spriteFacing = spriteComp.get('facing');
-    console.log(">> _buildSprite " + spriteName + " for " + (this.get('entityId')));
+    console.log(">> _buildSprite " + spriteName + " for " + (this.get('entityId')) + " @ " + (this.get('x')) + "," + (this.get('y')));
     if (framelist) {
       if (!this.spriteFrameCache[spriteName]) {
         frameCache = {};
@@ -1005,7 +1007,9 @@ ActorView = Ember.Object.extend({
   },
   _syncPosition: (function() {
     var sprite;
+    console.log("_syncPosition for ");
     if (sprite = this.get('sprite')) {
+      console.log("  sprite " + (this.get('sprite.name')) + " pos to " + (this.get('x')) + "," + (this.get('y')));
       sprite.position.x = this.get('x');
       return sprite.position.y = this.get('y');
     }
@@ -1518,6 +1522,7 @@ EntityFactory = (function() {
 
   EntityFactory.prototype.powerup = function(x, y, powerup_type) {
     var crystal_frames, i, p, powerup_frames;
+    console.log("!! creating " + powerup_type + " powerup @ " + x + "," + y);
     crystal_frames = (function() {
       var _i, _results;
       _results = [];

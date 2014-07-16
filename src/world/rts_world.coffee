@@ -67,7 +67,6 @@ class RtsWorld extends SimSim.WorldBase
 
   deserializeComponent: (serializedComponent) ->
     new C[serializedComponent.type](serializedComponent)
-    # eval("new C.#{serializedComponent.type}(serializedComponent)")
 
   #
   # Invocable via proxy:
@@ -106,18 +105,10 @@ class RtsWorld extends SimSim.WorldBase
 
   #### SimSim.WorldBase#step(dtInFractionalSeconds)
   step: (dt) ->
-    # @entityInspector.markIn()
-    # @resetTimer ||= 0
-    # @resetTimer += dt
-    # if @resetTimer > 500
-      # @entityInspector.reset()
-      # @resetTimer = 0
     @introspector.beforeStep()
     @ecs.update(dt)
     @eventBus.clear()
     @introspector.afterStep()
-    # if @entityInspector
-    #   @entityInspector.markOut()
   
   #### SimSim.WorldBase#setData()
   setData: (data) ->

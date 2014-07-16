@@ -14,20 +14,24 @@ ActorView = Ember.Object.extend
   relayClicks: true
 
   init: ->
+    console.log "APE"
     @_super()
     @spriteFrameCache = SpriteFrameCache
     sprite = @_buildSprite(
       @get('entity.Sprite')
       # @get('entity.Owned') # this was really for coloring via playerMetaData
     )
+
     @set 'sprite', sprite
+    @_syncPosition()
+
 
   _buildSprite: (spriteComp, ownedComp) ->
     sprite = undefined
     framelist = spriteComp.get('framelist')
     spriteName = spriteComp.get('name')
     spriteFacing = spriteComp.get('facing')
-    console.log ">> _buildSprite #{spriteName} for #{@get('entityId')}"
+    console.log ">> _buildSprite #{spriteName} for #{@get('entityId')} @ #{@get('x')},#{@get('y')}"
     if framelist
       unless @spriteFrameCache[spriteName]
         frameCache = {}
@@ -50,7 +54,9 @@ ActorView = Ember.Object.extend
     sprite
     
   _syncPosition: (->
+    console.log "_syncPosition for "
     if sprite = @get('sprite')
+      console.log "  sprite #{@get('sprite.name')} pos to #{@get 'x'},#{@get 'y'}"
       sprite.position.x = @get('x')
       sprite.position.y = @get('y')
   ).observes('sprite', 'x', 'y')

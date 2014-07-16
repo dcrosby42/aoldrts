@@ -42,6 +42,7 @@ class EntityFactory
     robot
 
   powerup: (x, y, powerup_type) ->
+    console.log "!! creating #{powerup_type} powerup @ #{x},#{y}"
     crystal_frames = ("#{powerup_type}-crystal#{i}" for i in  [0..7])
     powerup_frames = {
       downIdle: crystal_frames
