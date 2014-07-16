@@ -5,11 +5,18 @@ EntityViewBinding = {}
 EntityViewBinding.create = (viewClass, opts) ->
   opts.add = (entity) ->
     view = viewClass.create(entity: entity)
+    entityId = entity.get('entityId')
+    pixiWrapper = @get('pixiWrapper')
+    sprite = view.get('sprite')
 
     if layer = opts.layer
-      @get('pixiWrapper').addSpriteToLayer layer, view.get('sprite')
+      pixiWrapper.addSpriteToLayer layer, sprite
     else
-      @get('pixiWrapper').addUISprite view.get('sprite')
+      pixiWrapper.addUISprite sprite
+
+    if view.get('relayClicks')
+      pixiWrapper.relaySpriteClicks(sprite, entityId)
+
     view
 
   opts.find = (entity,col) ->

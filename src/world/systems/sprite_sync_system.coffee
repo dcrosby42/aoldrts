@@ -63,14 +63,8 @@ class SpriteSyncSystem extends makr.IteratingSystem
     pixiSprite.position.x = position.x
     pixiSprite.position.y = position.y
     if owner?
-      console.log owner.playerId
-      console.log @playerFinder.playerMetadata
       if @playerFinder.playerMetadata[owner.playerId]?
         pixiSprite.tint = @playerFinder.playerMetadata[owner.playerId].color
-      # foo = Math.random() * 0xFFFFFF #
-      # console.log foo
-      # pixiSprite.tint = foo
-      console.log pixiSprite.tint
     pixiSprite.setInteractive(true)
     
     @pixiWrapper.addMiddleGroundSprite( pixiSprite, entity.id )

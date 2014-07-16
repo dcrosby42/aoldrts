@@ -54,20 +54,23 @@ class PixiWrapper extends SimSim.EventEmitter
   removeBackgroundSprite: (sprite) ->
     @bgSprites.removeChild sprite
 
-  addMiddleGroundSprite: (sprite, entityId=null) ->
-    endIndex = @sprites.children.length # ADD ON TOP
-    @sprites.addChildAt sprite, endIndex
-    # console.log "ADDED SPRITE for #{entityId}", sprite
-    if entityId?
-      sprite.mousedown = (data) =>
-        @emit "spriteClicked", data, entityId
+  addMiddleGroundSprite: (sprite) ->
+    @sprites.addChildAt sprite, @sprites.children.length # Add on top of all others
+
+  removeMiddleGroundSprite: (sprite) ->
+    @sprites.removeChild sprite
+
+  relaySpriteClicks: (sprite,entityId) ->
+    sprite.mousedown = (data) =>
+      @emit "spriteClicked", data, entityId
+
 
   addSpriteToLayer: (layerId, sprite) ->
     switch layerId
       when 'background'
         @addBackgroundSprite(sprite)
-      when 'actor'
-        @addMiddleGroundSprite(sprite) # TODO OOPS! entityId? ???
+      when 'middle'
+        @addMiddleGroundSprite(sprite)
       when 'ui'
         @addUISprite(sprite)
 
@@ -76,8 +79,7 @@ class PixiWrapper extends SimSim.EventEmitter
       when 'background'
         @removeBackgroundSprite(sprite)
       when 'actor'
-        #TODO @removeMiddleGroundSprite(sprite)
-        nil
+        @removeMiddleGroundSprite(sprite)
       when 'ui'
         @removeUISprite(sprite)
     

@@ -1,0 +1,2 @@
+SpriteFrameCache = {}
+module.exports = SpriteFrameCache
