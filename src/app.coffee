@@ -85,7 +85,6 @@ window.onload = ->
     )
     simulation = buildSimulation(
       world: new RtsWorld(
-          pixiWrapper:pixiWrapper
           introspector:introspector
         )
       url: gameConfig.simSimConnection.url

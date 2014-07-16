@@ -21,8 +21,7 @@ IntrospectorSystem =         require './systems/introspector_system.coffee'
 # SpriteSyncSystem =           require './systems/sprite_sync_system.coffee'
 
 class RtsWorld extends SimSim.WorldBase
-  constructor: ({@pixiWrapper, @introspector}) ->
-    @pixiWrapper or throw new Error("Need pixiWrapper")
+  constructor: ({@introspector}) ->
     @introspector or throw new Error("Need an Introspector")
 
     @playerMetadata = {}
@@ -34,12 +33,12 @@ class RtsWorld extends SimSim.WorldBase
     @checksumCalculator = new ChecksumCalculator()
     @ecs = new makr.World()
     @entityFactory = new EntityFactory(@ecs)
-    @_setupECS(@ecs, @pixieWrapper)
+    @_setupECS(@ecs)
     @_setupIntrospector(@ecs, @introspector)
 
     @map = @entityFactory.mapTiles((Math.random() * 1000)|0, 100, 100)
 
-  _setupECS: (ecs, pixieWrapper) ->
+  _setupECS: (ecs) ->
     CR.register(C.Position)
     CR.register(C.Sprite)
     CR.register(C.Owned)
@@ -52,7 +51,6 @@ class RtsWorld extends SimSim.WorldBase
     CR.register(C.Health)
     ecs.registerSystem(new WanderControlMappingSystem(@randomNumberGenerator))
     ecs.registerSystem(new GotoSystem())
-    # ecs.registerSystem(new SpriteSyncSystem(@pixiWrapper, @))
     ecs.registerSystem(new CommandQueueSystem(@commandQueue, @))  # passing "this" as the entityFinder
     ecs.registerSystem(new MovementSystem())
     ecs.registerSystem(new HealthSystem(@eventBus))
@@ -93,15 +91,6 @@ class RtsWorld extends SimSim.WorldBase
     console.log "Player #{playerId} JOINED"
     @playerMetadata[playerId] ||= {}
     @playerMetadata[playerId].color = @randomNumberGenerator.choose(PlayerColors)
-    # mapInfo = @map.get C.MapTiles
-    # v = @pixiWrapper.viewport
-
-    # 1. choose random initial map location and set player's viewport to see it
-    # 2. set a beacon in the center, spawn three bots and get them moving
-    
-    # @playerMetadata[playerId].viewport =
-    #   x: @randomNumberGenerator.nextInt(v.width, mapInfo.width - v.width)
-    #   y: @randomNumberGenerator.nextInt(v.height, mapInfo.height - v.height)
 
   #### SimSim.WorldBase#playerLeft(id)
   playerLeft: (playerId) ->

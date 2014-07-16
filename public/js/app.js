@@ -78,7 +78,6 @@ window.onload = function() {
     });
     simulation = buildSimulation({
       world: new RtsWorld({
-        pixiWrapper: pixiWrapper,
         introspector: introspector
       }),
       url: gameConfig.simSimConnection.url,
@@ -1800,10 +1799,7 @@ RtsWorld = (function(_super) {
   __extends(RtsWorld, _super);
 
   function RtsWorld(_arg) {
-    this.pixiWrapper = _arg.pixiWrapper, this.introspector = _arg.introspector;
-    this.pixiWrapper || (function() {
-      throw new Error("Need pixiWrapper");
-    })();
+    this.introspector = _arg.introspector;
     this.introspector || (function() {
       throw new Error("Need an Introspector");
     })();
@@ -1815,12 +1811,12 @@ RtsWorld = (function(_super) {
     this.checksumCalculator = new ChecksumCalculator();
     this.ecs = new makr.World();
     this.entityFactory = new EntityFactory(this.ecs);
-    this._setupECS(this.ecs, this.pixieWrapper);
+    this._setupECS(this.ecs);
     this._setupIntrospector(this.ecs, this.introspector);
     this.map = this.entityFactory.mapTiles((Math.random() * 1000) | 0, 100, 100);
   }
 
-  RtsWorld.prototype._setupECS = function(ecs, pixieWrapper) {
+  RtsWorld.prototype._setupECS = function(ecs) {
     CR.register(C.Position);
     CR.register(C.Sprite);
     CR.register(C.Owned);
