@@ -8,7 +8,6 @@ class RtsUI
     # TODO ARGH!!!!  (this should probably be composed in app.coffee or someplace earlier)
     @uiState.set 'pixiWrapper', @pixiWrapper
     window.ui = @uiState
-    # See the "Unconsumed computed properties" section of http://emberjs.com/guides/object-model/observers/
 
     @_setupUnitSelection()
     @_setupRobotSpawner()

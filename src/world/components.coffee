@@ -21,7 +21,7 @@ C.Powerup = class Powerup
   constructor: ({@powerup_type}) ->
 
 C.Sprite = class Sprite
-  constructor: ({@name, @framelist, @facing}) ->
+  constructor: ({@name, @framelist, @facing, @tintColor}) ->
     @remove = false
     @add = true
     @facing ||= "down"

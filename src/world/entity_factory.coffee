@@ -30,10 +30,11 @@ class EntityFactory
         rightIdle: ["#{robotName}_right_1"]
       }
 
-  robot: (x,y,robotName) ->
+  robot: ({x,y,type,tint}) ->
+    robotName=type
     robot = @ecs.create()
     robot.add(new C.Position(x: x, y: y), CR.get(C.Position))
-    robot.add(new C.Sprite(name: robotName, framelist: @generateRobotFrameList(robotName)), CR.get(C.Sprite))
+    robot.add(new C.Sprite(name: robotName, framelist: @generateRobotFrameList(robotName), tintColor: tint), CR.get(C.Sprite))
     robot.add(new C.Controls(), CR.get(C.Controls))
     robot.add(new C.Movement(vx: 0, vy: 0, speed:15), CR.get(C.Movement))
     robot.add(new C.Wander(range: 50), CR.get(C.Wander))

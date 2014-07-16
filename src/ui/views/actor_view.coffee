@@ -43,11 +43,9 @@ ActorView = Ember.Object.extend
       sprite = new PIXI.Sprite(PIXI.Texture.fromFrame(spriteName))
     sprite.anchor.x = sprite.anchor.y = 0.5
     
-    # TODO - PLAYER COLOR TINT!
-    # if ownedComp?
-    #   playerId = ownedComp.get('playerId')
-    #   if @playerFinder.playerMetadata[playerId]?
-    #     sprite.tint = @playerFinder.playerMetadata[playerId].color
+    if tint = spriteComp.get('tintColor')
+      sprite.tint = tint
+
     sprite.setInteractive(true)
     sprite
     
