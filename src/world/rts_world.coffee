@@ -17,13 +17,13 @@ HealthSystem =               require './systems/health_system.coffee'
 RobotDeathSystem =           require './systems/robot_death_system.coffee'
 ControlSystem =              require './systems/control_system.coffee'
 MovementSystem =             require './systems/movement_system.coffee'
-EntityInspectorSystem =      require './systems/entity_inspector_system.coffee'
+IntrospectorSystem =         require './systems/introspector_system.coffee'
 # SpriteSyncSystem =           require './systems/sprite_sync_system.coffee'
 
 class RtsWorld extends SimSim.WorldBase
   constructor: ({@pixiWrapper, @introspector}) ->
     @pixiWrapper or throw new Error("Need pixiWrapper")
-    @introspector or throw new Error("Need an introspector, eg, EntityInspector")
+    @introspector or throw new Error("Need an Introspector")
 
     @playerMetadata = {}
     @currentControls = {}
@@ -60,7 +60,7 @@ class RtsWorld extends SimSim.WorldBase
 
   _setupIntrospector: (ecs, introspector) ->
     for componentClass in [ C.Position,C.Movement,C.Owned,C.MapTiles,C.Health,C.MapTiles,C.Sprite ]
-      ecs.registerSystem(new EntityInspectorSystem(introspector, componentClass))
+      ecs.registerSystem(new IntrospectorSystem(introspector, componentClass))
 
   findEntityById: (id) ->
     (entity for entity in @ecs._alive when "#{entity.id}" == "#{id}")[0]

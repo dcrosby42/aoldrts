@@ -1,5 +1,5 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-var EntityInspector, GameRunner, KeyboardController, ParkMillerRNG, PixiWrapper, RtsUI, RtsWorld, StopWatch, UIState, buildKeyboardController, buildPixiWrapper, buildSimulation, buildStopWatch, getMeta, setupStats, _copyData;
+var GameRunner, Introspector, KeyboardController, ParkMillerRNG, PixiWrapper, RtsUI, RtsWorld, StopWatch, UIState, buildKeyboardController, buildPixiWrapper, buildSimulation, buildStopWatch, getMeta, setupStats, _copyData;
 
 RtsWorld = require('./world/rts_world.coffee');
 
@@ -17,7 +17,7 @@ ParkMillerRNG = require('./utils/pm_prng.coffee');
 
 UIState = require('./ui/ui_state.coffee');
 
-EntityInspector = require('./world/entity_inspector.coffee');
+Introspector = require('./world/introspector.coffee');
 
 getMeta = function(name) {
   var meta, _i, _len, _ref;
@@ -73,7 +73,7 @@ window.onload = function() {
     uiState = UIState.create({
       pixiWrapper: pixiWrapper
     });
-    introspector = new EntityInspector({
+    introspector = new Introspector({
       uiState: uiState
     });
     simulation = buildSimulation({
@@ -200,7 +200,7 @@ window.mouseScrollingChanged = function() {
 window.watchData = function() {};
 
 
-},{"./ui/game_runner.coffee":2,"./ui/keyboard_controller.coffee":3,"./ui/pixi_wrapper.coffee":4,"./ui/rts_ui.coffee":5,"./ui/ui_state.coffee":6,"./utils/pm_prng.coffee":19,"./utils/stop_watch.coffee":20,"./world/entity_inspector.coffee":23,"./world/rts_world.coffee":27}],2:[function(require,module,exports){
+},{"./ui/game_runner.coffee":2,"./ui/keyboard_controller.coffee":3,"./ui/pixi_wrapper.coffee":4,"./ui/rts_ui.coffee":5,"./ui/ui_state.coffee":6,"./utils/pm_prng.coffee":19,"./utils/stop_watch.coffee":20,"./world/introspector.coffee":25,"./world/rts_world.coffee":27}],2:[function(require,module,exports){
 var GameRunner;
 
 GameRunner = (function() {
@@ -1583,15 +1583,57 @@ module.exports = EntityFactory;
 
 
 },{"../utils/component_register.coffee":17,"../utils/pm_prng.coffee":19,"./components.coffee":21,"./map_helpers.coffee":26}],23:[function(require,module,exports){
-var EntityInspector;
+var EventBus;
 
-EntityInspector = (function() {
-  function EntityInspector(_arg) {
+EventBus = (function() {
+  function EventBus() {
+    this.clear();
+  }
+
+  EventBus.prototype.push = function(event_type, args) {
+    var _base;
+    if (args == null) {
+      args = {};
+    }
+    (_base = this._eventBag)[event_type] || (_base[event_type] = []);
+    return this._eventBag[event_type].push(args);
+  };
+
+  EventBus.prototype.clear = function() {
+    return this._eventBag = {};
+  };
+
+  EventBus.prototype.eventsFor = function(event_type) {
+    return this._eventBag[event_type] || [];
+  };
+
+  return EventBus;
+
+})();
+
+module.exports = EventBus;
+
+
+},{}],24:[function(require,module,exports){
+var E;
+
+E = {
+  Death: 'e_ent_death'
+};
+
+module.exports = E;
+
+
+},{}],25:[function(require,module,exports){
+var Introspector;
+
+Introspector = (function() {
+  function Introspector(_arg) {
     this.uiState = _arg.uiState;
     this.reset();
   }
 
-  EntityInspector.prototype.update = function(entityId, component) {
+  Introspector.prototype.update = function(entityId, component) {
     var eid, typeName, _base;
     eid = "" + entityId;
     if (component) {
@@ -1601,11 +1643,11 @@ EntityInspector = (function() {
     }
   };
 
-  EntityInspector.prototype.componentsByEntity = function() {
+  Introspector.prototype.componentsByEntity = function() {
     return this._data;
   };
 
-  EntityInspector.prototype.entitiesWithComponent = function(component_name) {
+  Introspector.prototype.entitiesWithComponent = function(component_name) {
     var component_hash, eid, matches, _ref;
     matches = {};
     _ref = this._data;
@@ -1618,23 +1660,23 @@ EntityInspector = (function() {
     return matches;
   };
 
-  EntityInspector.prototype.getEntity = function(entityId) {
+  Introspector.prototype.getEntity = function(entityId) {
     return this._data["" + entityId];
   };
 
-  EntityInspector.prototype.entityCount = function() {
+  Introspector.prototype.entityCount = function() {
     return Object.keys(this._data).length;
   };
 
-  EntityInspector.prototype.reset = function() {
+  Introspector.prototype.reset = function() {
     return this._data = {};
   };
 
-  EntityInspector.prototype.beforeStep = function() {
+  Introspector.prototype.beforeStep = function() {
     return this.reset();
   };
 
-  EntityInspector.prototype.afterStep = function() {
+  Introspector.prototype.afterStep = function() {
     var compData, compType, componentsByType, entities, entityId, newEntity, uiComp, uiEnt, watchList, _i, _len, _ref, _results;
     entities = this.uiState.get('entities');
     watchList = entities.mapBy('entityId');
@@ -1674,53 +1716,11 @@ EntityInspector = (function() {
     return _results;
   };
 
-  return EntityInspector;
+  return Introspector;
 
 })();
 
-module.exports = EntityInspector;
-
-
-},{}],24:[function(require,module,exports){
-var EventBus;
-
-EventBus = (function() {
-  function EventBus() {
-    this.clear();
-  }
-
-  EventBus.prototype.push = function(event_type, args) {
-    var _base;
-    if (args == null) {
-      args = {};
-    }
-    (_base = this._eventBag)[event_type] || (_base[event_type] = []);
-    return this._eventBag[event_type].push(args);
-  };
-
-  EventBus.prototype.clear = function() {
-    return this._eventBag = {};
-  };
-
-  EventBus.prototype.eventsFor = function(event_type) {
-    return this._eventBag[event_type] || [];
-  };
-
-  return EventBus;
-
-})();
-
-module.exports = EventBus;
-
-
-},{}],25:[function(require,module,exports){
-var E;
-
-E = {
-  Death: 'e_ent_death'
-};
-
-module.exports = E;
+module.exports = Introspector;
 
 
 },{}],26:[function(require,module,exports){
@@ -1758,7 +1758,7 @@ module.exports = MapHelpers;
 
 
 },{}],27:[function(require,module,exports){
-var C, CR, ChecksumCalculator, CommandQueueSystem, ControlSystem, EntityFactory, EntityInspectorSystem, EventBus, GotoSystem, HealthSystem, MovementSystem, ParkMillerRNG, PlayerColors, RobotDeathSystem, RtsWorld, WanderControlMappingSystem,
+var C, CR, ChecksumCalculator, CommandQueueSystem, ControlSystem, EntityFactory, EventBus, GotoSystem, HealthSystem, IntrospectorSystem, MovementSystem, ParkMillerRNG, PlayerColors, RobotDeathSystem, RtsWorld, WanderControlMappingSystem,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
@@ -1794,7 +1794,7 @@ ControlSystem = require('./systems/control_system.coffee');
 
 MovementSystem = require('./systems/movement_system.coffee');
 
-EntityInspectorSystem = require('./systems/entity_inspector_system.coffee');
+IntrospectorSystem = require('./systems/introspector_system.coffee');
 
 RtsWorld = (function(_super) {
   __extends(RtsWorld, _super);
@@ -1805,7 +1805,7 @@ RtsWorld = (function(_super) {
       throw new Error("Need pixiWrapper");
     })();
     this.introspector || (function() {
-      throw new Error("Need an introspector, eg, EntityInspector");
+      throw new Error("Need an Introspector");
     })();
     this.playerMetadata = {};
     this.currentControls = {};
@@ -1845,7 +1845,7 @@ RtsWorld = (function(_super) {
     _results = [];
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
       componentClass = _ref[_i];
-      _results.push(ecs.registerSystem(new EntityInspectorSystem(introspector, componentClass)));
+      _results.push(ecs.registerSystem(new IntrospectorSystem(introspector, componentClass)));
     }
     return _results;
   };
@@ -2033,7 +2033,7 @@ RtsWorld = (function(_super) {
 module.exports = RtsWorld;
 
 
-},{"../utils/array_extensions.coffee":15,"../utils/checksum_calculator.coffee":16,"../utils/component_register.coffee":17,"../utils/makr_extensions.coffee":18,"../utils/pm_prng.coffee":19,"./components.coffee":21,"./entity_factory.coffee":22,"./event_bus.coffee":24,"./systems/command_queue_system.coffee":28,"./systems/control_system.coffee":29,"./systems/entity_inspector_system.coffee":30,"./systems/goto_system.coffee":31,"./systems/health_system.coffee":32,"./systems/movement_system.coffee":33,"./systems/robot_death_system.coffee":34,"./systems/wander_control_mapping_system.coffee":35}],28:[function(require,module,exports){
+},{"../utils/array_extensions.coffee":15,"../utils/checksum_calculator.coffee":16,"../utils/component_register.coffee":17,"../utils/makr_extensions.coffee":18,"../utils/pm_prng.coffee":19,"./components.coffee":21,"./entity_factory.coffee":22,"./event_bus.coffee":23,"./systems/command_queue_system.coffee":28,"./systems/control_system.coffee":29,"./systems/goto_system.coffee":30,"./systems/health_system.coffee":31,"./systems/introspector_system.coffee":32,"./systems/movement_system.coffee":33,"./systems/robot_death_system.coffee":34,"./systems/wander_control_mapping_system.coffee":35}],28:[function(require,module,exports){
 var C, CommandQueueSystem, Commands, ComponentRegister,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -2166,41 +2166,7 @@ ControlSystem = (function(_super) {
 module.exports = ControlSystem;
 
 
-},{"../../utils/component_register.coffee":17,"../components.coffee":21,"../events.coffee":25}],30:[function(require,module,exports){
-var C, CR, E, EntityInspectorSystem,
-  __hasProp = {}.hasOwnProperty,
-  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
-
-CR = require('../../utils/component_register.coffee');
-
-C = require('../components.coffee');
-
-E = require('../events.coffee');
-
-EntityInspectorSystem = (function(_super) {
-  __extends(EntityInspectorSystem, _super);
-
-  function EntityInspectorSystem(entityInspector, componentClass) {
-    this.entityInspector = entityInspector;
-    this.componentClass = componentClass;
-    makr.IteratingSystem.call(this);
-    this.registerComponent(CR.get(this.componentClass));
-  }
-
-  EntityInspectorSystem.prototype.process = function(entity, elapsed) {
-    var component;
-    component = entity.get(CR.get(this.componentClass));
-    return this.entityInspector.update(entity.id, component);
-  };
-
-  return EntityInspectorSystem;
-
-})(makr.IteratingSystem);
-
-module.exports = EntityInspectorSystem;
-
-
-},{"../../utils/component_register.coffee":17,"../components.coffee":21,"../events.coffee":25}],31:[function(require,module,exports){
+},{"../../utils/component_register.coffee":17,"../components.coffee":21,"../events.coffee":24}],30:[function(require,module,exports){
 var C, CR, GotoSystem,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -2248,7 +2214,7 @@ GotoSystem = (function(_super) {
 module.exports = GotoSystem;
 
 
-},{"../../utils/component_register.coffee":17,"../components.coffee":21}],32:[function(require,module,exports){
+},{"../../utils/component_register.coffee":17,"../components.coffee":21}],31:[function(require,module,exports){
 var C, CR, E, HealthSystem,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -2287,7 +2253,41 @@ HealthSystem = (function(_super) {
 module.exports = HealthSystem;
 
 
-},{"../../utils/component_register.coffee":17,"../components.coffee":21,"../events.coffee":25}],33:[function(require,module,exports){
+},{"../../utils/component_register.coffee":17,"../components.coffee":21,"../events.coffee":24}],32:[function(require,module,exports){
+var C, CR, E, IntrospectorSystem,
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+CR = require('../../utils/component_register.coffee');
+
+C = require('../components.coffee');
+
+E = require('../events.coffee');
+
+IntrospectorSystem = (function(_super) {
+  __extends(IntrospectorSystem, _super);
+
+  function IntrospectorSystem(entityInspector, componentClass) {
+    this.entityInspector = entityInspector;
+    this.componentClass = componentClass;
+    makr.IteratingSystem.call(this);
+    this.registerComponent(CR.get(this.componentClass));
+  }
+
+  IntrospectorSystem.prototype.process = function(entity, elapsed) {
+    var component;
+    component = entity.get(CR.get(this.componentClass));
+    return this.entityInspector.update(entity.id, component);
+  };
+
+  return IntrospectorSystem;
+
+})(makr.IteratingSystem);
+
+module.exports = IntrospectorSystem;
+
+
+},{"../../utils/component_register.coffee":17,"../components.coffee":21,"../events.coffee":24}],33:[function(require,module,exports){
 var C, CR, E, MovementSystem,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -2325,7 +2325,7 @@ MovementSystem = (function(_super) {
 module.exports = MovementSystem;
 
 
-},{"../../utils/component_register.coffee":17,"../components.coffee":21,"../events.coffee":25}],34:[function(require,module,exports){
+},{"../../utils/component_register.coffee":17,"../components.coffee":21,"../events.coffee":24}],34:[function(require,module,exports){
 var C, CR, E, RobotDeathSystem,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -2370,7 +2370,7 @@ RobotDeathSystem = (function(_super) {
 module.exports = RobotDeathSystem;
 
 
-},{"../../utils/component_register.coffee":17,"../components.coffee":21,"../events.coffee":25}],35:[function(require,module,exports){
+},{"../../utils/component_register.coffee":17,"../components.coffee":21,"../events.coffee":24}],35:[function(require,module,exports){
 var C, CR, ParkMillerRNG, WanderControlMappingSystem,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };

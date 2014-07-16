@@ -1,5 +1,5 @@
 
-class EntityInspector
+class Introspector
   constructor: ({@uiState}) ->
     @reset()
 
@@ -62,4 +62,4 @@ class EntityInspector
       entities.removeObject entities.findBy('entityId', entityId)
 
 
-module.exports = EntityInspector
+module.exports = Introspector

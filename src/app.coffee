@@ -10,7 +10,7 @@ GameRunner = require './ui/game_runner.coffee'
 ParkMillerRNG = require './utils/pm_prng.coffee'
 
 UIState = require './ui/ui_state.coffee'
-EntityInspector = require './world/entity_inspector.coffee'
+Introspector = require './world/introspector.coffee'
 
 
 getMeta = (name) ->
@@ -80,7 +80,7 @@ window.onload = ->
     uiState = UIState.create(
       pixiWrapper:pixiWrapper
     )
-    introspector = new EntityInspector(
+    introspector = new Introspector(
       uiState: uiState
     )
     simulation = buildSimulation(
