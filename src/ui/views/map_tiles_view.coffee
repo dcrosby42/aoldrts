@@ -5,8 +5,6 @@ MapTilesView = Ember.Object.extend
   entity: null
   sprite: null
   entityIdBinding: 'entity.entityId'
-  # xBinding: 'entity.Position.x'
-  # yBinding: 'entity.Position.y'
   seedBinding: 'entity.MapTiles.seed'
   widthBinding: 'entity.MapTiles.width'
   heightBinding: 'entity.MapTiles.height'
@@ -14,18 +12,6 @@ MapTilesView = Ember.Object.extend
   init: ->
     @_super()
     @set 'sprite', @createTiles(@get('seed'), @get('width'), @get('height'))
-    #TODO @pixiWrapper.addBackgroundSprite(tilesSprites)
-
-    # sprite = new PIXI.Graphics()
-    # sprite.lineStyle 1, 0x0099FF
-    # sprite.drawRect -15,-20,30,40
-    # @set 'sprite', sprite
-
-  # _syncPosition: (->
-  #   if sprite = @get('sprite')
-  #     sprite.position.x = @get('x')
-  #     sprite.position.y = @get('y')
-  # ).observes('sprite', 'x', 'y')
 
   createTile: (frame, x, y) ->
     tile = new PIXI.Sprite(PIXI.Texture.fromFrame(frame))
