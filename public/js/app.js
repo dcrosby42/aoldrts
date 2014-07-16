@@ -416,6 +416,11 @@ PixiWrapper = (function(_super) {
     this.uiSprites = new PIXI.DisplayObjectContainer();
     this.uiSprites.setInteractive(true);
     this.stage.addChild(this.uiSprites);
+    this.layers = {
+      background: this.bgSprites,
+      middle: this.sprites,
+      ui: this.uiSprites
+    };
     this.viewport = new Viewport({
       spriteGroups: [this.sprites, this.bgSprites, this.uiSprites],
       width: this.renderer.width,
@@ -438,30 +443,6 @@ PixiWrapper = (function(_super) {
     })(this);
   }
 
-  PixiWrapper.prototype.addUISprite = function(sprite) {
-    return this.uiSprites.addChild(sprite);
-  };
-
-  PixiWrapper.prototype.removeUISprite = function(sprite) {
-    return this.uiSprites.removeChild(sprite);
-  };
-
-  PixiWrapper.prototype.addBackgroundSprite = function(sprite) {
-    return this.bgSprites.addChildAt(sprite, 0);
-  };
-
-  PixiWrapper.prototype.removeBackgroundSprite = function(sprite) {
-    return this.bgSprites.removeChild(sprite);
-  };
-
-  PixiWrapper.prototype.addMiddleGroundSprite = function(sprite) {
-    return this.sprites.addChildAt(sprite, this.sprites.children.length);
-  };
-
-  PixiWrapper.prototype.removeMiddleGroundSprite = function(sprite) {
-    return this.sprites.removeChild(sprite);
-  };
-
   PixiWrapper.prototype.relaySpriteClicks = function(sprite, entityId) {
     return sprite.mousedown = (function(_this) {
       return function(data) {
@@ -471,24 +452,20 @@ PixiWrapper = (function(_super) {
   };
 
   PixiWrapper.prototype.addSpriteToLayer = function(layerId, sprite) {
-    switch (layerId) {
-      case 'background':
-        return this.addBackgroundSprite(sprite);
-      case 'middle':
-        return this.addMiddleGroundSprite(sprite);
-      case 'ui':
-        return this.addUISprite(sprite);
+    var layer;
+    if (layer = this.layers[layerId]) {
+      return layer.addChildAt(sprite, layer.children.length);
+    } else {
+      return console.log("!! FAIL to add to non-existant sprite layer '" + layerId + "'", sprite);
     }
   };
 
   PixiWrapper.prototype.removeSpriteFromLayer = function(layerId, sprite) {
-    switch (layerId) {
-      case 'background':
-        return this.removeBackgroundSprite(sprite);
-      case 'middle':
-        return this.removeMiddleGroundSprite(sprite);
-      case 'ui':
-        return this.removeUISprite(sprite);
+    var layer;
+    if (layer = this.layers[layerId]) {
+      return layer.removeChild(sprite);
+    } else {
+      return console.log("!! FAIL to remove from non-existant sprite layer '" + layerId + "'", sprite);
     }
   };
 
@@ -724,12 +701,14 @@ UIState = Ember.Object.extend({
   haloViews: [],
   _syncHaloViews: EntityViewBinding.create(HaloView, {
     from: "selectedUnits",
-    to: "haloViews"
+    to: "haloViews",
+    layer: 'ui'
   }),
   healthViews: [],
   _syncHealthViews: EntityViewBinding.create(HealthView, {
     from: "unitsWithHealth",
-    to: 'healthViews'
+    to: 'healthViews',
+    layer: 'ui'
   }),
   mapBackgroundViews: [],
   _syncMapBackgroundViews: EntityViewBinding.create(MapTilesView, {
@@ -756,19 +735,17 @@ StatefulBinding = require('./stateful_binding.coffee');
 EntityViewBinding = {};
 
 EntityViewBinding.create = function(viewClass, opts) {
+  var layer;
+  layer = opts.layer || 'middle';
   opts.add = function(entity) {
-    var entityId, layer, pixiWrapper, sprite, view;
+    var entityId, pixiWrapper, sprite, view;
     view = viewClass.create({
       entity: entity
     });
     entityId = entity.get('entityId');
     pixiWrapper = this.get('pixiWrapper');
     sprite = view.get('sprite');
-    if (layer = opts.layer) {
-      pixiWrapper.addSpriteToLayer(layer, sprite);
-    } else {
-      pixiWrapper.addUISprite(sprite);
-    }
+    pixiWrapper.addSpriteToLayer(layer, sprite);
     if (view.get('relayClicks')) {
       pixiWrapper.relaySpriteClicks(sprite, entityId);
     }
@@ -778,12 +755,7 @@ EntityViewBinding.create = function(viewClass, opts) {
     return col.findBy("entityId", entity.entityId);
   };
   opts.remove = function(entity, view) {
-    var layer;
-    if (layer = opts.layer) {
-      return this.get('pixiWrapper').removeSpriteFromLayer(layer, view.get('sprite'));
-    } else {
-      return this.get('pixiWrapper').removeUISprite(view.get('sprite'));
-    }
+    return this.get('pixiWrapper').removeSpriteFromLayer(layer, view.get('sprite'));
   };
   return StatefulBinding.create(opts);
 };
@@ -1709,7 +1681,6 @@ Introspector = (function() {
     _results = [];
     for (_i = 0, _len = watchList.length; _i < _len; _i++) {
       entityId = watchList[_i];
-      console.log("Introspector removing entity " + entityId);
       _results.push(entities.removeObject(entities.findBy('entityId', entityId)));
     }
     return _results;

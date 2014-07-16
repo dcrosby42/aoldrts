@@ -59,7 +59,6 @@ class Introspector
       entities.pushObject(uiEnt) if newEntity
 
     for entityId in watchList
-      console.log "Introspector removing entity #{entityId}"
       entities.removeObject entities.findBy('entityId', entityId)
 
 

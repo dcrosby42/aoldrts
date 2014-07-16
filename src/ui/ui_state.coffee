@@ -47,11 +47,13 @@ UIState = Ember.Object.extend
   _syncHaloViews: EntityViewBinding.create HaloView,
     from: "selectedUnits"
     to: "haloViews"
+    layer: 'ui'
 
   healthViews: []
   _syncHealthViews: EntityViewBinding.create HealthView,
     from: "unitsWithHealth"
     to: 'healthViews'
+    layer: 'ui'
 
   mapBackgroundViews: []
   _syncMapBackgroundViews: EntityViewBinding.create MapTilesView,

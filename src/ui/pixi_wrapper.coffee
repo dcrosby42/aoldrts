@@ -18,6 +18,11 @@ class PixiWrapper extends SimSim.EventEmitter
     @uiSprites.setInteractive true
     @stage.addChild @uiSprites
 
+    @layers =
+      background: @bgSprites
+      middle:     @sprites
+      ui:         @uiSprites
+
     # TODO can this use a DisplayObjectContainer to contain the sprite groups?
     @viewport = new Viewport
       spriteGroups: [@sprites, @bgSprites, @uiSprites]
@@ -40,48 +45,21 @@ class PixiWrapper extends SimSim.EventEmitter
     # map.scale.y = 0.2
     # @stage.addChild map
 
-    # @stage.mousedown = (data) ->
-    #   console.log "Stage mouse down!", data, data.getLocalPosition(data.target)
-  addUISprite: (sprite) ->
-    @uiSprites.addChild sprite
-
-  removeUISprite: (sprite) ->
-    @uiSprites.removeChild sprite
-
-  addBackgroundSprite: (sprite) ->
-    @bgSprites.addChildAt sprite, 0 # ADD ALL THE WAY AT THE BOTTOM
-
-  removeBackgroundSprite: (sprite) ->
-    @bgSprites.removeChild sprite
-
-  addMiddleGroundSprite: (sprite) ->
-    @sprites.addChildAt sprite, @sprites.children.length # Add on top of all others
-
-  removeMiddleGroundSprite: (sprite) ->
-    @sprites.removeChild sprite
-
   relaySpriteClicks: (sprite,entityId) ->
     sprite.mousedown = (data) =>
       @emit "spriteClicked", data, entityId
 
-
   addSpriteToLayer: (layerId, sprite) ->
-    switch layerId
-      when 'background'
-        @addBackgroundSprite(sprite)
-      when 'middle'
-        @addMiddleGroundSprite(sprite)
-      when 'ui'
-        @addUISprite(sprite)
+    if layer = @layers[layerId]
+      layer.addChildAt sprite, layer.children.length # new sprites are topmost in their layer
+    else
+      console.log "!! FAIL to add to non-existant sprite layer '#{layerId}'",sprite
 
   removeSpriteFromLayer: (layerId, sprite) ->
-    switch layerId
-      when 'background'
-        @removeBackgroundSprite(sprite)
-      when 'middle'
-        @removeMiddleGroundSprite(sprite)
-      when 'ui'
-        @removeUISprite(sprite)
+    if layer = @layers[layerId]
+      layer.removeChild sprite
+    else
+      console.log "!! FAIL to remove from non-existant sprite layer '#{layerId}'",sprite
     
   appendViewTo: (el) ->
     @renderer.view.id = "game"
