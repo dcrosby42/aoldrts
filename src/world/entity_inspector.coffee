@@ -55,7 +55,7 @@ class EntityInspector
           uiComp = Ember.Object.create(entityId: entityId)
           uiEnt.set(compType, uiComp)
         uiComp.setProperties compData
-        # TODO: remove the UI Components for all components who are NO LONGER PRESENT IN UI WORLD
+        # TODO: remove the UI Components for all components who are NO LONGER PRESENT IN WORLD
       entities.pushObject(uiEnt) if newEntity
 
     for entityId in watchList

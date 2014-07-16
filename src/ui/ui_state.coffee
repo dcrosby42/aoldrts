@@ -1,5 +1,6 @@
 HaloView = require './views/halo_view.coffee'
 HealthView = require './views/health_view.coffee'
+MapTilesView = require './views/map_tiles_view.coffee'
 EntityViewBinding = require './utils/entity_view_binding.coffee'
 
 UIState = Ember.Object.extend
@@ -7,6 +8,7 @@ UIState = Ember.Object.extend
     @_super()
     @get('selectedUnits')
     @get('entitiesWithHealth')
+    @get('mapTiles')
 
   pixiWrapper: null
 
@@ -27,6 +29,10 @@ UIState = Ember.Object.extend
     @get('entities').map((entity) => entity if entity.get('Health')).compact()
   ).property('entities.[]')
 
+  mapTiles: (->
+    @get('entities').map((entity) => entity if entity.get('MapTiles')).compact()
+  ).property('entities.[]')
+
   haloViews: []
   _syncHaloViews: EntityViewBinding.create HaloView,
     from: "selectedUnits"
@@ -36,5 +42,11 @@ UIState = Ember.Object.extend
   _syncHealthViews: EntityViewBinding.create HealthView,
     from: "entitiesWithHealth"
     to: 'healthViews'
+
+  mapBackgroundViews: []
+  _syncMapBackgroundViews: EntityViewBinding.create MapTilesView,
+    from: 'mapTiles'
+    to: 'mapBackgroundViews'
+    layer: 'background'
 
 module.exports = UIState

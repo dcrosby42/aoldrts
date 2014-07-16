@@ -366,10 +366,10 @@ World.prototype.create = function World_create() {
     entity = this._dead.pop();
     entity._alive = true;
     entity._id = id;
-    console.log("makr.js: World.prototype.create: REVIVED Entity id="+entity.id, entity);
+    // console.log("makr.js: World.prototype.create: REVIVED Entity id="+entity.id, entity);
   } else {
     entity = new Entity(this, id);
-    console.log("makr.js: World.prototype.create: new Entity id="+entity.id, entity);
+    // console.log("makr.js: World.prototype.create: new Entity id="+entity.id, entity);
   }
 
   this._alive.push(entity);

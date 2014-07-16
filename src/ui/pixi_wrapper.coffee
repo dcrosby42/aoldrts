@@ -48,8 +48,11 @@ class PixiWrapper extends SimSim.EventEmitter
   removeUISprite: (sprite) ->
     @uiSprites.removeChild sprite
 
-  addBackgroundSprite: (sprite, entityId=null) ->
+  addBackgroundSprite: (sprite) ->
     @bgSprites.addChildAt sprite, 0 # ADD ALL THE WAY AT THE BOTTOM
+
+  removeBackgroundSprite: (sprite) ->
+    @bgSprites.removeChild sprite
 
   addMiddleGroundSprite: (sprite, entityId=null) ->
     endIndex = @sprites.children.length # ADD ON TOP
@@ -59,6 +62,25 @@ class PixiWrapper extends SimSim.EventEmitter
       sprite.mousedown = (data) =>
         @emit "spriteClicked", data, entityId
 
+  addSpriteToLayer: (layerId, sprite) ->
+    switch layerId
+      when 'background'
+        @addBackgroundSprite(sprite)
+      when 'actor'
+        @addMiddleGroundSprite(sprite) # TODO OOPS! entityId? ???
+      when 'ui'
+        @addUISprite(sprite)
+
+  removeSpriteFromLayer: (layerId, sprite) ->
+    switch layerId
+      when 'background'
+        @removeBackgroundSprite(sprite)
+      when 'actor'
+        #TODO @removeMiddleGroundSprite(sprite)
+        nil
+      when 'ui'
+        @removeUISprite(sprite)
+    
   appendViewTo: (el) ->
     @renderer.view.id = "game"
     el.appendChild(@renderer.view)

@@ -4,7 +4,6 @@ ComponentRegister = (->
   ctors = []
   types = []
 
-  console.log "!!! MAKE NEW ComponentRegister 1!!"
   register: (ctor) ->
     i = ctors.indexOf(ctor)
     if i < 0

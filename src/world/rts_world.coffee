@@ -15,7 +15,6 @@ GotoSystem =                 require './systems/goto_system.coffee'
 WanderControlMappingSystem = require './systems/wander_control_mapping_system.coffee'
 HealthSystem =               require './systems/health_system.coffee'
 RobotDeathSystem =           require './systems/robot_death_system.coffee'
-MapTilesSystem =             require './systems/map_tiles_system.coffee'
 ControlSystem =              require './systems/control_system.coffee'
 MovementSystem =             require './systems/movement_system.coffee'
 EntityInspectorSystem =      require './systems/entity_inspector_system.coffee'
@@ -54,14 +53,13 @@ class RtsWorld extends SimSim.WorldBase
     ecs.registerSystem(new WanderControlMappingSystem(@randomNumberGenerator))
     ecs.registerSystem(new GotoSystem())
     ecs.registerSystem(new SpriteSyncSystem(@pixiWrapper, @))
-    ecs.registerSystem(new MapTilesSystem(@pixiWrapper))
     ecs.registerSystem(new CommandQueueSystem(@commandQueue, @))  # passing "this" as the entityFinder
     ecs.registerSystem(new MovementSystem())
     ecs.registerSystem(new HealthSystem(@eventBus))
     ecs.registerSystem(new RobotDeathSystem(@eventBus, @, @entityFactory))
 
   _setupIntrospector: (ecs, introspector) ->
-    for componentClass in [ C.Position,C.Movement,C.Owned,C.MapTiles, C.Health ]
+    for componentClass in [ C.Position,C.Movement,C.Owned,C.MapTiles, C.Health, C.MapTiles ]
       ecs.registerSystem(new EntityInspectorSystem(introspector, componentClass))
 
   findEntityById: (id) ->
@@ -95,15 +93,15 @@ class RtsWorld extends SimSim.WorldBase
     console.log "Player #{playerId} JOINED"
     @playerMetadata[playerId] ||= {}
     @playerMetadata[playerId].color = @randomNumberGenerator.choose(PlayerColors)
-    mapInfo = @map.get C.MapTiles
-    v = @pixiWrapper.viewport
+    # mapInfo = @map.get C.MapTiles
+    # v = @pixiWrapper.viewport
 
     # 1. choose random initial map location and set player's viewport to see it
     # 2. set a beacon in the center, spawn three bots and get them moving
     
-    @playerMetadata[playerId].viewport =
-      x: @randomNumberGenerator.nextInt(v.width, mapInfo.width - v.width)
-      y: @randomNumberGenerator.nextInt(v.height, mapInfo.height - v.height)
+    # @playerMetadata[playerId].viewport =
+    #   x: @randomNumberGenerator.nextInt(v.width, mapInfo.width - v.width)
+    #   y: @randomNumberGenerator.nextInt(v.height, mapInfo.height - v.height)
 
   #### SimSim.WorldBase#playerLeft(id)
   playerLeft: (playerId) ->
@@ -137,20 +135,19 @@ class RtsWorld extends SimSim.WorldBase
     @playerMetadata = data.playerMetadata
     @ecs._nextEntityID = data.nextEntityId
     @randomNumberGenerator.seed = data.sacredSeed
-    console.log "setData: @ecs._nextEntityID set to #{@ecs._nextEntityID}"
+    # console.log "setData: @ecs._nextEntityID set to #{@ecs._nextEntityID}"
     staleEnts = @ecs._alive[..]
     for ent in staleEnts
-      console.log "setData: killing entity #{ent.id}", ent
-      #XXX ent._componentMask.reset() # shouldn't be needed, kill() does this
+      # console.log "setData: killing entity #{ent.id}", ent
       ent.kill()
 
     for entId, components of data.componentBags
       entity = @ecs.resurrect(entId)
-      console.log "setData: resurrected entity for entId=#{entId}:", entity
+      # console.log "setData: resurrected entity for entId=#{entId}:", entity
       comps = (@deserializeComponent(c) for c in components)
       entity._componentMask.reset()
       for comp in comps
-        console.log "setData: adding component to #{entity.id}:", comp
+        # console.log "setData: adding component to #{entity.id}:", comp
         entity.add(comp, CR.get(comp.constructor))
 
   #### SimSim.WorldBase#getData()
