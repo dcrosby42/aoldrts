@@ -57,7 +57,7 @@ class RtsWorld extends SimSim.WorldBase
     ecs.registerSystem(new RobotDeathSystem(@eventBus, @, @entityFactory))
 
   _setupIntrospector: (ecs, introspector) ->
-    for componentClass in [ C.Position,C.Movement,C.Owned,C.MapTiles,C.Health,C.MapTiles,C.Sprite ]
+    for componentClass in [ C.Position,C.Movement,C.Owned,C.MapTiles,C.Health,C.Sprite ]
       ecs.registerSystem(new IntrospectorSystem(introspector, componentClass))
 
   findEntityById: (id) ->

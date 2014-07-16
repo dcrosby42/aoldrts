@@ -1837,7 +1837,7 @@ RtsWorld = (function(_super) {
 
   RtsWorld.prototype._setupIntrospector = function(ecs, introspector) {
     var componentClass, _i, _len, _ref, _results;
-    _ref = [C.Position, C.Movement, C.Owned, C.MapTiles, C.Health, C.MapTiles, C.Sprite];
+    _ref = [C.Position, C.Movement, C.Owned, C.MapTiles, C.Health, C.Sprite];
     _results = [];
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
       componentClass = _ref[_i];
