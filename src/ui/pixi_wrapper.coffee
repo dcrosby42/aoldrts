@@ -78,7 +78,7 @@ class PixiWrapper extends SimSim.EventEmitter
     switch layerId
       when 'background'
         @removeBackgroundSprite(sprite)
-      when 'actor'
+      when 'middle'
         @removeMiddleGroundSprite(sprite)
       when 'ui'
         @removeUISprite(sprite)

@@ -485,7 +485,7 @@ PixiWrapper = (function(_super) {
     switch (layerId) {
       case 'background':
         return this.removeBackgroundSprite(sprite);
-      case 'actor':
+      case 'middle':
         return this.removeMiddleGroundSprite(sprite);
       case 'ui':
         return this.removeUISprite(sprite);
@@ -964,7 +964,6 @@ ActorView = Ember.Object.extend({
   relayClicks: true,
   init: function() {
     var sprite;
-    console.log("APE");
     this._super();
     this.spriteFrameCache = SpriteFrameCache;
     sprite = this._buildSprite(this.get('entity.Sprite'));
@@ -977,7 +976,6 @@ ActorView = Ember.Object.extend({
     framelist = spriteComp.get('framelist');
     spriteName = spriteComp.get('name');
     spriteFacing = spriteComp.get('facing');
-    console.log(">> _buildSprite " + spriteName + " for " + (this.get('entityId')) + " @ " + (this.get('x')) + "," + (this.get('y')));
     if (framelist) {
       if (!this.spriteFrameCache[spriteName]) {
         frameCache = {};
@@ -1007,9 +1005,7 @@ ActorView = Ember.Object.extend({
   },
   _syncPosition: (function() {
     var sprite;
-    console.log("_syncPosition for ");
     if (sprite = this.get('sprite')) {
-      console.log("  sprite " + (this.get('sprite.name')) + " pos to " + (this.get('x')) + "," + (this.get('y')));
       sprite.position.x = this.get('x');
       return sprite.position.y = this.get('y');
     }
@@ -1494,7 +1490,6 @@ EntityFactory = (function() {
 
   EntityFactory.prototype.robot = function(x, y, robotName) {
     var robot;
-    console.log("robot", robotName);
     robot = this.ecs.create();
     robot.add(new C.Position({
       x: x,
@@ -1522,7 +1517,6 @@ EntityFactory = (function() {
 
   EntityFactory.prototype.powerup = function(x, y, powerup_type) {
     var crystal_frames, i, p, powerup_frames;
-    console.log("!! creating " + powerup_type + " powerup @ " + x + "," + y);
     crystal_frames = (function() {
       var _i, _results;
       _results = [];
@@ -1715,6 +1709,7 @@ Introspector = (function() {
     _results = [];
     for (_i = 0, _len = watchList.length; _i < _len; _i++) {
       entityId = watchList[_i];
+      console.log("Introspector removing entity " + entityId);
       _results.push(entities.removeObject(entities.findBy('entityId', entityId)));
     }
     return _results;
@@ -1999,7 +1994,6 @@ RtsWorld = (function(_super) {
       nextEntityId: this.ecs._nextEntityID,
       sacredSeed: this.randomNumberGenerator.seed
     };
-    console.log(data);
     return data;
   };
 

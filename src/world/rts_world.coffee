@@ -145,7 +145,6 @@ class RtsWorld extends SimSim.WorldBase
       componentBags: componentBags
       nextEntityId: @ecs._nextEntityID
       sacredSeed: @randomNumberGenerator.seed
-    console.log data
     data
 
   serializeComponent: (component) ->

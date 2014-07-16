@@ -31,7 +31,6 @@ class EntityFactory
       }
 
   robot: (x,y,robotName) ->
-    console.log "robot", robotName
     robot = @ecs.create()
     robot.add(new C.Position(x: x, y: y), CR.get(C.Position))
     robot.add(new C.Sprite(name: robotName, framelist: @generateRobotFrameList(robotName)), CR.get(C.Sprite))
@@ -42,7 +41,6 @@ class EntityFactory
     robot
 
   powerup: (x, y, powerup_type) ->
-    console.log "!! creating #{powerup_type} powerup @ #{x},#{y}"
     crystal_frames = ("#{powerup_type}-crystal#{i}" for i in  [0..7])
     powerup_frames = {
       downIdle: crystal_frames
